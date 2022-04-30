@@ -1,0 +1,14 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+inst/doc
+inst/tidyvpc_discont_inv
+data-raw
+.*.swp
+*.bak
+*.tmp
+*.temp
+#doc
+Meta
+doc
