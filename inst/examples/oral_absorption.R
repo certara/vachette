@@ -1,10 +1,13 @@
 # oral-absorption example from mrgsolve
 
+library(mrgsolve)
+library(dplyr)
+library(vachette)
 
-tag      <- "v16"
+tag      <- paste0("v",packageVersion("vachette"))
 model  <- "oral-absorption"
 
-script       <- paste0("vachette-main-",tag,".R")
+script       <- paste0("vachette/examples/oral_absorption_",tag,".R")
 setup        <- "A"     # choice of ref and query/queries. Choose B is ref/query should be swapped
 my.covariate <- "none"  # To be changed for each model example
 
@@ -13,6 +16,97 @@ mrgdelta <- 0.1
 
 set.seed(125)
 
+oral1cmt.ipred <- '
+
+[ PARAM ] @annotated
+TVCL : 1    : Clearance (L/hr)
+TVV  : 35   : Volume of distribution (L)
+TVKA : 0.5  : Absorption rate constant (1/hr)
+TVF  : 1    : Bioavailability
+WT   : 70   : Weight (kg)
+
+[ CMT ] GUT CENT
+
+[ SET ] delta=1
+
+[ MAIN ]
+
+double CL = TVCL*pow(WT/70,0.75)*exp(ECL);
+double V  = TVV*exp(EV);
+double KA = TVKA*pow(WT/70,0.75)*exp(EKA);
+
+F_GUT  = TVF*pow(WT/70,0.9);
+
+[ OMEGA ] @annotated
+ECL : 0.1 : Eta-CL
+EV  : 0.1 : Eta-V
+EKA : 0.1 : Eta-KA
+
+[ SIGMA ] @labels PROP ADD
+0.00 0.0
+
+[ ODE ]
+dxdt_GUT = -KA*GUT;
+dxdt_CENT = KA*GUT - (CL/V)*CENT;
+
+[ TABLE ]
+double IPRED = CENT/V;
+double DV    = IPRED*(1+PROP)+ADD;
+
+while(DV < 0) {
+simeps();
+DV = IPRED*(1+PROP)+ADD;
+}
+
+[ CAPTURE ] CP = CENT/V WT DV TVCL ECL;
+
+'
+
+oral1cmt.pred <- '
+
+[ PARAM ] @annotated
+TVCL : 1    : Clearance (L/hr)
+TVV  : 35   : Volume of distribution (L)
+TVKA : 0.5  : Absorption rate constant (1/hr)
+TVF  : 1    : Bioavailability
+WT   : 70   : Weight (kg)
+
+[ CMT ] GUT CENT
+
+[ SET ] delta=1
+
+[ MAIN ]
+
+double CL = TVCL*pow(WT/70,0.75)*exp(ECL);
+double V  = TVV*exp(EV);
+double KA = TVKA*pow(WT/70,0.75)*exp(EKA);
+
+F_GUT  = TVF*pow(WT/70,0.9);
+
+[ OMEGA ] @annotated
+ECL : 0.0 : Eta-CL
+EV  : 0.0 : Eta-V
+EKA : 0.0 : Eta-KA
+
+[ SIGMA ] @labels PROP ADD
+0.000 0.00
+
+[ ODE ]
+dxdt_GUT = -KA*GUT;
+dxdt_CENT = KA*GUT - (CL/V)*CENT;
+
+[ TABLE ]
+double IPRED = CENT/V;
+double DV    = IPRED*(1+PROP)+ADD;
+
+while(DV < 0) {
+simeps();
+DV = IPRED*(1+PROP)+ADD;
+}
+
+[ CAPTURE ] CP = CENT/V WT DV TVCL ECL;
+
+'
 my.ipred <- mcode("oral1cmt.ipred", oral1cmt.ipred)
 my.pred  <- mcode("oral1cmt.pred", oral1cmt.pred)
 
