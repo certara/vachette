@@ -1,8 +1,10 @@
 Package: vachette
 Title: A Method for Visualization of PMx Models
-Version: 0.0.1
+Version: 0.16.0
 Authors@R: c(
-      person("James", "Craig", email = "james.craig@certara.com", role = c("aut", "cre")),
+      person("Jos", "Lommerse", email = "jos.lommerse@certara.com", role = c("aut", "cre")),
+      person("Amy", "Cheung", email = "jos.lommerse@certara.com", role = c("aut")),
+      person("James", "Craig", email = "james.craig@certara.com", role = c("aut")),
       person("Certara USA, Inc.", role = c("cph","fnd"))
       )
 Description: A method to visualize PKPD analyses which are impacted by covariate effects.
@@ -17,4 +19,16 @@ Suggests:
     knitr,
     rmarkdown
 Imports:
+    mrgsolve,
+    ggplot2,
+    dplyr,
+    tidyr,
+    dplyr,
+    magrittr,
+    dtw,
+    rootSolve,
+    pracma,
+    gtools,
+    Rfast,
+    prospectr
    

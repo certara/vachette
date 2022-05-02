@@ -14,5 +14,6 @@
 ^docs$
 ^pkgdown$
 ^_pkgdown\.yml$
-
+^plots$
 ^vachette\.Rproj$
+

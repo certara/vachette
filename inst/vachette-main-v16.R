@@ -1,13 +1,13 @@
-# ------------------------------------------------------------------------- 
-#  Sponsor           : Merck 
+# -------------------------------------------------------------------------
+#  Sponsor           : Merck
 #  Project Number    : MRK-FTE-VRSV-640
 #  Project Root Path : Local
-# ------------------------------------------------------------------------- 
+# -------------------------------------------------------------------------
 #  Program : vachette-main-v7.R
-#  Author  : Jos Lommerse - Certara 
+#  Author  : Jos Lommerse - Certara
 #  Date    : 02 February 2022
 #  Purpose : Vachette method for Visualization of Analyses with Covariates
-# ------------------------------------------------------------------------- 
+# -------------------------------------------------------------------------
 #  Software : R version 4.1.2 (2021-11-01)
 #  Platform : ThinkPad P15s Gen 2 Model 20W6008AUS
 #  Environment : Windows-10, 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz
@@ -28,9 +28,9 @@ library(prospectr)
 # v1: Based on vachette-functions-oral-absorption-v2.R
 # v2: indirect response example with updated functions
 # v3: same as v2 (align version with vachette-functions-v3.R)
-# v4: change choice of xlast ref 
+# v4: change choice of xlast ref
 #     add i.v. example (no landmark)
-# v5: New folder structure 
+# v5: New folder structure
 #     +Simple Emax model
 # v6 Using splines for landmark finding
 # v7 Using Savitzky-Golay for landmark finding
@@ -50,11 +50,11 @@ library(prospectr)
 # Clear memory
 rm(list=ls())
 
-tag      <- "v16"  
-# model  <- "sigmoid"  
-# model  <- "iv"  
+tag      <- "v16"
+# model  <- "sigmoid"
+# model  <- "iv"
 model  <- "oral-absorption"
-# model  <- "indirect-response"  
+# model  <- "indirect-response"
 # model  <- "oral-two-dose"
 # model <- "pembro"
 
@@ -66,7 +66,7 @@ extra  <- "-delta01"      # extra info to add to output file names
 mrgdelta <- 0.1
 
 # Location of this script
-home   <- dirname(rstudioapi::getActiveDocumentContext()$path) 
+home   <- dirname(rstudioapi::getActiveDocumentContext()$path)
 getwd()
 setwd(home)
 
@@ -90,26 +90,26 @@ render <- theme_bw()+
 #              DEFINE REFERENCE AND QUERY                #
 #                                                        #
 ##########################################################
-# 
+#
 if (model == 'pembro')
 {
   # my.ipred <- mcode("pembro", pembro.ipred)
   # my.pred  <- mcode("pembro", pembro.pred)
-  
+
   # (Typical prediction)
-  
+
   xstop         <- 14    # Actual observations end at xstop = 14 days
   xlast.user    <- 700    # User provided x value to max. simulate out - replaces expand.factor
   #expand.factor <- 10   # factor to expand simulated curve to find last X values for ref and query
   tolend        <- 0.001  # Max tolerance allowed minimizing difference open end ref and query
   tolnoise      <- 1e-8   # Max tolerance allowed between gridpoints to identify landmarks for stepsize=1
-  step.x.factor <- 1.5  # Factor x-steps between which y-values are lower than the SCALED tolerance 
+  step.x.factor <- 1.5  # Factor x-steps between which y-values are lower than the SCALED tolerance
   ngrid.open.end<- 100  # Number of grid points to characterize open end curves
-  
+
 
   # Select pembro covariate to assess:
   my.covariate <- "sex"
-  
+
   # Original situation (query contraction to fit ref)
   # SEX covariate
   if(setup=="A") cov.ref        <- 1
@@ -117,13 +117,13 @@ if (model == 'pembro')
   # Alternative situation (query expansion to fit ref)
   if(setup=="B") cov.ref        <- 2
   if(setup=="B") cov.query      <- 1
-  
+
   # ------
-  
+
   # mod.read <- mread("../literature-examples/pembrolizumab/mrgsolve/pembro")
   mod.read <- mcode("pembro", pembro)
-  
-  
+
+
   #simulation settings
   dose <- 10                 #set pembrolizumab dose in mg/kg
   dose.interval <- c(14,21)  #set dosing interval in days
@@ -132,57 +132,57 @@ if (model == 'pembro')
   maxtime = 25*7             #set end of simulation time interval
   subj.n = 2
   subj.n.iiv = 2188
-  
+
   # sample.times1 <- c(0.5, 1, 2, 5, 10, 24, 48, 4*24, 8*24, 11*24, dose.interval[1]*24)/24
   # sample.times2 <- c(0:dose.n)*14
-  # 
+  #
   # sample.times3 <- c(0.5, 1, 2, 5, 10, 24, 48, 4*24, 8*24, 11*24, 14*24, 17*24, dose.interval[2]*24)/24
   # sample.times4 <- c(0:dose.n)*21
-  
+
   # samples <- merge(sample.times1, sample.times2) %>%
   #   mutate(times = x + y)
-  # 
+  #
   # samples2 <- merge(sample.times3, sample.times4) %>%
   #   mutate(times = x + y)
-  
+
   # ---- JL  start with single dose (single Q2W only)
   dose.n        <- 1
   # Single dose
   dose.interval <- c(999)  # e.g. c(14) for Q2W
-  
+
   # Full (long) simulation
   samples <- merge(c(0:(1*xlast.user*24))/24, 0) %>%    # 1 doses, 14 days
     mutate(times = x + y)
   samples2 <- merge(c(0:(1*21*24))/24, 0) %>%   # 1 doses, 21 days
     mutate(times = x + y)
-  
+
   # "Actual" data to be sampled
   samples.iiv <- merge(c(0:(1*xstop*24))/24, 0) %>%    # 1 doses, 14 days
     mutate(times = x + y)
   samples2.iiv <- merge(c(0:(1*xstop*24))/24, 0) %>%   # 1 doses, 21 days
     mutate(times = x + y)
   # ------
-  
+
   param(mod.read)
   # Model parameters (N=25):
-  #   name     value   . name     value 
+  #   name     value   . name     value
   # ADIAGN   1       | RESERR   -0.272
-  # ALB      39.6    | SEX      1     
-  # BECOG    1       | TVCL     0.22  
-  # BSLD     89.6    | TVEXCLQ  0.595 
-  # CLADIAGN 0.145   | TVEXV1V2 0.489 
-  # CLALB    -0.907  | TVQ      0.795 
-  # CLBECOGN -0.0739 | TVV1     3.48  
-  # CLBSLD   0.0872  | TVV2     4.06  
+  # ALB      39.6    | SEX      1
+  # BECOG    1       | TVCL     0.22
+  # BSLD     89.6    | TVEXCLQ  0.595
+  # CLADIAGN 0.145   | TVEXV1V2 0.489
+  # CLALB    -0.907  | TVQ      0.795
+  # CLBECOGN -0.0739 | TVV1     3.48
+  # CLBSLD   0.0872  | TVV2     4.06
   # CLEGFR   0.135   | V1ALB    -0.208
   # CLIPIP   0.14    | V1IPIP   0.0737
   # CLSEX    -0.152  | V1SEX    -0.134
-  # EGFR     88.5    | WT       76.8  
-  # IPIP     0       | .        .    
-  
+  # EGFR     88.5    | WT       76.8
+  # IPIP     0       | .        .
+
   #also update omega matrix to zero to simulate typical curves:
   mod     <- omat(mod.read, dmat(0,0))
-  
+
   #individual covariate distributions (to match Table 2 in publication)
   sampling.n <- 1000
   ind.sex <- sample(c(1,2), size = sampling.n, replace = TRUE, prob = c(0.591, 0.409))
@@ -192,14 +192,14 @@ if (model == 'pembro')
   ind.egfr <- exp(rnorm(sampling.n, mean = log(88.7), sd = 0.4))
   ind.alb <- exp(rnorm(sampling.n, mean = log(30), sd = 0.2))
   ind.bsld <- exp(rnorm(sampling.n, mean = log(86), sd = 0.5))
-  
+
   #create simulation dataset:
   dosedat <- ev(ID = 1:subj.n, amt = dose, ii = dose.interval[1], addl = 49) %>%
     mutate(WT = 76.8,
-           amt = dose * WT, 
+           amt = dose * WT,
            rate = amt/inf.duration,
            dose = dose)
-  
+
   #typical covariate values
   tSEX = 1
   tIPIP = 0
@@ -208,7 +208,7 @@ if (model == 'pembro')
   tBSLD = 89.60
   tBECOG = 1
   tADIAGN = 1
-  
+
   covariates <- data.frame(tSEX, tIPIP, tALB, tEGFR, tBSLD, tBECOG, tADIAGN)
   if (my.covariate == 'sex')                icov <- 1
   if (my.covariate == 'IPI status')         icov <- 2
@@ -217,8 +217,8 @@ if (model == 'pembro')
   if (my.covariate == 'Baseline tumor burden') icov <- 5
   if (my.covariate == 'ECOG Status')        icov <- 6
   if (my.covariate == 'Cancer Type')        icov <- 7
-  
-  
+
+
   ind.dat.ori <- dosedat %>%
     dplyr::select(ID, WT) %>%
     mutate(SEX = tSEX,
@@ -228,17 +228,17 @@ if (model == 'pembro')
            BSLD = tBSLD,
            BECOG = tBECOG,
            ADIAGN = tADIAGN)
-  
+
   # ----- IIV model/dataset ----
-  
+
   mod.iiv <- mod.read
-  
+
   dosedat.iiv <- ev(ID = 1:sampling.n, amt = dose, ii = dose.interval, addl = 49) %>%
     mutate(WT = rnorm(sampling.n, 76.8, 8),
            amt = dose * WT,
            rate = amt/inf.duration,
            dose = dose)
-  
+
   # Sex
   ind.dat.iiv <- dosedat.iiv %>%
     dplyr::select(ID, WT) %>%
@@ -249,11 +249,11 @@ if (model == 'pembro')
            EGFR = tEGFR,
            ALB = tALB,
            BSLD = tBSLD)
-  
+
   # -------------------------------
-  
+
   cov.name <- str_replace(names(covariates)[icov], "t", "")
-  
+
   if (cov.name == "SEX") {
     ind.data <- ind.dat.ori %>%
       mutate(SEX = range(ind.sex))
@@ -289,32 +289,32 @@ if (model == 'pembro')
       mutate(BECOG = range(ind.ecog))
     colname = "ECOG Status"
     header = "for differing ECOG status"
-  } 
+  }
   if (cov.name == "ADIAGN") {
     ind.data <- ind.dat.ori %>%
       mutate(ADIAGN = range(ind.diag))
     colname = "Cancer Type"
     header = "for different cancer types"
   }
-  
+
   out.collect     <- NULL
   out.collect.iiv <- NULL
-  
+
   for (iint in unique(dose.interval))
   {
-    
+
     if (iint == 999) {
-      times <- samples$times 
+      times <- samples$times
       dosedat <- dosedat %>%
         mutate(ii = 999)
     }
-    
+
     if (iint == 21) {
       times <- samples2$times
       dosedat <- dosedat %>%
         mutate(ii = 21)
     }
-    
+
     # ---- Typical -----
     sim <- mod %>%
       data_set(dosedat) %>%
@@ -322,20 +322,20 @@ if (model == 'pembro')
       carry_out(EVID) %>%
       Req(CONC, CONC_RUV, SEX, IPIP, ALB, EGFR, BSLD, BECOG, ADIAGN) %>%
       mrgsim(tad = TRUE, tgrid = times)
-    
+
     output <- as.data.frame(sim) %>%
       filter(EVID == 0, time!=0) %>%   # time=0 causes problems at scaling
       dplyr::select(-EVID) %>%
       mutate(dosing.interval = paste0(iint, " days"))
-    
+
     # Keep time=0 (to show issue when scaling)
     output0 <- as.data.frame(sim) %>%
       filter(EVID == 0) %>%   # time=0 causes problems at scaling
       dplyr::select(-EVID) %>%
       mutate(dosing.interval = paste0(iint, " days"))
-    
+
     out.collect <- rbind(out.collect, output)
-    
+
     # ---- Sampling, iiv ----
     sim.iiv <- mod.iiv %>%
       data_set(dosedat.iiv) %>%
@@ -343,107 +343,107 @@ if (model == 'pembro')
       carry_out(EVID) %>%
       Req(CONC, CONC_RUV, SEX, IPIP, ALB, EGFR, BSLD, BECOG, ADIAGN) %>%
       mrgsim(tad = TRUE, tgrid = samples.iiv$times)
-    
+
     output.iiv <- as.data.frame(sim.iiv) %>%
       filter(EVID == 0, time!=0) %>%   # time=0 causes problems at scaling
-      dplyr::select(-EVID) 
-    
+      dplyr::select(-EVID)
+
     out.collect.iiv <- rbind(out.collect.iiv, output.iiv)
-    
+
   }
-  
+
   p.pembro1 <-  out.collect %>%
     filter(dosing.interval == "999 days") %>%
     ggplot() +
     geom_line(aes(x = time/7, y = CONC, color = factor(round(get(cov.name), 1)))) +
     labs(title = paste0("Pembrolizumab simulated typical PK profiles, ", header),
          x = "Time (weeks)",
-         y = "Pembrolizumab Concentration (µg/mL)",
+         y = "Pembrolizumab Concentration (?g/mL)",
          color = colname) +
     facet_wrap(~dosing.interval, labeller = label_both, scales = "free") +
     theme_bw() +
     scale_y_log10()
-  
+
   plot(p.pembro1)
-  
+
   p.pembro2 <-  out.collect.iiv %>%
     ggplot() +
     geom_line(aes(x = time/7, y = CONC, group = ID, col=factor(SEX)))+
     labs(title = paste0("Pembrolizumab simulated typical PK profiles, ", header),
          x = "Time (weeks)",
-         y = "Pembrolizumab Concentration (µg/mL)") +
+         y = "Pembrolizumab Concentration (?g/mL)") +
     theme_bw() +
     scale_y_log10()
 
   # ---- Vachette ---
   # Start with one dose, SEX covariate only
-  
+
   # Typical cuve for SEX
   long  <- as.data.frame(out.collect) %>%
     mutate(x=time, y=CONC, COV=SEX)                 # Standardize
-  
+
   # all in standard parameters x,y
   longref   <- long %>% filter(COV==cov.ref)
   longquery <- long %>% filter(COV==cov.query)
-  
+
   # (Representing observations)
-  
+
   nsample <- 200
-  
+
   # Sample nsample reference and nsample query data points:
   indivsam.query <- out.collect.iiv %>%
     filter(SEX==cov.query) %>%
-    slice(sample(n(),nsample,replace=F)) %>% 
+    slice(sample(n(),nsample,replace=F)) %>%
     mutate(x=time, y=CONC, COV=SEX)                 # Standardize
-  
+
   indivsam.ref <- out.collect.iiv %>%
     filter(SEX==cov.ref) %>%
-    slice(sample(n(),nsample,replace=F)) %>% 
+    slice(sample(n(),nsample,replace=F)) %>%
     mutate(x=time, y=CONC, COV=SEX)                 # Standardize
-  
+
   indivsam <- rbind(indivsam.query,indivsam.ref) %>%
-    arrange(time) 
-  
+    arrange(time)
+
   # Plot typical + sample
   p.pembro3 <- longref %>%
-    ggplot(aes(x=x,y=y)) + 
+    ggplot(aes(x=x,y=y)) +
     geom_line(col='red') +
     geom_line(data=longquery,col='blue') +
     geom_point(data=indivsam.ref,col='red') +
     geom_point(data=indivsam.query,col='blue')
-  
+
   # Plot typical + sample
   p.pembro4 <- output0 %>%
-    ggplot(aes(x=time/7,y=CONC,col=factor(SEX))) + 
+    ggplot(aes(x=time/7,y=CONC,col=factor(SEX))) +
     geom_line()+
     labs(title = paste0("Pembrolizumab simulated typical PK profiles, ", header),
          x = "Time (weeks)",
-         y = "Pembrolizumab Concentration (µg/mL)") +
+         y = "Pembrolizumab Concentration (?g/mL)") +
     coord_cartesian(xlim=c(0,2)) +
     guides(color=guide_legend(title="SEX"))+
     render
-  
+
   # Plot typical + sample
   p.pembro5 <- output %>%
-    ggplot(aes(x=time/7,y=CONC,col=factor(SEX))) + 
+    ggplot(aes(x=time/7,y=CONC,col=factor(SEX))) +
     geom_line()+
     labs(title = paste0("Pembrolizumab simulated typical PK profiles, ", header),
          x = "Time (weeks)",
-         y = "Pembrolizumab Concentration (µg/mL)") +
+         y = "Pembrolizumab Concentration (?g/mL)") +
     coord_cartesian(xlim=c(0,2)) +
     guides(color=guide_legend(title="SEX"))+
     render
-  
+
   pdf(paste0("../plots/pembro.pdf"))
-  
+
   plot(p.pembro1)
   plot(p.pembro2)
   plot(p.pembro3)
   plot(p.pembro4)
   plot(p.pembro5)
-  
+
   dev.off()
-  
+
 }  # if model=='pembro'
 
 ##########################################################
@@ -456,12 +456,12 @@ if (model == 'pembro')
 if (model == 'sigmoid')
 {
   # (Typical prediction)
-  
+
   xstop         <- 10**2.5  # Samples cannot be located "after" xstop
   xlast.user    <- 10**5  # User provided x value to max. simulate out - replaces expand.factor
   tolend        <- 0.001  # Max tolerance allowed minimizing difference open end ref and query
   tolnoise      <- 1e-8   # Max tolerance allowed between gridpoints to identify landmarks for stepsize=1
-  step.x.factor <- 1.5    # Factor x-steps between which y-values are lower than the SCALED tolerance 
+  step.x.factor <- 1.5    # Factor x-steps between which y-values are lower than the SCALED tolerance
   ngrid.open.end<- 100    # Number of grid points to characterize open end curves
   # Original situation (query contraction to fit ref)
   if(setup=="A") cov.ref        <- 70
@@ -469,9 +469,9 @@ if (model == 'sigmoid')
   # Alternative situation (query expansion to fit ref)
   if(setup=="B") cov.ref        <- 30
   if(setup=="B") cov.query      <- 70
-  
+
   my.covariate <- "weigth"
-  
+
   # simulate pred
   # longref     <- longquery  <- data.frame(x = 10**(c(-40:40)/10))
   longref     <- longquery  <- data.frame(x = 10**(c((-10*log10(xlast.user)):(10*log10(xlast.user)))/10))
@@ -485,12 +485,12 @@ if (model == 'sigmoid')
   longquery$y <- sigmoid(longref$x, emax=emax, ic50=ic50.query, gamma=gamma)
   longquery$WT <- cov.query
   longquery$COV<- cov.query   # Standardize
-  
+
   # Merge
   long <- rbind(longref,longquery)
-  
+
   # (Representing observations)
-  
+
   nsample <- 20
   # simulate ipred
   set.seed(20220131)
@@ -506,54 +506,54 @@ if (model == 'sigmoid')
   indivsam$iic50[indivsam$WT==cov.ref]   <- NA
   indivsam$iic50[indivsam$WT==cov.ref]   <- ic50.ref*rnorm(length(indivsam$iic50[indivsam$WT==cov.ref]),1,0.2)
   indivsam$iic50[indivsam$WT==cov.query] <- ic50.query*rnorm(length(indivsam$iic50[indivsam$WT==cov.query]),1,0.2)
-  
+
   # Standardize:
   indivsam$COV <- indivsam$WT
-  
+
   # Response
   indivsam$y   <- sigmoid(indivsam$x, emax=indivsam$iemax, ic50=indivsam$iic50, gamma=indivsam$igamma)
-  
+
   # Sample nsample reference and nsample query data points:
   indivsam.query <- indivsam %>%
-    filter(COV==cov.query) %>% 
+    filter(COV==cov.query) %>%
     slice(sample(n(),nsample,replace=F))
   indivsam.ref   <- indivsam %>%
-    filter(COV==cov.ref) %>% 
+    filter(COV==cov.ref) %>%
     slice(sample(n(),nsample,replace=F))
   indivsam <- rbind(indivsam.query,indivsam.ref) %>%
     arrange(x)
-  
+
   # ---- V2ACHER transformation of x for comparison ----
-  longquery <- longquery %>% 
+  longquery <- longquery %>%
     mutate(x.tr = ifelse(WT==cov.query,x/(ic50.query/ic50.ref),x))
   # No y-scaling needed in this case
-  
-  indivsam <- indivsam %>% 
+
+  indivsam <- indivsam %>%
     mutate(x.tr = ifelse(WT==cov.query,x/(ic50.query/ic50.ref),x))
   # No y-scaling needed in this case
   # ------------------------------------------
-  
-  p0 <- longref %>% 
+
+  p0 <- longref %>%
     ggplot(aes(x=x,y=y))+
     geom_line(col='red')+
     geom_line(data=longquery,col='blue') +
     labs(title=paste0(model," Extrapolated Query (blue) and Reference (red) ",setup),
          caption=script)
-  p0log <- longref %>% 
+  p0log <- longref %>%
     ggplot(aes(x=x,y=y))+
     geom_line(col='red')+
     geom_line(data=longquery,col='blue') +
     scale_x_log10() +
     labs(title=paste0(model," Extrapolated Query (blue) and Reference (red) ",setup),
          caption=script)
-  p0logV2acher <- longref %>% 
+  p0logV2acher <- longref %>%
     ggplot(aes(x=x,y=y))+
     geom_line(col='red')+
     geom_line(data=longquery,aes(x=x.tr,y=y),col='blue',lty=2) +
     scale_x_log10() +
     labs(title=paste0(model," Extrapolated Query (blue) and Reference (red) ",setup),
          caption=script)
-  p0samples <- longref %>% 
+  p0samples <- longref %>%
     ggplot(aes(x=x,y=y))+
     geom_line(col='red')+
     geom_line(data=longquery,col='blue') +
@@ -562,7 +562,7 @@ if (model == 'sigmoid')
     scale_x_log10() +
     labs(title=paste0(model," Extrapolated Query (blue) and Reference (red) ",setup),
          caption=script)
-  
+
 }
 
 ##########################################################
@@ -577,15 +577,15 @@ if (model == 'iv')
 {
   my.ipred <- mcode("iv.ipred", iv.ipred)
   my.pred  <- mcode("iv.pred", iv.pred)
-  
+
   # (Typical prediction)
-  
+
   xstop         <- 12   # Actual observations end at xstop = 48 hr
   xlast.user    <- 72  # User provided x value to max. simulate out - replaces expand.factor
   #expand.factor <- 10   # factor to expand simulated curve to find last X values for ref and query
   tolend        <- 0.001  # Max tolerance allowed minimizing difference open end ref and query
   tolnoise      <- 1e-8   # Max tolerance allowed between gridpoints to identify landmarks for stepsize=1
-  step.x.factor <- 1.5  # Factor x-steps between which y-values are lower than the SCALED tolerance 
+  step.x.factor <- 1.5  # Factor x-steps between which y-values are lower than the SCALED tolerance
   ngrid.open.end<- 100  # Number of grid points to characterize open end curves
   # Original situation (query contraction to fit ref)
   if(setup=="A") cov.ref        <- 70
@@ -593,45 +593,45 @@ if (model == 'iv')
   # Alternative situation (query expansion to fit ref)
   if(setup=="B") cov.ref        <- 30
   if(setup=="B") cov.query      <- 70
-  
+
   my.covariate <- "weigth"
-  
+
   # # population data
   data <- expand.idata(ID=1,WT=c(cov.query,cov.ref))
-  
+
   # simulate pred
   long.out <- my.pred %>%
     ev(amt=100,addl=0,ii=24,cmt=1) %>%
     idata_set(data) %>%
-    mrgsim(delta=mrgdelta,end=step.x.factor*xlast.user) 
-  
+    mrgsim(delta=mrgdelta,end=step.x.factor*xlast.user)
+
   long  <- as.data.frame(long.out) %>%
     filter(!(time==0 & CENT==0)) %>%     # No Dose rec
     mutate(x=time, y=CP, COV=WT)         # Standardize
-  
+
   # all in standard parameters x,y
   longref   <- long %>% filter(COV==cov.ref)
   longquery <- long %>% filter(COV==cov.query)
-  
+
   # (Representing observations)
-  
+
   nsample <- 20
-  
+
   # individual data
   idata <- expand.idata(ID = c(1:50),
                         WT = c(cov.query,cov.ref))
-  
+
   # simulate ipred
   set.seed(20220131)
   imy.out <- my.ipred %>%
     ev(amt=100,addl=0,ii=24,cmt=1) %>%
     idata_set(idata) %>%
     mrgsim(delta=mrgdelta,end=xstop)
-  
+
   indiv <- as.data.frame(imy.out) %>%
     filter(!(time==0 & CENT==0)) %>%     # No Dose rec
     mutate(x=time, y=CP, COV=WT)         # Standardize
-  
+
   # Sample nsample reference and nsample query data points:
   indivsam.query <- indiv %>%
     filter(COV==cov.query) %>%
@@ -641,7 +641,7 @@ if (model == 'iv')
     slice(sample(n(),nsample,replace=F))
   indivsam <- rbind(indivsam.query,indivsam.ref) %>%
     arrange(time)
-  
+
 }
 
 ##########################################################
@@ -656,20 +656,20 @@ if (model == 'oral-absorption')
 {
   my.ipred <- mcode("oral1cmt.ipred", oral1cmt.ipred)
   my.pred  <- mcode("oral1cmt.pred", oral1cmt.pred)
-  
+
   # ---------------- SIMULATED TYPICAL/POPULATION CURVES -------------
-  
+
   # (Typical prediction)
-  
+
   # oral 2-dose
   # xstop         <- 96   # Actual observations end at xstop = 48 hr
   # xlast.user    <- 640  # User provided x value to max. simulate out - replaces expand.factor
   # #expand.factor <- 10   # factor to expand simulated curve to find last X values for ref and query
   # tolend        <- 0.001  # Max tolerance allowed minimizing difference open end ref and query
   # tolnoise      <- 1e-8   # Max tolerance allowed between gridpoints to identify landmarks for stepsize=1
-  # step.x.factor <- 1.5  # Factor x-steps between which y-values are lower than the SCALED tolerance 
+  # step.x.factor <- 1.5  # Factor x-steps between which y-values are lower than the SCALED tolerance
   # ngrid.open.end<- 100  # Number of grid points to characterize open end curves
-  
+
   xstop         <- 48   # Actual observations end at xstop = 48 hr
   xlast.user    <- 500  # User provided x value to max. simulate out - replaces expand.factor
   #expand.factor <- 10   # factor to expand simulated curve to find last X values for ref and query
@@ -677,16 +677,16 @@ if (model == 'oral-absorption')
   tolnoise      <- 1e-8   # Max tolerance allowed between gridpoints to identify landmarks for stepsize=1
   step.x.factor <- 1.1  # Factor x-steps between which y-values are lower than the SCALED tolerance
   ngrid.open.end<- 100  # Number of grid points to characterize open end curves
-  
+
   # Original situation (query contraction to fit ref)
   if(setup=="A") cov.ref        <- 70
   if(setup=="A") cov.query      <- 30
   # Alternative situation (query expansion to fit ref)
   if(setup=="B") cov.ref        <- 30
   if(setup=="B") cov.query      <- 70
-  
+
   my.covariate <- "weigth"
-  
+
   # # population data
   data <- expand.idata(ID=1,WT=c(cov.query,cov.ref))
   #
@@ -694,35 +694,35 @@ if (model == 'oral-absorption')
   long.out <- my.pred %>%
     ev(amt=100,addl=0,ii=24,cmt=1) %>%
     idata_set(data) %>%
-    mrgsim(delta=mrgdelta,end=step.x.factor*xlast.user) 
-  
+    mrgsim(delta=mrgdelta,end=step.x.factor*xlast.user)
+
   long  <- as.data.frame(long.out) %>%
     filter(!(time==0 & GUT==0)) %>%     # No Dose rec
     mutate(x=time, y=CP, COV=WT)         # Standardize
-  
+
   # all in standard parameters x,y
   longref   <- long %>% filter(WT==cov.ref)
   longquery <- long %>% filter(WT==cov.query)
-  
+
   # (Representing observations)
-  
+
   nsample <- 20
   #
   # individual data
   idata <- expand.idata(ID = c(1:50),
                         WT = c(cov.query,cov.ref))
-  
+
   # simulate ipred
   set.seed(20220131)
   imy.out <- my.ipred %>%
     ev(amt=100,addl=0,ii=24,cmt=1) %>%
     idata_set(idata) %>%
     mrgsim(delta=mrgdelta,end=xstop)
-  
+
   indiv <- as.data.frame(imy.out) %>%
     filter(!(time==0 & GUT==0)) %>%     # No Dose rec
     mutate(x=time, y=CP, COV=WT)         # Standardize
-  
+
   # Sample nsample reference and nsample query data points:
   indivsam.query <- indiv %>%
     filter(WT==cov.query) %>%
@@ -746,17 +746,17 @@ if (model == 'oral-two-dose')
 {
   my.ipred <- mcode("oral1cmt.ipred", oral1cmt.ipred)
   my.pred  <- mcode("oral1cmt.pred", oral1cmt.pred)
-  
+
   # ---------------- SIMULATED TYPICAL/POPULATION CURVES -------------
-  
+
   # (Typical prediction)
-  
+
   xstop         <- 96   # Actual observations end at xstop = 48 hr
   xlast.user    <- 640  # User provided x value to max. simulate out - replaces expand.factor
   #expand.factor <- 10   # factor to expand simulated curve to find last X values for ref and query
   tolend        <- 0.001  # Max tolerance allowed minimizing difference open end ref and query
   tolnoise      <- 1e-8   # Max tolerance allowed between gridpoints to identify landmarks for stepsize=1
-  step.x.factor <- 1.5  # Factor x-steps between which y-values are lower than the SCALED tolerance 
+  step.x.factor <- 1.5  # Factor x-steps between which y-values are lower than the SCALED tolerance
   ngrid.open.end<- 100  # Number of grid points to characterize open end curves
   # Original situation (query contraction to fit ref)
   if(setup=="A") cov.ref        <- 70
@@ -764,9 +764,9 @@ if (model == 'oral-two-dose')
   # Alternative situation (query expansion to fit ref)
   if(setup=="B") cov.ref        <- 30
   if(setup=="B") cov.query      <- 70
-  
+
   my.covariate <- "weigth"
-  
+
   # # population data
   data <- expand.idata(ID=1,WT=c(cov.query,cov.ref))
   #
@@ -774,35 +774,35 @@ if (model == 'oral-two-dose')
   long.out <- my.pred %>%
     ev(amt=100,addl=1,ii=48,cmt=1) %>%
     idata_set(data) %>%
-    mrgsim(delta=mrgdelta,end=step.x.factor*xlast.user) 
-  
+    mrgsim(delta=mrgdelta,end=step.x.factor*xlast.user)
+
   long  <- as.data.frame(long.out) %>%
     filter(!(time==0 & GUT==0)) %>%     # No Dose rec
     mutate(x=time, y=CP, COV=WT)         # Standardize
-  
+
   # all in standard parameters x,y
   longref   <- long %>% filter(WT==cov.ref)
   longquery <- long %>% filter(WT==cov.query)
-  
+
   # (Representing observations)
-  
+
   nsample <- 20
   #
   # individual data
   idata <- expand.idata(ID = c(1:50),
                         WT = c(cov.query,cov.ref))
-  
+
   # simulate ipred
   set.seed(20220131)
   imy.out <- my.ipred %>%
     ev(amt=100,addl=1,ii=48,cmt=1) %>%
     idata_set(idata) %>%
     mrgsim(delta=mrgdelta,end=xstop)
-  
+
   indiv <- as.data.frame(imy.out) %>%
     filter(!(time==0 & GUT==0)) %>%     # No Dose rec
     mutate(x=time, y=CP, COV=WT)         # Standardize
-  
+
   # Sample nsample reference and nsample query data points:
   indivsam.query <- indiv %>%
     filter(WT==cov.query) %>%
@@ -824,20 +824,20 @@ if (model == 'oral-two-dose')
 
 if (model == 'indirect-response')
 {
-  
+
   my.ipred <- mcode("indirect.response.ipred", indirect.response.ipred)
   my.pred  <- mcode("indirect.response.pred", indirect.response.pred)
-  
+
   # ---------------- SIMULATED TYPICAL/POPULATION CURVES -------------
-  
+
   # (Typical prediction)
-  
+
   xstop         <- 48   # Actual curves end at xstop = 48 hr
   xlast.user    <- 96   # User provided x value to max. simulate out - replaces expand.factor
   #expand.factor <- 2.5  # factor to expand simulated curve to find last X values for ref and query
   tolend        <- 0.001  # Max tolerance allowed minimizing difference open end ref and query
   tolnoise      <- 1e-8   # Max tolerance allowed between gridpoints to identify landmarks for stepsize=1
-  step.x.factor <- 1.5  # Factor x-steps between which y-values are lower than the SCALED tolerance 
+  step.x.factor <- 1.5  # Factor x-steps between which y-values are lower than the SCALED tolerance
   ngrid.open.end<- 100  # Number of grid points to characterize open end curves
   # Original situation (query contraction to fit ref)
   if(setup=="A") cov.ref        <- 70
@@ -846,37 +846,37 @@ if (model == 'indirect-response')
   if(setup=="B") cov.ref        <- 30
   if(setup=="B") cov.query      <- 70
   mrgdelta     <- 0.1
-  
+
   my.covariate <- "weigth"
-  
+
   # population data
   data <- expand.idata(ID=1,WT=c(cov.query,cov.ref))
-  
+
   # simulate pred
   long.out <- my.pred %>%
     init(RESP = 10) %>%    # =TVBSLN
     ev(amt=100,addl=0,ii=24,cmt=1) %>%
     idata_set(data) %>%
-    # mrgsim(delta=mrgdelta,end=step.x.factor*xlast.user) 
+    # mrgsim(delta=mrgdelta,end=step.x.factor*xlast.user)
     mrgsim(delta=0.1,end=step.x.factor*xlast.user,atol=1E-20,rtol=1E-10)
   # Problems when delta=0.25 (small stepsize --> identifying f2)
-  
+
   long  <- as.data.frame(long.out)%>%
     filter(!(time==0 & CENT==0)) %>%       # No Dose rec
     mutate(x=time, y=RESP, COV=WT)         # Standardize
-  
+
   # all in standard parameters x,y
   longref   <- long %>% filter(WT==cov.ref)
   longquery <- long %>% filter(WT==cov.query)
-  
+
   # (Representing observations)
-  
+
   nsample <- 20
   #
   # individual data
   idata <- expand.idata(ID = c(1:50),
                         WT = c(cov.query,cov.ref))
-  
+
   # simulate ipred
   set.seed(20220131)
   imy.out <- my.ipred %>%
@@ -884,11 +884,11 @@ if (model == 'indirect-response')
     ev(amt=100,addl=0,ii=24,cmt=1) %>%
     idata_set(idata) %>%
     mrgsim(delta=mrgdelta,end=xstop)
-  
+
   indiv <- as.data.frame(imy.out) %>%
     filter(!(time==0 & CENT==0)) %>%       # No Dose rec
     mutate(x=time, y=RESP, COV=WT)         # Standardize
-  
+
   # Sample nsample reference and nsample query data points:
   indivsam.query <- indiv %>%
     filter(WT==cov.query) %>%
@@ -901,8 +901,9 @@ if (model == 'indirect-response')
 }
 
 # --------------------------------------------------------
+#Above is all mrgsolve
 
-p0 <- longref %>% 
+p0 <- longref %>%
   ggplot(aes(x=x,y=y))+
   geom_line(col='red')+
   geom_line(data=longquery,col='blue') +
@@ -970,13 +971,13 @@ p0.lm.init <- p0 +
   geom_point(data=my.query.lm.refined,aes(x=x,y=y),pch=21,fill='yellow',size=3)
 
 # Check if query and ref have same landmarks in same order
-if(dim(my.ref.lm.refined)[1] != dim(my.query.lm.refined)[1] | 
-   !sum(my.ref.lm.refined$type == my.query.lm.refined$type)>0) 
+if(dim(my.ref.lm.refined)[1] != dim(my.query.lm.refined)[1] |
+   !sum(my.ref.lm.refined$type == my.query.lm.refined$type)>0)
   stop("No matching landmarks between reference and query")
 
 # ------------------ LAST X FOR REF ------------------
 
-# Different step.x.factor brings different last x values, 
+# Different step.x.factor brings different last x values,
 # but probably it does not matter for transformation (to be tested)
 # my.ref.lm.new.old <- get.ref.open.end.old(longref$x,longref$y,my.ref.lm,tol=0.01,step.x.factor=1.5)
 
@@ -1019,11 +1020,11 @@ my.query.scaled <- NULL
 for(iseg in c(1:nseg))
 {
   # Segment to map
-  segm.ref <- longref %>% 
+  segm.ref <- longref %>%
     filter(x>=my.ref.lm$x[iseg] & x<=my.ref.lm$x[iseg+1])
-  segm.query <- longquery %>% 
+  segm.query <- longquery %>%
     filter(x>=my.query.lm$x[iseg] & x<=my.query.lm$x[iseg+1])
-  
+
   # First data point scaled by derivatives (l'Hopital) --> did not work, use constant scaling
   my.query.add <- map.segment(segm.ref,
                               segm.query,
@@ -1034,11 +1035,11 @@ for(iseg in c(1:nseg))
 }
 
 # Plot scaling factors of curves
-p.scaling1 <- my.query.scaled %>% 
+p.scaling1 <- my.query.scaled %>%
   ggplot(aes(x=x,y=y.scaling))+
   geom_line()+
   theme_bw()
-p.scaling2 <- my.query.scaled %>% 
+p.scaling2 <- my.query.scaled %>%
   ggplot(aes(x=x,y=y.scaling))+
   geom_line()+
   scale_y_continuous(limits = c(0,NA))+
@@ -1049,7 +1050,7 @@ p.scaling2 <- my.query.scaled %>%
 head(my.query.scaled)
 
 # All information is available:
-p1 <- my.query.scaled %>% 
+p1 <- my.query.scaled %>%
   ggplot(aes(x=x,y=y)) +
   geom_line() +
   geom_line(aes(x=x.scaled,y=y.scaled),col='red')+
@@ -1073,19 +1074,19 @@ p2 <- p1 +
 
 # 1. Assign segments to each query sample data point and to reference curve
 indivsam.query$seg <- longref$seg <- longquery$seg <- NA
-for(iseg in c(1:nseg)) 
+for(iseg in c(1:nseg))
 {
   indivsam.query <- indivsam.query %>% mutate(seg = ifelse(x>=my.query.lm$x[iseg] & x<=my.query.lm$x[iseg+1], iseg, seg))
   longref        <- longref        %>% mutate(seg = ifelse(x>=my.ref.lm$x[iseg]   & x<=my.ref.lm$x[iseg+1], iseg, seg))
   longquery      <- longquery      %>% mutate(seg = ifelse(x>=my.query.lm$x[iseg] & x<=my.query.lm$x[iseg+1], iseg, seg))
 }
-# 
+#
 if(sum(is.na(indivsam.query$seg)>0))                                                 stop("Error, not all samples could be assigned to a segment")
 if(sum(is.na(longref$seg[longref$x<=my.ref.lm$x[my.ref.lm$type=='end']])>0))         stop("Error, not all ref data could be assigned to a segment")
 if(sum(is.na(longquery$seg[longquery$x<=my.query.lm$x[my.query.lm$type=='end']])>0)) stop("Error, not all query data could be assigned to a segment")
 
 # Check
-p3 <- p1 + 
+p3 <- p1 +
   geom_line(data=longquery,aes(x=x,y=y,col=factor(seg)),lwd=1.5) +
   geom_line(data=longref,aes(x=x,y=y,col=factor(seg)),lwd=1.5) +
   coord_cartesian(xlim=c(0,xstop)) +
@@ -1132,14 +1133,14 @@ longref       %>% group_by(seg) %>% dplyr::summarise(y.max=max(y),y.min=min(y))
 
 # 4. Determine obs x-scaling segment by segment
 indivsam.query$xpred.scaled <- NA
-for(iseg in c(1:nseg)) 
+for(iseg in c(1:nseg))
 {
-  indivsam.query$xpred.scaled[indivsam.query$seg==iseg] <- 
+  indivsam.query$xpred.scaled[indivsam.query$seg==iseg] <-
     approx(longref$y[!is.na(longref$seg) & longref$seg==iseg],
            longref$x[!is.na(longref$seg) & longref$seg==iseg],
            xout=indivsam.query$ypred.scaled[indivsam.query$seg==iseg],
            rule=2)$y
-  
+
   indivsam.query$x.scaled[indivsam.query$seg==iseg] <- indivsam.query$xpred.scaled[indivsam.query$seg==iseg]
 }
 
@@ -1149,7 +1150,7 @@ for(iseg in c(1:nseg))
 max.x <- max(indivsam.query$x.scaled, indivsam.query$x, xstop)
 
 # Check
-p6 <- p1 + 
+p6 <- p1 +
   geom_line(data=longref,aes(x=x,y=y),lwd=1.5) +
   geom_point(data=indivsam.query,aes(x=xpred.scaled,y=ypred.scaled,col=factor(seg))) +
   coord_cartesian(xlim=c(0,max.x)) +
@@ -1159,7 +1160,7 @@ p6 <- p1 +
 
 
 # Check
-p7 <- p1 + 
+p7 <- p1 +
   geom_line(data=longref,aes(x=x,y=y),lwd=1) +
   geom_point(data=indivsam.query,aes(x=x,y=y,col=factor(seg))) +
   geom_point(data=indivsam.query,aes(x=x.scaled,y=y.scaled,col=factor(seg))) +
@@ -1217,18 +1218,18 @@ indivsam.query$log.y.scaled <- log(indivsam.query$y.scaled)
 indivsam.query$log.y.diff        <- indivsam.query$log.y        - indivsam.query$log.y.query.curve.original.x
 indivsam.query$log.y.diff.scaled <- indivsam.query$log.y.scaled - indivsam.query$log.y.ref.curve.scaled.x
 
-p8.log.y.diff <- indivsam.query %>% 
+p8.log.y.diff <- indivsam.query %>%
   ggplot()+
   geom_abline(slope=1,col='red')+
   geom_point(aes(x=log.y.diff,y=log.y.diff.scaled))+
   labs(x="Log diff original data to typical query",
        y="Log diff Vachette transformed data to typical reference",
        title="Log-scale difference original data versus typical query curve to\nlog-scale Vachette transformed data to typical reference curve",
-       caption=script) 
+       caption=script)
 # Perfect
-  
+
 # Vachette plot, both transformed query observations together with reference observations
-p9 <- longref %>% 
+p9 <- longref %>%
   ggplot() +
   geom_line(data=longref,aes(x=x,y=y),lwd=1) +
   geom_point(data=indivsam.ref,aes(x=x,y=y),col='red') +
@@ -1238,7 +1239,7 @@ p9 <- longref %>%
        caption=script)
 
 # Vachette plot, both transformed query observations together with reference observations
-p10 <- longref %>% 
+p10 <- longref %>%
   ggplot() +
   geom_line(data=longref,aes(x=x,y=y),lwd=1) +
   geom_point(data=indivsam.ref,aes(x=x,y=y),col='red') +
@@ -1302,13 +1303,13 @@ if(model=='pembro')
 }
 if(model=='sigmoid') # Add V2acher scaling
 {
-  plot(p7+render+coord_cartesian(xlim=c(0.0001,NA)) + scale_x_log10() + 
+  plot(p7+render+coord_cartesian(xlim=c(0.0001,NA)) + scale_x_log10() +
          geom_point(data=indivsam[indivsam$COV==cov.query,],aes(x=x.tr,y=y), pch=1, size=4))
-  plot(p8+render+coord_cartesian(xlim=c(0.0001,NA)) + scale_x_log10() + 
+  plot(p8+render+coord_cartesian(xlim=c(0.0001,NA)) + scale_x_log10() +
          geom_point(data=indivsam[indivsam$COV==cov.query,],aes(x=x.tr,y=y), pch=1, size=4))
-  plot(p9+render+coord_cartesian(xlim=c(0.0001,NA)) + scale_x_log10() + 
+  plot(p9+render+coord_cartesian(xlim=c(0.0001,NA)) + scale_x_log10() +
          geom_point(data=indivsam[indivsam$COV==cov.query,],aes(x=x.tr,y=y), pch=1, size=4))
-  plot(p10+render+coord_cartesian(xlim=c(0.0001,NA)) + scale_x_log10() + 
+  plot(p10+render+coord_cartesian(xlim=c(0.0001,NA)) + scale_x_log10() +
          geom_point(data=indivsam[indivsam$COV==cov.query,],aes(x=x.tr,y=y), pch=1, size=4))
 }
 
