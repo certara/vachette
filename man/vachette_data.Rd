@@ -4,16 +4,36 @@
 \alias{vachette_data}
 \title{Initialize vachette object with required data}
 \usage{
-vachette_data(indivsam.obs, output.typ, indivsam.vpc = NULL, vachette.covs)
+vachette_data(
+  indivsam.obs,
+  output.typ,
+  indivsam.vpc = NULL,
+  vachette.covs,
+  ref.cov1,
+  ref.dose,
+  IIV_CORR = FALSE,
+  error = c("proportional", "additive"),
+  model.name = NULL
+)
 }
 \arguments{
-\item{indivsam.obs}{Observed \code{data.frame}}
+\item{indivsam.obs}{Observed data of class \code{data.frame}}
 
-\item{output.typ}{Typ \code{data.frame}}
+\item{output.typ}{Typ data of class \code{data.frame}}
 
-\item{indivsam.vpc}{VPC \code{data.frame}}
+\item{indivsam.vpc}{VPC data of class  \code{data.frame}}
 
-\item{vachette.covs}{chracter vector of covariate names}
+\item{vachette.covs}{Character vector of covariate names}
+
+\item{ref.cov1}{Reference covariate value in data}
+
+\item{ref.dose}{Reference dose value in data}
+
+\item{IIV_CORR}{Logical; if IIV corrections performed}
+
+\item{error}{Character; options are \code{"proportional"} or \code{"additive"}}
+
+\item{model.name}{Character; optional model name for plot output}
 }
 \value{
 `vachette_data`

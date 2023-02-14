@@ -19,7 +19,8 @@ RoxygenNote: 7.2.2
 Suggests:
     knitr,
     rmarkdown,
-    mrgsolve
+    mrgsolve,
+    testthat (>= 3.0.0)
 Imports:
     ggplot2,
     dplyr,
@@ -32,3 +33,4 @@ Imports:
     gtools,
     Rfast,
     prospectr
+Config/testthat/edition: 3
