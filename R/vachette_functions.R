@@ -1,5 +1,9 @@
 
 #' @import ggplot2
+#' @import dplyr
+#' @import tidyr
+#' @import prospectr
+#' @rawNamespace import(stats, except = c(filter, lag))
 #'
 NULL
 
