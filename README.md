@@ -38,3 +38,9 @@ The following releases prior to those archived on GitHub are described below:
 * `v0.14.0` Repair single dose "reverse", Repair Emax, Repair indirect response
 * `v0.15.0` test use of simulation tolerances indirect response
 * `v0.16.0`  Pembro model
+
+## Glossary
+
+* Region: Region is the Vachette terminology for the time between two dose administrations
+* Region Type:  May be open or closed
+* Covariate Combinations Number: Number of unique covariate combinations
