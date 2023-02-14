@@ -142,3 +142,44 @@ p.scaling.factor <- function(vachette_data) {
        col="Segment") +
   render
 }
+
+
+#' p.vachette.arrow
+#'
+#' @param vachette_data Object of class \code{vachette_data}
+#'
+#' @return Object of class \code{ggplot2}
+#' @export
+#'
+#' @examples
+#' p.vachette.arrow(vachette_data)
+#'
+p.vachette.arrow <- function(vachette_data) {
+
+  vachette_data$obs.all %>%
+  ggplot(aes(x=x,y=y)) +
+  # Transformation arrows
+  geom_segment(aes(x=x,y=y,xend=x.scaled,yend=y.scaled),
+               arrow = arrow(length = unit(0.2, "cm")),col='grey') +
+
+  geom_line(data=vachette_data$curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
+  geom_line(data=vachette_data$curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),lwd=1) +
+  geom_point(data=vachette_data$obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19,alpha=0.25) +
+  geom_point(data=vachette_data$obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),pch=19,alpha=0.25) +
+  geom_point(data=vachette_data$obs.all %>% filter(ref=='No'),aes(x=x.scaled,y=y.scaled,col='Transformed'),pch=19) +
+
+  scale_color_manual(name='Data type',
+                     breaks=c('Query',
+                              'Reference',
+                              'Transformed'),
+                     values=c('Query'='blue',
+                              'Reference'='red',
+                              'Transformed' = 'purple'))+
+
+  coord_cartesian(xlim=c(0,max(vachette_data$obs.all$x,vachette_data$obs.all$x.scaled)))+
+  labs(title=paste0(vachette_data$model.name," - Observations + transformations"),
+       subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error")
+       #caption=script
+       )+
+  render
+}
