@@ -64,3 +64,81 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
     }
   }
 }
+
+
+#' p.scaled.typical.curves.landmarks
+#'
+#' @param vachette_data Object of class\code{vachette_data}
+#'
+#' @export
+p.scaled.typical.curves.landmarks <- function(vachette_data) {
+
+  curves.all <- vachette_data$curves.all
+  lm.all <- vachette_data$lm.all
+  model.name <- vachette_data$model.name
+  xstop <- vachette_data$xstop
+
+  stopifnot(!is.null(curves.all))
+
+  curves.all %>%
+  ggplot(aes(x=x,y=y,group=ucov,
+             col = factor(seg)))+
+  geom_line(lwd=1)+
+  geom_line(data=curves.all %>% filter(ref=="Yes"),col='black',lty=2,lwd=1,alpha=0.5)+
+  # Add landmark positions
+  geom_point(data=lm.all,pch=3,size=4,col='black',stroke = 2)+
+  coord_cartesian(xlim=c(0,xstop)) +
+  labs(title=paste0(model.name," - Typical curve segments"),
+       subtitle = "Dashed line: Reference typical curve",
+      # caption=script,
+       col="Segment")+
+  render
+}
+
+#' p.scaled.typical.full.curves.landmarks
+#'
+#' @param vachette_data Object of class\code{vachette_data}
+#'
+#' @export
+p.scaled.typical.full.curves.landmarks <- function(vachette_data) {
+  curves.all <- vachette_data$curves.all
+  lm.all <- vachette_data$lm.all
+  model.name <- vachette_data$model.name
+
+  curves.all %>%
+  ggplot(aes(x=x,y=y,group=ucov,
+             col = factor(seg)))+
+  geom_line(lwd=1)+
+  geom_line(data=curves.all %>% filter(ref=="Yes"),col='black',lty=2,lwd=1,alpha=0.5)+
+  # Add landmark positions
+  geom_point(data=lm.all,pch=3,size=4,col='black',stroke = 2)+
+  labs(title=paste0(model.name," - Typical curve segments"),
+       subtitle = "Dashed line: Reference typical curve",
+      # caption=script,
+       col="Segment")+
+  render
+}
+
+#' p.scaling.factor
+#'
+#' @param vachette_data Object of class\code{vachette_data}
+#'
+#' @export
+p.scaling.factor <- function(vachette_data) {
+  curves.all <- vachette_data$curves.all
+  obs.all <- vachette_data$obs.all
+  model.name <- vachette_data$model.name
+
+ curves.all %>%
+  mutate(mycurve = ifelse(ref=='Yes','Reference','Query')) %>%
+  ggplot(aes(x=x,y=x.scaling,col=factor(seg)))+
+  geom_line(lwd=1)+
+  facet_wrap(~paste(mycurve," covariate =",COV))+
+  coord_cartesian(xlim=c(NA,max(obs.all$x,obs.all$x.scaled)),
+                  ylim=c(0,max(curves.all$x.scaling[curves.all$x<=max(obs.all$x,obs.all$x.scaled)])))+
+  labs(title=paste0(model.name," - x-scaling factors"),
+       subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error"),
+       #caption=script,
+       col="Segment") +
+  render
+}
