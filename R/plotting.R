@@ -142,3 +142,404 @@ p.scaling.factor <- function(vachette_data) {
        col="Segment") +
   render
 }
+
+#' p.scaled.typical.curves
+#'
+#' @param vachette_data Object of class \code{vachette_data}
+#'
+#' @return Object of class \code{ggplot2}
+#' @export
+#'
+p.scaled.typical.curves <- function(vachette_data) {
+  vachette_data$curves.all %>%
+  ggplot(aes(x=x,y=y,group=ucov))+
+  # geom_line(lwd=1.5,alpha=0.5)+
+  geom_line(data=vachette_data$curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Yes'),lwd=1.5,alpha=0.60)+
+  geom_line(data=vachette_data$curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='No'),lwd=1.5)+
+  geom_line(aes(x=x.scaled, y=y.scaled), col='black',lwd=0.75,lty=2)+
+  # scale_color_manual(values=c('red','blue')) +
+  # scale_linetype_manual(values = c(3, 1),
+  #                       labels = c("Covariate", "Reference")) +
+  coord_cartesian(xlim=c(0,vachette_data$xstop)) +
+  scale_color_manual(name='Reference\ncurve',
+                     breaks=c('No', 'Yes'),
+                     values=c('No'='blue',
+                              'Yes'='red'))+
+  labs(title=paste0(vachette_data$model.name," - Covariate typical curves"),
+       subtitle = "Dashed lines: Covariate typical curves after Vachette transformation",
+      # caption=script,
+       col="Covariate value\n(Reference)")+
+  render
+}
+
+#' p.scaled.observation.curves
+#'
+#' @param vachette_data Object of class \code{vachette_data}
+#'
+#' @return Object of class \code{ggplot2}
+#' @export
+#'
+p.scaled.observation.curves <- function(vachette_data) {
+# Copy ref curves to each ID
+obs.all <- vachette_data$obs.all
+myids  <- unique(obs.all$ID)
+curves.all <- vachette_data$curves.all
+curves.all.ids <- NULL
+for(iid in c(1:length(myids))) {curves.all.ids <- rbind(curves.all.ids,curves.all %>% mutate(ID=myids[iid]))}
+
+# Overlay observation curves per ID
+  obs.all %>%
+  ggplot(aes(x=x,y=y,group=paste(ID,COV)))+
+  geom_line(data=curves.all.ids %>% filter(ref=="Yes"),aes(x=x,y=y,col='Typical reference'),lwd=1)+
+  geom_line(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference observations'))+
+  geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference observations'))+
+  geom_line(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query observations'))+
+  geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query observations'))+
+  geom_line(data=obs.all %>% filter(ref=='No'),aes(x=x.scaled, y=y.scaled, col='Query transformed'),lty=2)+
+  geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x.scaled, y=y.scaled, col='Query transformed'))+
+  # scale_color_manual(values=c('red','blue')) +
+  # scale_linetype_manual(values = c(3, 1),
+  #                       labels = c("Covariate", "Reference")) +
+  scale_color_manual(name='Data type',
+                     breaks=c('Query transformed',
+                              'Query observations',
+                              'Reference observations',
+                              'Typical reference'),
+                     values=c('Query transformed'='purple',
+                              'Query observations'='blue',
+                              'Reference observations'='red',
+                              'Typical reference'='black'))+
+  coord_cartesian(xlim=c(0,vachette_data$xstop)) +
+  labs(title=paste0(vachette_data$model.name," - Individual observation curves"),
+       subtitle = "Dashed lines: Individual observation curves after Vachette transformation",
+      # caption=script,
+       col="Covariate value\n(Reference)")+
+  render
+}
+
+#' p.scaled.observation.curves.by.id
+#'
+#' @param vachette_data Object of class \code{vachette_data}
+#'
+#' @return Object of class \code{ggplot2}
+#' @export
+#'
+p.scaled.observation.curves.by.id <- function(vachette_data) {
+# Observation curve for each ID
+  obs.all <- vachette_data$obs.all
+  myids  <- unique(obs.all$ID)
+  curves.all <- vachette_data$curves.all
+  curves.all.ids <- NULL
+for(iid in c(1:length(myids))) {curves.all.ids <- rbind(curves.all.ids,curves.all %>% mutate(ID=myids[iid]))}
+  obs.all %>%
+  ggplot(aes(x=x,y=y,group=paste(ID,COV)))+
+  geom_line(data=curves.all.ids %>% filter(ref=="Yes"),aes(x=x,y=y,col='Typical reference'),lwd=1)+
+  geom_line(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference observations'))+
+  geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference observations'))+
+  geom_line(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query observations'))+
+  geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query observations'))+
+  geom_line(data=obs.all %>% filter(ref=='No'),aes(x=x.scaled, y=y.scaled, col='Query transformed'),lty=2)+
+  geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x.scaled, y=y.scaled, col='Query transformed'))+
+  # scale_color_manual(values=c('red','blue')) +
+  # scale_linetype_manual(values = c(3, 1),
+  #                       labels = c("Covariate", "Reference")) +
+  scale_color_manual(name='Data type',
+                     breaks=c('Query transformed',
+                              'Query observations',
+                              'Reference observations',
+                              'Typical reference'),
+                     values=c('Query transformed'='purple',
+                              'Query observations'='blue',
+                              'Reference observations'='red',
+                              'Typical reference'='black'))+
+  facet_wrap(~ID)+
+  coord_cartesian(xlim=c(0,vachette_data$xstop)) +
+  labs(title=paste0(vachette_data$model.name," - Individual observation curves"),
+       subtitle = "Dashed lines: Individual observation curves after Vachette transformation",
+       #caption=script,
+       col="Covariate value\n(Reference)")+
+  render
+}
+
+
+#' p.transformation
+#'
+#' @param vachette_data Object of class \code{vachette_data}
+#'
+#' @return Object of class \code{ggplot2}
+#' @export
+#'
+p.transformation <- function(vachette_data) {
+# Select first or second segment as example and first region
+  nseg <- vachette_data$nseg
+  curves.all <- vachette_data$curves.all
+  obs.all <- vachette_data$obs.all
+  p.seg    <- ifelse(nseg > 1, 2, 1)
+  p.region <- 1
+  obs.all %>%
+    ggplot(aes(
+      x = x,
+      y = y,
+      col = factor(seg),
+      pch = factor(paste(!!!syms(vachette_data$vachette.covs)))
+    )) +
+    # geom_point(data = obs.all %>% filter(seg==2),size=2,alpha=0.25) +
+    # geom_point(data = obs.all %>% filter(ref=="No",seg==2),aes(x=x.scaled,y=y.scaled),col='purple',size=2) +
+    # Transformation arrows
+    # geom_segment(aes(x=x,y=y,xend=x.scaled,yend=y.scaled),
+    #              arrow = arrow(length = unit(0.2, "cm")),col='grey') +
+    geom_line(
+      data = curves.all %>% filter(ref != "No"),
+      lwd = 1,
+      col = 'grey'
+    ) +
+    geom_line(
+      data = curves.all %>% filter(ref == "No"),
+      lwd = 1,
+      col = 'grey'
+    ) +
+    geom_line(
+      data = curves.all %>% filter(ref != "No", seg == p.seg),
+      lwd = 1,
+      col = 'red'
+    ) +
+    geom_line(
+      data = curves.all %>% filter(ref == "No", seg == p.seg, region == p.region),
+      lwd = 1,
+      col = 'blue'
+    ) +
+    geom_line(
+      data = curves.all %>% filter(ref == "No", seg == p.seg, region == p.region),
+      aes(x = x.scaled),
+      lwd = 1,
+      col = 'cyan'
+    ) +
+    geom_line(
+      data = curves.all %>% filter(ref == "No", seg == p.seg, region == p.region),
+      aes(x = x.scaled, y = y.scaled),
+      lwd = 1,
+      col = 'purple',
+      lty = 2
+    ) +
+    coord_cartesian(xlim = c(0, max(obs.all$x, obs.all$x.scaled))) +
+    labs(
+      title = paste0(
+        vachette_data$model.name,
+        " - Example Vachette segment-",
+        p.seg,
+        " transformation"
+      ),
+      subtitle = paste0(if (vachette_data$ADD_TR)
+        "Additive Error", if (vachette_data$PROP_TR)
+          "Proportional Error"),
+     # caption = script,
+      col = "Segm",
+      shape = "Covs"
+    ) +
+    render
+}
+
+#' p.add.distances
+#'
+#' @param vachette_data Object of class \code{vachette_data}
+#'
+#' @return Object of class \code{ggplot2}
+#' @export
+#'
+p.add.distances <- function(vachette_data) {
+  obs.all <- vachette_data$obs.all
+# Additive distances before and after transformation
+obs.all %>%
+  ggplot(aes(x=dist.add.orig,y=dist.add.transformed,col=factor(seg)))+
+  geom_abline(slope=1)+
+  geom_point()+
+  labs(title=paste0(vachette_data$model.name," - Normal distances: original and after transformation"),
+       subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error"),
+       #caption=script,
+       x = 'Original distance',
+       x = 'Distance after transformation',
+       col="Segm.")+
+  render
+}
+
+#' p.prop.distances
+#'
+#' @param vachette_data Object of class \code{vachette_data}
+#'
+#' @return Object of class \code{ggplot2}
+#' @export
+#'
+p.prop.distances <- function(vachette_data) {
+  obs.all <- vachette_data$obs.all
+# Proportional distances before and after transformation
+obs.all %>%
+  ggplot(aes(x=dist.prop.orig,y=dist.prop.transformed,col=factor(seg)))+
+  geom_abline(slope=1)+
+  geom_point()+
+  labs(title=paste0(vachette_data$model.name," - Proportional distances: original and after transformation"),
+       subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error"),
+       #caption=script,
+       x = 'Original distance on log scale',
+       x = 'Distance on log scale after transformation',
+       col="Segm.")+
+  render
+}
+
+#' p.obs.ref.query
+#'
+#' @param vachette_data Object of class \code{vachette_data}
+#'
+#' @return Object of class \code{ggplot2}
+#' @export
+#'
+p.obs.ref.query <- function(vachette_data) {
+  stopifnot(length(vachette_data$vachette.covs) == 1)
+  obs.all <- vachette_data$obs.all
+  curves.all <- vachette_data$curves.all
+  obs.all %>%
+  ggplot(aes(x=x,y=y)) +
+  geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),lwd=1) +
+  geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
+  geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),pch=19) +
+  geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19) +
+
+  scale_color_manual(name='Data type',
+                     breaks=c('Query',
+                              'Reference'),
+                     values=c('Query'='blue',
+                              'Reference'='red'))+
+  coord_cartesian(xlim=c(0,max(obs.all$x))) +
+  labs(title=paste0(vachette_data$model.name," - Observation + typical curves"),
+       subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error")
+       #caption=script
+       )+
+  render
+}
+
+
+#' p.obs.cov
+#'
+#' @param vachette_data Object of class \code{vachette_data}
+#'
+#' @return Object of class \code{ggplot2}
+#' @export
+#'
+p.obs.cov <- function(vachette_data) {
+  stopifnot(length(vachette_data$vachette.covs) == 1)
+  obs.all <- vachette_data$obs.all
+  curves.all <- vachette_data$curves.all
+
+  obs.all %>%
+  ggplot(aes(x=x,y=y)) +
+  geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
+  geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),lwd=1) +
+  geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19) +
+  geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),pch=19) +
+
+  scale_color_manual(name='Data type',
+                     breaks=c('Query',
+                              'Reference'),
+                     values=c('Query'='blue',
+                              'Reference'='red'))+
+  facet_wrap(~paste("ucov",ucov)) +
+  coord_cartesian(xlim=c(0,max(obs.all$x))) +
+  labs(title=paste0(vachette_data$model.name," - Observation + typical curves"),
+       subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error")
+       #caption=script
+       )+
+  render
+}
+
+#' p.vachette.arrow
+#'
+#' @param vachette_data Object of class \code{vachette_data}
+#'
+#' @return Object of class \code{ggplot2}
+#' @export
+#'
+#' @examples
+#' p.vachette.arrow(vachette_data)
+#'
+p.vachette.arrow <- function(vachette_data) {
+  stopifnot(length(vachette_data$vachette.covs) == 1)
+
+  vachette_data$obs.all %>%
+  ggplot(aes(x=x,y=y)) +
+  # Transformation arrows
+  geom_segment(aes(x=x,y=y,xend=x.scaled,yend=y.scaled),
+               arrow = arrow(length = unit(0.2, "cm")),col='grey') +
+
+  geom_line(data=vachette_data$curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
+  geom_line(data=vachette_data$curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),lwd=1) +
+  geom_point(data=vachette_data$obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19,alpha=0.25) +
+  geom_point(data=vachette_data$obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),pch=19,alpha=0.25) +
+  geom_point(data=vachette_data$obs.all %>% filter(ref=='No'),aes(x=x.scaled,y=y.scaled,col='Transformed'),pch=19) +
+
+  scale_color_manual(name='Data type',
+                     breaks=c('Query',
+                              'Reference',
+                              'Transformed'),
+                     values=c('Query'='blue',
+                              'Reference'='red',
+                              'Transformed' = 'purple'))+
+
+  coord_cartesian(xlim=c(0,max(vachette_data$obs.all$x,vachette_data$obs.all$x.scaled)))+
+  labs(title=paste0(vachette_data$model.name," - Observations + transformations"),
+       subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error")
+       #caption=script
+       )+
+  render
+}
+
+#' p.vachette
+#'
+#' @param vachette_data Object of class \code{vachette_data}
+#'
+#' @return Object of class \code{ggplot2}
+#' @export
+#'
+p.vachette <- function(vachette_data) {
+  stopifnot(length(vachette_data$vachette.covs) == 1)
+  obs.all <- vachette_data$obs.all
+  curves.all <- vachette_data$curves.all
+
+  obs.all %>%
+    ggplot(aes(x = x, y = y)) +
+    geom_line(
+      data = curves.all %>% filter(ref == 'Yes'),
+      aes(x = x, y = y, col = 'Reference'),
+      lwd = 1
+    ) +
+    geom_point(
+      data = obs.all %>% filter(ref == 'Yes'),
+      aes(x = x, y = y, col = 'Reference'),
+      pch = 19
+    ) +
+    geom_point(
+      data = obs.all %>% filter(ref == 'No'),
+      aes(x = x.scaled, y = y.scaled, col = 'Query\nTransformed'),
+      pch = 19
+    ) +
+
+    scale_color_manual(
+      name = 'Data type',
+      breaks = c('Query',
+                 'Reference',
+                 'Query\nTransformed'),
+      values = c(
+        'Query' = 'blue',
+        'Reference' = 'red',
+        'Query\nTransformed' = 'purple'
+      )
+    ) +
+
+    coord_cartesian(xlim = c(0, max(obs.all$x, obs.all$x.scaled))) +
+    labs(
+      title = paste0(vachette_data$model.name, " - Observations + transformations"),
+      subtitle = paste0(if (vachette_data$ADD_TR)
+        "Additive Error", if (vachette_data$PROP_TR)
+          "Proportional Error")
+      #caption=script
+    ) +
+    render
+}

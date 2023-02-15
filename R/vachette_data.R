@@ -113,7 +113,8 @@ vachette_data <-
     ref.cov1 = ref.cov1,
     ref.region = ref.region,
     ref.dose = ref.dose,
-    xstop = xstop
+    xstop = xstop,
+    n.ucov = n.ucov
   ) %>%
     structure(class = "vachette_data")
 }
@@ -271,7 +272,8 @@ update.vachette_data <- function(vachette_data, ...) {
       output.typ = output.typ,
       obs.orig = obs.orig,
       sim.orig = sim.orig,
-      tab.ucov = tab.ucov
+      tab.ucov = tab.ucov,
+      n.ucov = n.ucov
     )
   )
 }
@@ -688,7 +690,27 @@ apply_transformations.vachette_data <-
 
   }
 
-  update(vachette_data, obs.all=obs.all, curves.all = curves.all, lm.all = lm.all)
+  n.ucov <- vachette_data$n.ucov
+  for(i.ucov in c(1:n.ucov))
+  {
+    typ.curve <- output.typ %>% filter(ucov==i.ucov)
+    ref.curve <- output.typ %>% filter(ucov==ref.ucov)
+    obs       <- obs.all    %>% filter(ucov==i.ucov)
+
+    # Additive distances to original curves
+    obs.all$dist.add.orig[obs.all$ucov==i.ucov] <- approx(typ.curve$x,typ.curve$y,xout=obs$x)$y - obs$y
+    # Vachette transformed - distances to ref curve
+    obs.all$dist.add.transformed[obs.all$ucov==i.ucov] <- approx(ref.curve$x,ref.curve$y,xout=obs$x.scaled)$y - obs$y.scaled
+
+    # Proportional distances to original curves (assume all y > 0)
+    # obs.all$dist.prop.orig[obs.all$ucov==i.ucov]        <- log(approx(typ.curve$x,typ.curve$y,xout=obs$x)$y) - log(obs$y)
+    obs.all$dist.prop.orig[obs.all$ucov==i.ucov]        <- approx(typ.curve$x,log(typ.curve$y),xout=obs$x)$y - log(obs$y)
+    # Vachette transformed - distances to ref curve
+    # obs.all$dist.prop.transformed[obs.all$ucov==i.ucov] <- log(approx(ref.curve$x,ref.curve$y,xout=obs$x.scaled)$y) - log(obs$y.scaled)
+    obs.all$dist.prop.transformed[obs.all$ucov==i.ucov] <- approx(ref.curve$x,log(ref.curve$y),xout=obs$x.scaled)$y - log(obs$y.scaled)
+  }
+
+  update(vachette_data, obs.all=obs.all, curves.all = curves.all, lm.all = lm.all, nseg = nseg)
 
 
 }

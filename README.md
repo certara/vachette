@@ -7,13 +7,33 @@ Vachette builds off previous work done in [V2ACHER](https://ascpt.onlinelibrary.
 ## Examples
 
 ```r
-oral_absorption_ex <- system.file(package = "vachette", "examples", "oral_absorption.R")
-# Run script
-# Note: "plots/vachette-main-oral-absorption-weight<version>.pdf" created in working directory
-source(oral_absorption_ex)
 
-# Alternatively, open file in RStudio for interactive execution of example
-file.edit(oral_absorption_ex)
+indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv")) |> 
+  dplyr::rename(WT = "vachette.cov1")
+output.typ <- read.csv(system.file(package = "vachette", "examples", "iv-typ.csv")) |> 
+  dplyr::rename(WT = "vachette.cov1")
+
+library(vachette)
+vd <-
+  vachette_data(
+    indivsam.obs,
+    output.typ,
+    vachette.covs = "WT",
+    ref.cov1 = 70,
+    ref.dose = 1,
+    model.name = "Intravenous (i.v)"
+  )
+
+vd <- vd |>
+  apply_transformations()
+
+p.vachette.arrow(vd)
+p.scaled.typical.curves.landmarks(vd)
+p.scaled.typical.full.curves.landmarks(vd)
+p.scaling.factor(vd)
+p.transformation(vd)
+p.add.distances(vd)
+p.vachette(vd)
 ```
 
 ## Releases
