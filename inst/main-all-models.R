@@ -25,11 +25,11 @@ rm(list=ls())
 models <- c("iv",
             "sigmoid",
             "oral-absorption",
-            "oral-absorption-manuscript",
+            # "oral-absorption-manuscript",
             "indirect-response",
-            "indirect-response-high-dose",
+            # "indirect-response-high-dose",
             "oral-two-dose",
-            "oral-two-dose-one-region",
+            # "oral-two-dose-one-region",
             "oral-two-cov",
             "pembro")
 nmodels <- length(models)
