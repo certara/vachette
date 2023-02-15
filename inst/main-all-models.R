@@ -3,9 +3,9 @@
 #  Project Number    : MRK-FTE-VRSV-640
 #  Project Root Path : Local
 # -------------------------------------------------------------------------
-#  Program : vachette-main-v29.R
+#  Program : vachette-main-all-models-v55.R
 #  Author  : Jos Lommerse - Certara
-#  Date    : 31 January 2023
+#  Date    : 14 Feb 2023
 #  Purpose : Vachette method for Visualization of Analyses with Covariates
 # -------------------------------------------------------------------------
 #  Software : R version 4.1.2 (2021-11-01)
@@ -13,19 +13,32 @@
 #  Environment : Windows-10, 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz
 # -------------------------------------------------------------------------
 
-# v53-james Reduced version for James, i.v. and oral absorption only
+# v53 Reduced version for James, i.v. and oral absorption only
+# v54 Expanding to include all models
+# v55 Continued v54
+# v56 Pembro
 
 # Clear memory
 rm(list=ls())
 
-# List of possible examples (will be ~8 in total)
+# Model examples
 models <- c("iv",
-            "oral-absorption")
+            "sigmoid",
+            "oral-absorption",
+            "oral-absorption-manuscript",
+            "indirect-response",
+            "indirect-response-high-dose",
+            "oral-two-dose",
+            "oral-two-dose-one-region",
+            "oral-two-cov",
+            "pembro")
+nmodels <- length(models)
 
 # Model example to run
-run.model  <- "iv"
+run.model  <- "oral-two-cov"
+# run.model  <- "pembro"
 
-tag        <- "v53-james"
+tag        <- "v56"
 script     <- paste0("vachette-main-all-models-",tag,".R")
 
 # ------------ Settings ----------
@@ -33,10 +46,10 @@ script     <- paste0("vachette-main-all-models-",tag,".R")
 # ----- Simulations -----
 
 # Simulate observations or take observations from flat file (located in "../flat-files/ folder")
-SIM_OBS           <- F  # Simulate typical curves/observation (else flat files will be read)
+SIM_OBS           <- T  # Simulate typical curves/observation (else flat files will be read)
 SIM_SAVE          <- T  # Save simulated data, note that flat files will not be overwritten
 # Carry out VPC simulations too?
-VVPC              <- T
+VVPC              <- F
 # Simulate model with proportional or additve error?
 PROP_SIM          <- T  # Else simulation will be using additive error
 
@@ -58,11 +71,21 @@ ADD_TR            <- ifelse(PROP_TR,F,T)
 # Carry out landmark position refinement step?
 LM_REFINE         <- F  # Landmark refinement
 
+# Plot with log-x axis?
+XLOG              <- F
+
 # ------ General defaults (can be adjusted by user if required) ----------
 tolend        <- 0.001  # Max tolerance to determine last.x (allowed minimizing difference open end ref and query)
 tolnoise      <- 1e-8   # Max tolerance allowed between gridpoints to identify landmarks for stepsize=1 (first and second derivative extremes)
 step.x.factor <- 1.5    # Factor x-steps between which y-values are lower than the SCALED tolerance
 ngrid.open.end<- 100    # Number of grid points to characterize open end curves
+w.init        <- 17     # Savitzky Golay smoothing - initial landmarks
+w1.refine     <- 7      # Savitzky Golay smoothing - refine landmarks - first derivative
+w2.refine     <- 5      # Savitzky Golay smoothing - refine landmarks - second derivative
+
+# Required for "oral-two-cov":
+if(run.model=="oral-two-cov") w.init <- 23
+# if(run.model=="pembro")       w.init <- 29
 
 # =================================================================
 
@@ -75,7 +98,6 @@ library(mrgsolve)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
-# should not use entire tidyverse dependency, parse out using exact dependencies.
 library(tidyverse)
 library(dtw)
 library(rootSolve)
@@ -87,17 +109,22 @@ library(data.table)
 library(Hmisc)
 
 # Vachette functions
-source('vachette-functions-v39-james.R')
+source('vachette-functions-v39.R')
 
 # Mrgsove models
-#source('vachette-models-v33-james.R')    # Slightly reduced variability for oral abs
+source('vachette-models-v34.R')    # Slightly reduced variability for oral abs
 
 # PMx examples
-source('vachette-example-iv-v35-james.R')
-source('vachette-example-oral-absorption-v38-james.R') # with SAVE option
+source('vachette-example-iv-v35.R')
+source('vachette-example-sigmoid-v30.R')
+source('vachette-example-oral-absorption-v38.R')
+source('vachette-example-oral-two-dose-v33.R')
+source('vachette-example-oral-two-cov-v1.r')
+source('vachette-example-indirect-response-v30.R')
+source('vachette-example-pembro-v1.R')
 
 # Utility functions
-source('vachette-utils-v30-james.R')
+source('vachette-utils-v30.R')
 
 set.seed(121)
 
@@ -126,11 +153,41 @@ if(model=='iv')
   ref.dose   <- 1     # First (and only) dose
 }
 
+# ---------------- IV ----------------------------
+if(model=='sigmoid')
+{
+  ref.cov1   <- 70    # e.g. (kg)
+  ref.dose   <- 1     # First (and only) dose
+}
+
 # ---------------- SINGLE DOSE ORAL ----------------------------
-if(model=='oral-absorption')
+if(model=='oral-absorption' | model == 'oral-two-dose')
 {
   ref.cov1   <- 70
   ref.dose   <- 1     # First (and only) dose
+}
+
+# ---------------- SINGLE DOSE ORAL, TWO COVARIATES  -------------
+if(model=='oral-two-cov')
+{
+  ref.cov1   <- 70    # WT
+  ref.cov2   <- 30    # AGE
+  ref.dose   <- 1     # First (and only) dose
+}
+
+# ---------------- INDIRECT RESPONSE PKPD ----------------------------
+if(model=='indirect-response')
+{
+  ref.cov1   <- 70
+  ref.dose   <- 1     # First (and only) dose
+}
+
+# ---------------- PEMBRO ----------------------------
+if(model=='pembro')
+{
+  ref.cov1   <- 'Q2W' # or 'Q2W'
+  ref.cov2   <- "16"  # ALB, Other extreme is 53.5
+  ref.dose   <- 3     # First dose
 }
 
 ###########################################################################
@@ -151,10 +208,30 @@ if(SIM_OBS)
   if(model=='iv')        output.typ   <- sim.iv(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
   if(model=='iv')        indivsam.obs <- sim.iv(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
   if(model=='iv' & VVPC) indivsam.vpc <- sim.iv(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  # sigmoid/Emax
+  if(model=='sigmoid')        output.typ   <- sim.sigmoid(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='sigmoid')        indivsam.obs <- sim.sigmoid(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='sigmoid' & VVPC) indivsam.vpc <- sim.sigmoid(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
   # oral
   if(model=='oral-absorption')        output.typ   <- sim.oral.absorption(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
   if(model=='oral-absorption')        indivsam.obs <- sim.oral.absorption(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
   if(model=='oral-absorption' & VVPC) indivsam.vpc <- sim.oral.absorption(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  # oral
+  if(model=='oral-two-dose')        output.typ   <- sim.oral.two.dose(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='oral-two-dose')        indivsam.obs <- sim.oral.two.dose(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='oral-two-dose' & VVPC) indivsam.vpc <- sim.oral.two.dose(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  # oral - two covariates
+  if(model=='oral-two-cov')        output.typ   <- sim.oral.two.cov(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='oral-two-cov')        indivsam.obs <- sim.oral.two.cov(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='oral-two-cov' & VVPC) indivsam.vpc <- sim.oral.two.cov(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  # oral
+  if(model=='indirect-response')        output.typ   <- sim.indirect.response(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='indirect-response')        indivsam.obs <- sim.indirect.response(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='indirect-response' & VVPC) indivsam.vpc <- sim.indirect.response(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  # pembro
+  if(model=='pembro')        output.typ   <- sim.pembro(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='pembro')        indivsam.obs <- sim.pembro(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='pembro' & VVPC) indivsam.vpc <- sim.pembro(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
 }
 
 # ------ Retrieve from flat files ----
@@ -163,13 +240,33 @@ if(SIM_OBS)
 if(!SIM_OBS) # Read flat file
 {
   # iv
-  if(model=='iv')        output.typ   <- read.csv("../flat-files-james/vachette-example-iv-v35-james-typ.csv",stringsAsFactors = F)
-  if(model=='iv')        indivsam.obs <- read.csv("../flat-files-james/vachette-example-iv-v35-james-obs.csv",stringsAsFactors = F)
-  if(model=='iv' & VVPC) indivsam.vpc <- read.csv("../flat-files-james/vachette-example-iv-v35-james-vpc.csv",stringsAsFactors = F)
-  # oral
-  if(model=='oral-absorption')        output.typ   <- read.csv("../flat-files-james/vachette-example-oral-absorption-v38-james-typ.csv",stringsAsFactors = F)
-  if(model=='oral-absorption')        indivsam.obs <- read.csv("../flat-files-james/vachette-example-oral-absorption-v38-james-obs.csv",stringsAsFactors = F)
-  if(model=='oral-absorption' & VVPC) indivsam.vpc <- read.csv("../flat-files-james/vachette-example-oral-absorption-v38-james-vpc.csv",stringsAsFactors = F)
+  if(model=='iv')        output.typ   <- read.csv("../flat-files/vachette-example-iv-v35-typ.csv",stringsAsFactors = F)
+  if(model=='iv')        indivsam.obs <- read.csv("../flat-files/vachette-example-iv-v35-obs.csv",stringsAsFactors = F)
+  if(model=='iv' & VVPC) indivsam.vpc <- read.csv("../flat-files/vachette-example-iv-v35-vpc.csv",stringsAsFactors = F)
+  # sigmoid
+  if(model=='sigmoid')        output.typ   <- read.csv("../flat-files/vachette-example-sigmoid-v30-typ.csv",stringsAsFactors = F)
+  if(model=='sigmoid')        indivsam.obs <- read.csv("../flat-files/vachette-example-sigmoid-v30-obs.csv",stringsAsFactors = F)
+  if(model=='sigmoid' & VVPC) indivsam.vpc <- read.csv("../flat-files/vachette-example-sigmoid-v30-vpc.csv",stringsAsFactors = F)
+  # oral-absorption
+  if(model=='oral-absorption')        output.typ   <- read.csv("../flat-files/vachette-example-oral-absorption-v38-typ.csv",stringsAsFactors = F)
+  if(model=='oral-absorption')        indivsam.obs <- read.csv("../flat-files/vachette-example-oral-absorption-v38-obs.csv",stringsAsFactors = F)
+  if(model=='oral-absorption' & VVPC) indivsam.vpc <- read.csv("../flat-files/vachette-example-oral-absorption-v38-vpc.csv",stringsAsFactors = F)
+  # oral-absorption two dose
+  if(model=='oral-two-dose')        output.typ   <- read.csv("../flat-files/vachette-example-oral-two-dose-v33-typ.csv",stringsAsFactors = F)
+  if(model=='oral-two-dose')        indivsam.obs <- read.csv("../flat-files/vachette-example-oral-two-dose-v33-obs.csv",stringsAsFactors = F)
+  if(model=='oral-two-dose' & VVPC) indivsam.vpc <- read.csv("../flat-files/vachette-example-oral-two-dose-v33-vpc.csv",stringsAsFactors = F)
+  # oral-absorption two dose
+  if(model=='oral-two-cov')        output.typ   <- read.csv("../flat-files/vachette-example-oral-two-cov-v1-typ.csv",stringsAsFactors = F)
+  if(model=='oral-two-cov')        indivsam.obs <- read.csv("../flat-files/vachette-example-oral-two-cov-v1-obs.csv",stringsAsFactors = F)
+  if(model=='oral-two-cov' & VVPC) indivsam.vpc <- read.csv("../flat-files/vachette-example-oral-two-cov-v1-vpc.csv",stringsAsFactors = F)
+  # indirect-response
+  if(model=='indirect-response')        output.typ   <- read.csv("../flat-files/vachette-example-indirect-response-v30-typ.csv",stringsAsFactors = F)
+  if(model=='indirect-response')        indivsam.obs <- read.csv("../flat-files/vachette-example-indirect-response-v30-obs.csv",stringsAsFactors = F)
+  if(model=='indirect-response' & VVPC) indivsam.vpc <- read.csv("../flat-files/vachette-example-indirect-response-v30-vpc.csv",stringsAsFactors = F)
+  # indirect-response
+  if(model=='pembro')        output.typ   <- read.csv("../flat-files/vachette-example-pembro-v1-typ.csv",stringsAsFactors = F)
+  if(model=='pembro')        indivsam.obs <- read.csv("../flat-files/vachette-example-pembro-v1-obs.csv",stringsAsFactors = F)
+  if(model=='pembro' & VVPC) indivsam.vpc <- read.csv("../flat-files/vachette-example-pembro-v1-vpc.csv",stringsAsFactors = F)
 }
 
 # -------------------------------------------------
@@ -182,10 +279,6 @@ indivsam.obs$isim      <- 1
 # @James: also fine to add if-statements throughout the code up to "VACHETTE TRANSFORMATION STEPS"
 if(!VVPC) indivsam.vpc <- indivsam.obs
 
-# Keep required data fileds only:
-indivsam.obs  <- indivsam.obs %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,dosenr)
-indivsam.vpc  <- indivsam.vpc %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,dosenr)
-
 ###########################################################################
 #                                                                         #
 #                    VACHETTE PREPARATION                                 #
@@ -197,8 +290,21 @@ indivsam.vpc  <- indivsam.vpc %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachett
 vachette.covs  <- names(output.typ)[grepl("vachette.cov",names(output.typ))]
 nvachette.covs <- length(vachette.covs)
 
-# Extract last observed x (look for max x/time in obs and sim data)
+# Keep required data fields only:
+if(nvachette.covs==1) indivsam.obs  <- indivsam.obs %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,dosenr)
+if(nvachette.covs==1) indivsam.vpc  <- indivsam.vpc %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,dosenr)
+if(nvachette.covs==2) indivsam.obs  <- indivsam.obs %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,vachette.cov2,dosenr)
+if(nvachette.covs==2) indivsam.vpc  <- indivsam.vpc %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,vachette.cov2,dosenr)
+
+# Extract last observed x
 xstop <- max(indivsam.obs$x,indivsam.vpc$x)
+
+# output.typ %>% ggplot(aes(x=x,y=y))+geom_line()+facet_grid(vachette.cov1~vachette.cov2)
+# output.typ %>%
+#   ggplot(aes(x=x,y=y,
+#              group=paste(vachette.cov1,vachette.cov2),
+#              col=paste(vachette.cov1,vachette.cov2)))+
+#   geom_line()+coord_cartesian(xlim=c(0,xstop))
 
 # Define unique covariate combination: To be improved
 if(nvachette.covs==1)
@@ -250,7 +356,7 @@ if(nvachette.covs==2) comb.ucov <- output.typ %>% expand(vachette.cov1,vachette.
 # Add to info to data frames
 if(nvachette.covs==1)
 {
-  for(i in c(1:dim(comb.ucov)[1])) #nrow()
+  for(i in c(1:dim(comb.ucov)[1]))
   {
     # Get number of doses for each covariate combination:
     z <- output.typ %>% filter(vachette.cov1 == comb.ucov$vachette.cov1[i])
@@ -424,7 +530,7 @@ for(i.ucov in c(1:dim(tab.ucov)[1]))
     mutate(ref = tab.ucov$ref[i.ucov])    # Flag for reference
 
   # We have to run Vachette twice if observation AND simulated replicates have to be generated (for VPC)
-  # @James: you may be able to do this more efficient - leverage tidyvpc here?
+  # @James: you may be able to do this more efficient
 
   # Observations
   if (!VVPC)
@@ -448,10 +554,10 @@ for(i.ucov in c(1:dim(tab.ucov)[1]))
   # Large stepsize -> large tol
   tolapply <- tolnoise*(output.typ$x[2]-output.typ$x[1])   # Grid stepsize
 
-  my.ref.lm.init    <- get.x.multi.landmarks(ref$x,ref$y,w=17,tol=tolapply)
+  my.ref.lm.init    <- get.x.multi.landmarks(ref$x,ref$y,w=w.init,tol=tolapply)
   my.ref.lm.init$y  <- approx(ref$x,ref$y, xout=my.ref.lm.init$x)$y
 
-  my.query.lm.init    <- get.x.multi.landmarks(query$x,query$y,w=17,tol=tolapply)
+  my.query.lm.init    <- get.x.multi.landmarks(query$x,query$y,w=w.init,tol=tolapply)
   my.query.lm.init$y  <- approx(query$x,query$y, xout=my.query.lm.init$x)$y
 
   if(!LM_REFINE)
@@ -461,17 +567,49 @@ for(i.ucov in c(1:dim(tab.ucov)[1]))
   }
   if(LM_REFINE)
   {
-    my.ref.lm.refined    <- refine.x.multi.landmarks(x=ref$x,y=ref$y,lm=my.ref.lm.init,tol=0.01*tolapply)
+    my.ref.lm.refined    <- refine.x.multi.landmarks(x=ref$x,y=ref$y,lm=my.ref.lm.init,tol=0.01*tolapply,w1=w1.refine,w2=w2.refine)
     my.ref.lm.refined$y  <- approx(ref$x, ref$y, xout=my.ref.lm.refined$x)$y
 
-    my.query.lm.refined    <- refine.x.multi.landmarks(query$x,query$y,lm=my.query.lm.init,tol=0.01*tolapply)
+    my.query.lm.refined    <- refine.x.multi.landmarks(query$x,query$y,lm=my.query.lm.init,tol=0.01*tolapply,w1=w1.refine,w2=w2.refine)
     my.query.lm.refined$y  <- approx(query$x,query$y, xout=my.query.lm.refined$x)$y
   }
 
   # Check if query and ref have same landmarks in same order
   if(dim(my.ref.lm.refined)[1] != dim(my.query.lm.refined)[1] |
      !sum(my.ref.lm.refined$type == my.query.lm.refined$type)>0)
-    stop("No matching landmarks between reference and query")
+  {
+    output.typ %>%
+      ggplot(aes(x=x,y=y,group=ucov,col=factor(ucov)))+
+      geom_line(lwd=1)+
+      # Add landmark positions
+      geom_point(data=my.ref.lm.refined %>% mutate(ucov=tab.ucov$ucov[tab.ucov$ref=='Yes']),pch=3,size=4,col='black',stroke = 2) +
+      geom_point(data=my.query.lm.refined %>% mutate(ucov=i.ucov),pch=3,size=4,col='black',stroke = 2) +
+      facet_wrap(~paste(ucov,"Ref",tab.ucov$ref[ucov]))+
+      labs(title=paste0(model," - Typical curve segments"),
+           subtitle = "Dashed line: Reference typical curve",
+           caption=script,
+           col="Cov combi")+
+      render
+
+    # ucov=1 only
+    output.typ %>%
+      filter(ucov==1) %>%
+      # filter(x>513,x<515,ucov==2) %>%
+      ggplot(aes(x=x,y=y,group=ucov,col=factor(ucov)))+
+      geom_line(lwd=1)+
+      geom_point(col='magenta')+
+      # Add landmark positions
+      # geom_point(data=my.ref.lm.refined %>% mutate(ucov=tab.ucov$ucov[tab.ucov$ref=='Yes']) %>% filter(x>513,x<515,ucov==2),pch=3,size=4,col='black',stroke = 2) +
+      # geom_point(data=my.query.lm.refined %>% mutate(ucov=i.ucov) %>% filter(x>513,x<515,ucov==2),pch=3,size=4,col='black',stroke = 2) +
+      geom_point(data=my.query.lm.refined %>% mutate(ucov=1),pch=3,size=4,col='black',stroke = 2) +
+      labs(title=paste0(model," - Typical curve segments"),
+           subtitle = "Dashed line: Reference typical curve",
+           caption=script,
+           col="Cov combi")+
+      render
+    #
+    stop("Landmarks do not match between reference and query")
+  }
 
   # C. ---------- Get last.x for reference and query typical curves ------------------
 
@@ -766,11 +904,11 @@ for(i.ucov in c(1:dim(tab.ucov)[1]))
 ###########################################################################
 
 # Save Vachette transformed data
-write.table(output.typ,paste0("../tables-james/vachette-curves-",model,"-",tag,".csv"),
+write.table(output.typ,paste0("../tables/vachette-curves-",model,"-",tag,".csv"),
             row.names=F,col.names=T,sep=',',na='.',quote=F)
-if (!VVPC) write.table(obs.all,paste0("../tables-james/vachette-obs-query-",model,"-",tag,".csv"),
+if (!VVPC) write.table(obs.all,paste0("../tables/vachette-obs-query-",model,"-",tag,".csv"),
                        row.names=F,col.names=T,sep=',',na='.',quote=F)
-if (VVPC)  write.table(obs.all,paste0("../tables-james/vachette-sim-query-",model,"-",tag,".csv"),
+if (VVPC)  write.table(obs.all,paste0("../tables/vachette-sim-query-",model,"-",tag,".csv"),
                        row.names=F,col.names=T,sep=',',na='.',quote=F)
 
 ###########################################################################
@@ -800,6 +938,11 @@ for(i.ucov in c(1:n.ucov))
   obs.all$dist.prop.transformed[obs.all$ucov==i.ucov] <- approx(ref.curve$x,log(ref.curve$y),xout=obs$x.scaled)$y - log(obs$y.scaled)
 }
 
+# Landmark x-positions
+lm.all.x <- lm.all %>%
+  mutate(i.lm = rep(c(1:(dim(lm.all)[1]/max(lm.all$ucov))),max(lm.all$ucov))) %>%
+  dplyr::select(i.lm,ucov,type,x) %>%
+  spread(ucov,x)
 
 ###########################################################################
 #                                                                         #
@@ -821,7 +964,7 @@ p.scaled.typical.curves.landmarks <- curves.all %>%
   # Add landmark positions
   geom_point(data=lm.all,pch=3,size=4,col='black',stroke = 2)+
   coord_cartesian(xlim=c(0,xstop)) +
-  labs(title=paste0(models.txt[model]," - Typical curve segments"),
+  labs(title=paste0(model," - Typical curve segments"),
        subtitle = "Dashed line: Reference typical curve",
        caption=script,
        col="Segment")+
@@ -835,7 +978,7 @@ p.scaled.typical.full.curves.landmarks <- curves.all %>%
   geom_line(data=curves.all %>% filter(ref=="Yes"),col='black',lty=2,lwd=1,alpha=0.5)+
   # Add landmark positions
   geom_point(data=lm.all,pch=3,size=4,col='black',stroke = 2)+
-  labs(title=paste0(models.txt[model]," - Typical curve segments"),
+  labs(title=paste0(model," - Typical curve segments"),
        subtitle = "Dashed line: Reference typical curve",
        caption=script,
        col="Segment")+
@@ -846,11 +989,10 @@ p.scaling.factor <- curves.all %>%
   mutate(mycurve = ifelse(ref=='Yes','Reference','Query')) %>%
   ggplot(aes(x=x,y=x.scaling,col=factor(seg)))+
   geom_line(lwd=1)+
-  facet_wrap(~paste(mycurve," covariate=",COV))+
+  facet_wrap(~paste0(mycurve," covariate=",COV," (",ucov,")"))+
   coord_cartesian(xlim=c(NA,max(obs.all$x,obs.all$x.scaled)),
                   ylim=c(0,max(curves.all$x.scaling[curves.all$x<=max(obs.all$x,obs.all$x.scaled)])))+
-  labs(title=paste0(models.txt[model]," - x-scaling factors"),
-       subtitle = paste0(if(ADD_TR) "Additive Error",if(PROP_TR) "Proportional Error"),
+  labs(title=paste0(model," - x-scaling factors"),
        caption=script,
        col="Segment")+
   render
@@ -870,7 +1012,7 @@ p.scaled.typical.curves <- curves.all %>%
                      breaks=c('No', 'Yes'),
                      values=c('No'='blue',
                               'Yes'='red'))+
-  labs(title=paste0(models.txt[model]," - Covariate typical curves"),
+  labs(title=paste0(model," - Covariate typical curves"),
        subtitle = "Dashed lines: Covariate typical curves after Vachette transformation",
        caption=script,
        col="Covariate value\n(Reference)")+
@@ -904,7 +1046,7 @@ p.scaled.observation.curves <- obs.all %>%
                               'Reference observations'='red',
                               'Typical reference'='black'))+
   coord_cartesian(xlim=c(0,xstop)) +
-  labs(title=paste0(models.txt[model]," - Individual observation curves"),
+  labs(title=paste0(model," - Individual observation curves"),
        subtitle = "Dashed lines: Individual observation curves after Vachette transformation",
        caption=script,
        col="Covariate value\n(Reference)")+
@@ -935,43 +1077,19 @@ p.scaled.observation.curves.by.id <- obs.all %>%
                               'Typical reference'='black'))+
   facet_wrap(~ID)+
   coord_cartesian(xlim=c(0,xstop)) +
-  labs(title=paste0(models.txt[model]," - Individual observation curves"),
+  labs(title=paste0(model," - Individual observation curves"),
        subtitle = "Dashed lines: Individual observation curves after Vachette transformation",
        caption=script,
        col="Covariate value\n(Reference)")+
   render
 
-# Transformation steps
-# Select first or second segment as example and first region
-p.seg    <- ifelse(nseg>1,2,1)
-p.region <- 1
-p.transformation <- obs.all %>%
-  ggplot(aes(x=x,y=y,col=factor(seg),pch=factor(paste(vachette.cov1)))) +
-  # geom_point(data = obs.all %>% filter(seg==2),size=2,alpha=0.25) +
-  # geom_point(data = obs.all %>% filter(ref=="No",seg==2),aes(x=x.scaled,y=y.scaled),col='purple',size=2) +
-  # Transformation arrows
-  # geom_segment(aes(x=x,y=y,xend=x.scaled,yend=y.scaled),
-  #              arrow = arrow(length = unit(0.2, "cm")),col='grey') +
-  geom_line(data=curves.all %>% filter(ref!="No"),lwd=1,col='grey') +
-  geom_line(data=curves.all %>% filter(ref=="No"),lwd=1,col='grey') +
-  geom_line(data=curves.all %>% filter(ref!="No",seg==p.seg),lwd=1,col='red') +
-  geom_line(data=curves.all %>% filter(ref=="No",seg==p.seg,region==p.region),lwd=1,col='blue') +
-  geom_line(data=curves.all %>% filter(ref=="No",seg==p.seg,region==p.region),aes(x=x.scaled),lwd=1,col='cyan') +
-  geom_line(data=curves.all %>% filter(ref=="No",seg==p.seg,region==p.region),aes(x=x.scaled,y=y.scaled),lwd=1,col='purple',lty=2) +
-  coord_cartesian(xlim=c(0,max(obs.all$x,obs.all$x.scaled)))+
-  labs(title=paste0(models.txt[model]," - Example Vachette segment-",p.seg," transformation"),
-       subtitle = paste0(if(ADD_TR) "Additive Error",if(PROP_TR) "Proportional Error"),
-       caption=script,
-       col="Segm",
-       shape="Covs")+
-  render
 
 # Additive distances before and after transformation
 p.add.distances <- obs.all %>%
   ggplot(aes(x=dist.add.orig,y=dist.add.transformed,col=factor(seg)))+
   geom_abline(slope=1)+
   geom_point()+
-  labs(title=paste0(models.txt[model]," - Normal distances: original and after transformation"),
+  labs(title=paste0(model," - Normal distances: original and after transformation"),
        subtitle = paste0(if(ADD_TR) "Additive Error",if(PROP_TR) "Proportional Error"),
        caption=script,
        x = 'Original distance',
@@ -984,7 +1102,7 @@ p.prop.distances <- obs.all %>%
   ggplot(aes(x=dist.prop.orig,y=dist.prop.transformed,col=factor(seg)))+
   geom_abline(slope=1)+
   geom_point()+
-  labs(title=paste0(models.txt[model]," - Proportional distances: original and after transformation"),
+  labs(title=paste0(model," - Proportional distances: original and after transformation"),
        subtitle = paste0(if(ADD_TR) "Additive Error",if(PROP_TR) "Proportional Error"),
        caption=script,
        x = 'Original distance on log scale',
@@ -994,93 +1112,89 @@ p.prop.distances <- obs.all %>%
 
 # -------------- Transformation etc. ---------------------------
 
-if(nvachette.covs==1)
-{
-  p.obs.ref.query <- obs.all %>%
-    ggplot(aes(x=x,y=y)) +
-    geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),lwd=1) +
-    geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
-    geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),pch=19) +
-    geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19) +
+p.obs.ref.query <- obs.all %>%
+  ggplot(aes(x=x,y=y)) +
+  geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query',group=ucov),lwd=1) +
+  geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference',group=ucov),lwd=1) +
+  geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query',group=ucov),pch=19) +
+  geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference',group=ucov),pch=19) +
 
-    scale_color_manual(name='Data type',
-                       breaks=c('Query',
-                                'Reference'),
-                       values=c('Query'='blue',
-                                'Reference'='red'))+
-    coord_cartesian(xlim=c(0,max(obs.all$x))) +
-    labs(title=paste0(models.txt[model]," - Observation + typical curves"),
-         subtitle = paste0(if(ADD_TR) "Additive Error",if(PROP_TR) "Proportional Error"),
-         caption=script)+
-    render
+  scale_color_manual(name='Data type',
+                     breaks=c('Query',
+                              'Reference'),
+                     values=c('Query'='blue',
+                              'Reference'='red'))+
+  coord_cartesian(xlim=c(0,max(obs.all$x))) +
+  labs(title=paste0(model," - Observation + typical curves"),
+       caption=script)+
+  render
 
-  p.obs.cov <- obs.all %>%
-    ggplot(aes(x=x,y=y)) +
-    geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
-    geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),lwd=1) +
-    geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19) +
-    geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),pch=19) +
+p.obs.cov <- obs.all %>%
+  ggplot(aes(x=x,y=y)) +
+  geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
+  geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),lwd=1) +
+  geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19) +
+  geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),pch=19) +
 
-    scale_color_manual(name='Data type',
-                       breaks=c('Query',
-                                'Reference'),
-                       values=c('Query'='blue',
-                                'Reference'='red'))+
-    facet_wrap(~paste("ucov",ucov)) +
-    coord_cartesian(xlim=c(0,max(obs.all$x))) +
-    labs(title=paste0(models.txt[model]," - Observation + typical curves"),
-         subtitle = paste0(if(ADD_TR) "Additive Error",if(PROP_TR) "Proportional Error"),
-         caption=script)+
-    render
+  scale_color_manual(name='Data type',
+                     breaks=c('Query',
+                              'Reference'),
+                     values=c('Query'='blue',
+                              'Reference'='red'))+
+  facet_wrap(~paste("ucov",ucov)) +
+  coord_cartesian(xlim=c(0,max(obs.all$x))) +
+  labs(title=paste0(model," - Observation + typical curves"),
+       caption=script)+
+  render
 
-  p.vachette.arrow <- obs.all %>%
-    ggplot(aes(x=x,y=y)) +
-    # Transformation arrows
-    geom_segment(aes(x=x,y=y,xend=x.scaled,yend=y.scaled),
-                 arrow = arrow(length = unit(0.2, "cm")),col='grey') +
+p.vachette.arrow <- obs.all %>%
+  ggplot(aes(x=x,y=y)) +
+  # Transformation arrows
+  geom_segment(aes(x=x,y=y,xend=x.scaled,yend=y.scaled),
+               arrow = arrow(length = unit(0.2, "cm")),col='grey') +
 
-    geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
-    geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),lwd=1) +
-    geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19,alpha=0.25) +
-    geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),pch=19,alpha=0.25) +
-    geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x.scaled,y=y.scaled,col='Transformed'),pch=19) +
+  geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference',group=ucov),lwd=1) +
+  geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query',group=ucov),lwd=1) +
+  geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference',group=ucov),pch=19,alpha=0.25) +
+  geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query',group=ucov),pch=19,alpha=0.25) +
+  geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x.scaled,y=y.scaled,col='Transformed'),pch=19) +
 
-    scale_color_manual(name='Data type',
-                       breaks=c('Query',
-                                'Reference',
-                                'Transformed'),
-                       values=c('Query'='blue',
-                                'Reference'='red',
-                                'Transformed' = 'purple'))+
+  scale_color_manual(name='Data type',
+                     breaks=c('Query',
+                              'Reference',
+                              'Transformed'),
+                     values=c('Query'='blue',
+                              'Reference'='red',
+                              'Transformed' = 'purple'))+
 
-    coord_cartesian(xlim=c(0,max(obs.all$x,obs.all$x.scaled)))+
-    labs(title=paste0(models.txt[model]," - Observations + transformations"),
-         subtitle = paste0(if(ADD_TR) "Additive Error",if(PROP_TR) "Proportional Error"),
-         caption=script)+
-    render
+  coord_cartesian(xlim=c(0,max(obs.all$x,obs.all$x.scaled)))+
+  labs(title=paste0(model," - Observations + transformations"),
+       subtitle = paste0(if(ADD_TR) "Additive Error",if(PROP_TR) "Proportional Error"),
+       caption=script)+
+  render
 
-  # Vachette final
-  p.vachette <- obs.all %>%
-    ggplot(aes(x=x,y=y)) +
+# Vachette final
+p.vachette <- obs.all %>%
+  ggplot(aes(x=x,y=y)) +
 
-    geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
-    geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19) +
-    geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x.scaled,y=y.scaled,col='Query\nTransformed'),pch=19) +
+  geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
+  geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19) +
+  geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x.scaled,y=y.scaled,col='Query\nTransformed'),pch=19) +
 
-    scale_color_manual(name='Data type',
-                       breaks=c('Query',
-                                'Reference',
-                                'Query\nTransformed'),
-                       values=c('Query'='blue',
-                                'Reference'='red',
-                                'Query\nTransformed' = 'purple'))+
+  scale_color_manual(name='Data type',
+                     breaks=c('Query',
+                              'Reference',
+                              'Query\nTransformed'),
+                     values=c('Query'='blue',
+                              'Reference'='red',
+                              'Query\nTransformed' = 'purple'))+
 
-    coord_cartesian(xlim=c(0,max(obs.all$x,obs.all$x.scaled)))+
-    labs(title=paste0(models.txt[model]," - Observations + transformations"),
-         subtitle = paste0(if(ADD_TR) "Additive Error",if(PROP_TR) "Proportional Error"),
-         caption=script)+
-    render
-}
+  coord_cartesian(xlim=c(0,max(obs.all$x,obs.all$x.scaled)))+
+  labs(title=paste0(model," - Observations + transformations"),
+       subtitle = paste0(if(ADD_TR) "Additive Error",if(PROP_TR) "Proportional Error"),
+       caption=script)+
+  render
+
 
 ###########################################################################
 #                                                                         #
@@ -1089,22 +1203,23 @@ if(nvachette.covs==1)
 ###########################################################################
 
 # Save plots in pdf-file:
-if (!VVPC) pdf(paste0("../plots-james/vachette-obs-",model,"-",tag,".pdf"))
-if (VVPC)  pdf(paste0("../plots-james/vachette-sim-",model,"-",tag,".pdf"))
-# scope VVPC argument, in the context of VPC options
+if (!VVPC) pdf(paste0("../plots/vachette-obs-",model,"-",tag,".pdf"))
+if (VVPC)  pdf(paste0("../plots/vachette-sim-",model,"-",tag,".pdf"))
+
 if(ADD_TR)  plot(p.add.distances)
 if(PROP_TR) plot(p.prop.distances)
-plot(p.scaled.typical.curves.landmarks)
-plot(p.scaled.typical.full.curves.landmarks)
-plot(p.scaling.factor)
-plot(p.scaled.typical.curves)
-plot(p.scaled.observation.curves)
-plot(p.scaled.observation.curves.by.id)
 
-plot(p.obs.ref.query)
-plot(p.obs.cov)
-plot(p.vachette.arrow)
-plot(p.vachette)
+plot(p.scaled.typical.curves.landmarks      + {if(XLOG) scale_x_log10()} + {if(XLOG) coord_cartesian(xlim=c(NA,xstop))})
+plot(p.scaled.typical.full.curves.landmarks + {if(XLOG) scale_x_log10()} + {if(XLOG) coord_cartesian(xlim=c(NA,NA))})
+plot(p.scaling.factor                       + {if(XLOG) scale_x_log10()} + {if(XLOG) coord_cartesian(xlim=c(NA,xstop))})
+plot(p.scaled.typical.curves                + {if(XLOG) scale_x_log10()} + {if(XLOG) coord_cartesian(xlim=c(NA,xstop))})
+plot(p.scaled.observation.curves            + {if(XLOG) scale_x_log10()} + {if(XLOG) coord_cartesian(xlim=c(NA,xstop))})
+plot(p.scaled.observation.curves.by.id      + {if(XLOG) scale_x_log10()} + {if(XLOG) coord_cartesian(xlim=c(NA,xstop))})
+
+plot(p.obs.ref.query                        + {if(XLOG) scale_x_log10()} + {if(XLOG) coord_cartesian(xlim=c(NA,xstop))})
+plot(p.obs.cov                              + {if(XLOG) scale_x_log10()} + {if(XLOG) coord_cartesian(xlim=c(NA,xstop))})
+plot(p.vachette.arrow                       + {if(XLOG) scale_x_log10()} + {if(XLOG) coord_cartesian(xlim=c(NA,xstop))})
+plot(p.vachette                             + {if(XLOG) scale_x_log10()} + {if(XLOG) coord_cartesian(xlim=c(NA,xstop))})
 
 dev.off()
 
@@ -1127,15 +1242,19 @@ print(' ')
 print("SIMULATIONS")
 if(SIM_OBS)  print(paste0("  Observations of ",nsim.indiv," individuals per covariate have been simulated"))
 if(SIM_OBS & PROP_SIM)  print("  Simulation of proportional residual error only")
+if(SIM_OBS & PROP_SIM)  print("  Simulation of proportional residual error only")
 if(SIM_OBS & !PROP_SIM)  print("  Simulation of additive residual error only")
 if(SIM_OBS & VVPC) print(paste0("  Simulation of ",nsim.vpc," replicates for Vachette VPC done"))
-if(!SIM_OBS) print("  Observations have been read from '../flat-files-james/' folder")
+if(!SIM_OBS) print("  Observations have been read from '../flat-files/' folder")
 print(' ')
 
 print("UNIQUE COVARIATES")
 print(tab.ucov)
 print(' ')
 
+print("LANDMARKS FOR EACH UNIQUE COVARIATE")
+print(lm.all.x)
+print(' ')
 
 print("VACHETTE TRANSFORMATION")
 if(IIV_CORR)   print(paste0("  Vachette IIV correction applied"))
