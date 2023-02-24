@@ -9,7 +9,6 @@ vachette_data(
   output.typ,
   indivsam.vpc = NULL,
   vachette.covs,
-  ref.cov1,
   ref.dose,
   IIV_CORR = FALSE,
   error = c("proportional", "additive"),
@@ -23,9 +22,7 @@ vachette_data(
 
 \item{indivsam.vpc}{VPC data of class  \code{data.frame}}
 
-\item{vachette.covs}{Character vector of covariate names}
-
-\item{ref.cov1}{Reference covariate value in data}
+\item{vachette.covs}{Named character vector of covariate names and reference values}
 
 \item{ref.dose}{Reference dose value in data}
 
