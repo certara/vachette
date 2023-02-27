@@ -15,7 +15,3 @@ Object of class \code{ggplot2}
 \description{
 p.vachette.arrow
 }
-\examples{
-p.vachette.arrow(vachette_data)
-
-}

@@ -18,8 +18,7 @@ vd <-
   vachette_data(
     indivsam.obs,
     output.typ,
-    vachette.covs = "WT",
-    ref.cov1 = 70,
+    vachette.covs = c("WT" = 70),
     ref.dose = 1,
     model.name = "Intravenous (i.v)"
   )
@@ -27,13 +26,22 @@ vd <-
 vd <- vd |>
   apply_transformations()
 
-p.vachette.arrow(vd)
+
+p.prop.distances(vd)
 p.scaled.typical.curves.landmarks(vd)
 p.scaled.typical.full.curves.landmarks(vd)
 p.scaling.factor(vd)
+p.scaled.typical.curves(vd)
+p.scaled.observation.curves(vd)
+#p.individual plots
+p.obs.ref.query(vd)
+p.obs.cov(vd)
+p.vachette.arrow(vd)
+p.vachette(vd)
+
+#misc
 p.transformation(vd)
 p.add.distances(vd)
-p.vachette(vd)
 ```
 
 ## Releases
