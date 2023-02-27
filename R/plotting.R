@@ -281,7 +281,7 @@ p.transformation <- function(vachette_data) {
       x = x,
       y = y,
       col = factor(seg),
-      pch = factor(paste(!!!syms(vachette_data$vachette.covs)))
+      pch = factor(paste(!!!syms(names(vachette_data$vachette.covs))))
     )) +
     # geom_point(data = obs.all %>% filter(seg==2),size=2,alpha=0.25) +
     # geom_point(data = obs.all %>% filter(ref=="No",seg==2),aes(x=x.scaled,y=y.scaled),col='purple',size=2) +
@@ -393,15 +393,15 @@ obs.all %>%
 #' @export
 #'
 p.obs.ref.query <- function(vachette_data) {
-  stopifnot(length(vachette_data$vachette.covs) == 1)
+  #stopifnot(length(vachette_data$vachette.covs) == 1)
   obs.all <- vachette_data$obs.all
   curves.all <- vachette_data$curves.all
   obs.all %>%
   ggplot(aes(x=x,y=y)) +
-  geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),lwd=1) +
-  geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
-  geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),pch=19) +
-  geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19) +
+  geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query', group=ucov),lwd=1) +
+  geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference', group=ucov),lwd=1) +
+  geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query', group=ucov),pch=19) +
+  geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference', group=ucov),pch=19) +
 
   scale_color_manual(name='Data type',
                      breaks=c('Query',
@@ -425,7 +425,7 @@ p.obs.ref.query <- function(vachette_data) {
 #' @export
 #'
 p.obs.cov <- function(vachette_data) {
-  stopifnot(length(vachette_data$vachette.covs) == 1)
+  #stopifnot(length(vachette_data$vachette.covs) == 1)
   obs.all <- vachette_data$obs.all
   curves.all <- vachette_data$curves.all
 
@@ -457,11 +457,8 @@ p.obs.cov <- function(vachette_data) {
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
-#' @examples
-#' p.vachette.arrow(vachette_data)
 #'
 p.vachette.arrow <- function(vachette_data) {
-  stopifnot(length(vachette_data$vachette.covs) == 1)
 
   vachette_data$obs.all %>%
   ggplot(aes(x=x,y=y)) +
@@ -469,10 +466,10 @@ p.vachette.arrow <- function(vachette_data) {
   geom_segment(aes(x=x,y=y,xend=x.scaled,yend=y.scaled),
                arrow = arrow(length = unit(0.2, "cm")),col='grey') +
 
-  geom_line(data=vachette_data$curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
-  geom_line(data=vachette_data$curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),lwd=1) +
-  geom_point(data=vachette_data$obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19,alpha=0.25) +
-  geom_point(data=vachette_data$obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),pch=19,alpha=0.25) +
+  geom_line(data=vachette_data$curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference',group=ucov),lwd=1) +
+  geom_line(data=vachette_data$curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query',group=ucov),lwd=1) +
+  geom_point(data=vachette_data$obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference',group=ucov),pch=19,alpha=0.25) +
+  geom_point(data=vachette_data$obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query',group=ucov),pch=19,alpha=0.25) +
   geom_point(data=vachette_data$obs.all %>% filter(ref=='No'),aes(x=x.scaled,y=y.scaled,col='Transformed'),pch=19) +
 
   scale_color_manual(name='Data type',
@@ -483,7 +480,7 @@ p.vachette.arrow <- function(vachette_data) {
                               'Reference'='red',
                               'Transformed' = 'purple'))+
 
-  coord_cartesian(xlim=c(0,max(vachette_data$obs.all$x,vachette_data$obs.all$x.scaled)))+
+  coord_cartesian(xlim=c(0,max(vachette_data$obs.all$x,vachette_data$obs.all$x.scaled))) +
   labs(title=paste0(vachette_data$model.name," - Observations + transformations"),
        subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error")
        #caption=script
@@ -499,7 +496,7 @@ p.vachette.arrow <- function(vachette_data) {
 #' @export
 #'
 p.vachette <- function(vachette_data) {
-  stopifnot(length(vachette_data$vachette.covs) == 1)
+  #stopifnot(length(vachette_data$vachette.covs) == 1)
   obs.all <- vachette_data$obs.all
   curves.all <- vachette_data$curves.all
 
