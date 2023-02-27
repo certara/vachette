@@ -46,7 +46,7 @@ script     <- paste0("vachette-main-all-models-",tag,".R")
 # ----- Simulations -----
 
 # Simulate observations or take observations from flat file (located in "../flat-files/ folder")
-SIM_OBS           <- T  # Simulate typical curves/observation (else flat files will be read)
+SIM_OBS           <- F  # Simulate typical curves/observation (else flat files will be read)
 SIM_SAVE          <- T  # Save simulated data, note that flat files will not be overwritten
 # Carry out VPC simulations too?
 VVPC              <- F
@@ -111,17 +111,17 @@ library(Hmisc)
 # Vachette functions
 source('vachette-functions-v39.R')
 
-# Mrgsove models
-source('vachette-models-v34.R')    # Slightly reduced variability for oral abs
-
-# PMx examples
-source('vachette-example-iv-v35.R')
-source('vachette-example-sigmoid-v30.R')
-source('vachette-example-oral-absorption-v38.R')
-source('vachette-example-oral-two-dose-v33.R')
-source('vachette-example-oral-two-cov-v1.r')
-source('vachette-example-indirect-response-v30.R')
-source('vachette-example-pembro-v1.R')
+# # Mrgsove models
+# source('vachette-models-v34.R')    # Slightly reduced variability for oral abs
+#
+# # PMx examples
+# source('vachette-example-iv-v35.R')
+# source('vachette-example-sigmoid-v30.R')
+# source('vachette-example-oral-absorption-v38.R')
+# source('vachette-example-oral-two-dose-v33.R')
+# source('vachette-example-oral-two-cov-v1.r')
+# source('vachette-example-indirect-response-v30.R')
+# source('vachette-example-pembro-v1.R')
 
 # Utility functions
 source('vachette-utils-v30.R')
