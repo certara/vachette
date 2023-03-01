@@ -13,13 +13,30 @@ apply_transformations(vachette_data, ...)
   tolend = 0.001,
   tolnoise = 1e-08,
   step.x.factor = 1.5,
-  ngrid.open.end = 100
+  ngrid.open.end = 100,
+  w.init = 17,
+  w1.refine = 7,
+  w2.refine = 5
 )
 }
 \arguments{
 \item{vachette_data}{Object of class \code{vachette_data}}
 
-\item{ngrid.open.end}{}
+\item{LM_REFINE}{Logical; Set to \code{TRUE} to refine landmark}
+
+\item{tolend}{Numeric;}
+
+\item{tolnoise}{Numeric;}
+
+\item{step.x.factor}{Numeric;}
+
+\item{ngrid.open.end}{Numeric;}
+
+\item{w.init}{Numeric; Savitzky Golay smoothing.}
+
+\item{w1.refine}{Numeric; Savitzky Golay smoothing, first derivative.}
+
+\item{w2.refine}{Numeric; Savitzky Golay smoothing, second derivative.}
 }
 \description{
 Apply vachette transformations

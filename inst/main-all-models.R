@@ -46,7 +46,7 @@ script     <- paste0("vachette-main-all-models-",tag,".R")
 # ----- Simulations -----
 
 # Simulate observations or take observations from flat file (located in "../flat-files/ folder")
-SIM_OBS           <- T  # Simulate typical curves/observation (else flat files will be read)
+SIM_OBS           <- F  # Simulate typical curves/observation (else flat files will be read)
 SIM_SAVE          <- T  # Save simulated data, note that flat files will not be overwritten
 # Carry out VPC simulations too?
 VVPC              <- F
@@ -111,17 +111,17 @@ library(Hmisc)
 # Vachette functions
 source('vachette-functions-v39.R')
 
-# Mrgsove models
-source('vachette-models-v34.R')    # Slightly reduced variability for oral abs
-
-# PMx examples
-source('vachette-example-iv-v35.R')
-source('vachette-example-sigmoid-v30.R')
-source('vachette-example-oral-absorption-v38.R')
-source('vachette-example-oral-two-dose-v33.R')
-source('vachette-example-oral-two-cov-v1.r')
-source('vachette-example-indirect-response-v30.R')
-source('vachette-example-pembro-v1.R')
+# # Mrgsove models
+# source('vachette-models-v34.R')    # Slightly reduced variability for oral abs
+#
+# # PMx examples
+# source('vachette-example-iv-v35.R')
+# source('vachette-example-sigmoid-v30.R')
+# source('vachette-example-oral-absorption-v38.R')
+# source('vachette-example-oral-two-dose-v33.R')
+# source('vachette-example-oral-two-cov-v1.r')
+# source('vachette-example-indirect-response-v30.R')
+# source('vachette-example-pembro-v1.R')
 
 # Utility functions
 source('vachette-utils-v30.R')
@@ -240,33 +240,33 @@ if(SIM_OBS)
 if(!SIM_OBS) # Read flat file
 {
   # iv
-  if(model=='iv')        output.typ   <- read.csv("../flat-files/vachette-example-iv-v35-typ.csv",stringsAsFactors = F)
-  if(model=='iv')        indivsam.obs <- read.csv("../flat-files/vachette-example-iv-v35-obs.csv",stringsAsFactors = F)
-  if(model=='iv' & VVPC) indivsam.vpc <- read.csv("../flat-files/vachette-example-iv-v35-vpc.csv",stringsAsFactors = F)
+  if(model=='iv')        output.typ   <- read.csv("./examples/iv-v35-typ.csv",stringsAsFactors = F)
+  if(model=='iv')        indivsam.obs <- read.csv("./examples/iv-v35-obs.csv",stringsAsFactors = F)
+  if(model=='iv' & VVPC) indivsam.vpc <- read.csv("./examples/iv-v35-vpc.csv",stringsAsFactors = F)
   # sigmoid
-  if(model=='sigmoid')        output.typ   <- read.csv("../flat-files/vachette-example-sigmoid-v30-typ.csv",stringsAsFactors = F)
-  if(model=='sigmoid')        indivsam.obs <- read.csv("../flat-files/vachette-example-sigmoid-v30-obs.csv",stringsAsFactors = F)
-  if(model=='sigmoid' & VVPC) indivsam.vpc <- read.csv("../flat-files/vachette-example-sigmoid-v30-vpc.csv",stringsAsFactors = F)
+  if(model=='sigmoid')        output.typ   <- read.csv("./examples/sigmoid-v30-typ.csv",stringsAsFactors = F)
+  if(model=='sigmoid')        indivsam.obs <- read.csv("./examples/sigmoid-v30-obs.csv",stringsAsFactors = F)
+  if(model=='sigmoid' & VVPC) indivsam.vpc <- read.csv("./examples/sigmoid-v30-vpc.csv",stringsAsFactors = F)
   # oral-absorption
-  if(model=='oral-absorption')        output.typ   <- read.csv("../flat-files/vachette-example-oral-absorption-v38-typ.csv",stringsAsFactors = F)
-  if(model=='oral-absorption')        indivsam.obs <- read.csv("../flat-files/vachette-example-oral-absorption-v38-obs.csv",stringsAsFactors = F)
-  if(model=='oral-absorption' & VVPC) indivsam.vpc <- read.csv("../flat-files/vachette-example-oral-absorption-v38-vpc.csv",stringsAsFactors = F)
+  if(model=='oral-absorption')        output.typ   <- read.csv("./examples/oral-absorption-v38-typ.csv",stringsAsFactors = F)
+  if(model=='oral-absorption')        indivsam.obs <- read.csv("./examples/oral-absorption-v38-obs.csv",stringsAsFactors = F)
+  if(model=='oral-absorption' & VVPC) indivsam.vpc <- read.csv("./examples/oral-absorption-v38-vpc.csv",stringsAsFactors = F)
   # oral-absorption two dose
-  if(model=='oral-two-dose')        output.typ   <- read.csv("../flat-files/vachette-example-oral-two-dose-v33-typ.csv",stringsAsFactors = F)
-  if(model=='oral-two-dose')        indivsam.obs <- read.csv("../flat-files/vachette-example-oral-two-dose-v33-obs.csv",stringsAsFactors = F)
-  if(model=='oral-two-dose' & VVPC) indivsam.vpc <- read.csv("../flat-files/vachette-example-oral-two-dose-v33-vpc.csv",stringsAsFactors = F)
+  if(model=='oral-two-dose')        output.typ   <- read.csv("./examples/oral-two-dose-v33-typ.csv",stringsAsFactors = F)
+  if(model=='oral-two-dose')        indivsam.obs <- read.csv("./examples/oral-two-dose-v33-obs.csv",stringsAsFactors = F)
+  if(model=='oral-two-dose' & VVPC) indivsam.vpc <- read.csv("./examples/oral-two-dose-v33-vpc.csv",stringsAsFactors = F)
   # oral-absorption two dose
-  if(model=='oral-two-cov')        output.typ   <- read.csv("../flat-files/vachette-example-oral-two-cov-v1-typ.csv",stringsAsFactors = F)
-  if(model=='oral-two-cov')        indivsam.obs <- read.csv("../flat-files/vachette-example-oral-two-cov-v1-obs.csv",stringsAsFactors = F)
-  if(model=='oral-two-cov' & VVPC) indivsam.vpc <- read.csv("../flat-files/vachette-example-oral-two-cov-v1-vpc.csv",stringsAsFactors = F)
+  if(model=='oral-two-cov')        output.typ   <- read.csv("./examples/oral-two-cov-v1-typ.csv",stringsAsFactors = F)
+  if(model=='oral-two-cov')        indivsam.obs <- read.csv("./examples/oral-two-cov-v1-obs.csv",stringsAsFactors = F)
+  if(model=='oral-two-cov' & VVPC) indivsam.vpc <- read.csv("./examples/oral-two-cov-v1-vpc.csv",stringsAsFactors = F)
   # indirect-response
-  if(model=='indirect-response')        output.typ   <- read.csv("../flat-files/vachette-example-indirect-response-v30-typ.csv",stringsAsFactors = F)
-  if(model=='indirect-response')        indivsam.obs <- read.csv("../flat-files/vachette-example-indirect-response-v30-obs.csv",stringsAsFactors = F)
-  if(model=='indirect-response' & VVPC) indivsam.vpc <- read.csv("../flat-files/vachette-example-indirect-response-v30-vpc.csv",stringsAsFactors = F)
+  if(model=='indirect-response')        output.typ   <- read.csv("./examples/indirect-response-v30-typ.csv",stringsAsFactors = F)
+  if(model=='indirect-response')        indivsam.obs <- read.csv("./examples/indirect-response-v30-obs.csv",stringsAsFactors = F)
+  if(model=='indirect-response' & VVPC) indivsam.vpc <- read.csv("./examples/indirect-response-v30-vpc.csv",stringsAsFactors = F)
   # indirect-response
-  if(model=='pembro')        output.typ   <- read.csv("../flat-files/vachette-example-pembro-v1-typ.csv",stringsAsFactors = F)
-  if(model=='pembro')        indivsam.obs <- read.csv("../flat-files/vachette-example-pembro-v1-obs.csv",stringsAsFactors = F)
-  if(model=='pembro' & VVPC) indivsam.vpc <- read.csv("../flat-files/vachette-example-pembro-v1-vpc.csv",stringsAsFactors = F)
+  if(model=='pembro')        output.typ   <- read.csv("./examples/pembro-v1-typ.csv",stringsAsFactors = F)
+  if(model=='pembro')        indivsam.obs <- read.csv("./examples/pembro-v1-obs.csv",stringsAsFactors = F)
+  if(model=='pembro' & VVPC) indivsam.vpc <- read.csv("./examples/pembro-v1-vpc.csv",stringsAsFactors = F)
 }
 
 # -------------------------------------------------
@@ -904,11 +904,11 @@ for(i.ucov in c(1:dim(tab.ucov)[1]))
 ###########################################################################
 
 # Save Vachette transformed data
-write.table(output.typ,paste0("../tables/vachette-curves-",model,"-",tag,".csv"),
+write.table(output.typ,paste0("./tables/vachette-curves-",model,"-",tag,".csv"),
             row.names=F,col.names=T,sep=',',na='.',quote=F)
-if (!VVPC) write.table(obs.all,paste0("../tables/vachette-obs-query-",model,"-",tag,".csv"),
+if (!VVPC) write.table(obs.all,paste0("./tables/vachette-obs-query-",model,"-",tag,".csv"),
                        row.names=F,col.names=T,sep=',',na='.',quote=F)
-if (VVPC)  write.table(obs.all,paste0("../tables/vachette-sim-query-",model,"-",tag,".csv"),
+if (VVPC)  write.table(obs.all,paste0("./tables/vachette-sim-query-",model,"-",tag,".csv"),
                        row.names=F,col.names=T,sep=',',na='.',quote=F)
 
 ###########################################################################

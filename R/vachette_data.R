@@ -4,11 +4,10 @@
 #' @param indivsam.obs Observed data of class \code{data.frame}
 #' @param output.typ Typ data of class \code{data.frame}
 #' @param indivsam.vpc VPC data of class  \code{data.frame}
-#' @param vachette.covs Character vector of covariate names
-#' @param ref.cov1 Reference covariate value in data
+#' @param vachette.covs Named character vector of covariate names and reference values
 #' @param ref.dose Reference dose value in data
 #' @param IIV_CORR Logical; if IIV corrections performed
-#' @param error Character; options are \code{"proportional"} or \code{"additive"}
+#' @param error Character; options are \code{"proportional"} or \code{"additive"}. Default is \code{"proportional"}
 #' @param model.name Character; optional model name for plot output
 #'
 #' @return `vachette_data`
@@ -25,7 +24,6 @@ vachette_data <-
            output.typ,
            indivsam.vpc = NULL,
            vachette.covs,
-           ref.cov1,
            ref.dose,
            IIV_CORR = FALSE,
            error = c("proportional", "additive"),
@@ -34,7 +32,7 @@ vachette_data <-
   # *Enhancement support tidy evaluation of vachette.covs
 
   # data QC checks to perform on obs, typ, vpc data
-  stopifnot(vachette.covs %in% names(indivsam.obs))
+  stopifnot(names(vachette.covs) %in% names(indivsam.obs))
   # Region is the Vachette terminology for the time between two dose administrations
   ref.region <- ref.dose
   # "Dummy" observations replicate number
@@ -49,11 +47,11 @@ vachette_data <-
     PROP_TR <- FALSE
   }
 
-  stopifnot(vachette.covs %in% names(output.typ))
+  stopifnot(names(vachette.covs) %in% names(output.typ))
 
   if (!is.null(indivsam.vpc)) {
     VVPC <- TRUE
-    stopifnot(vachette.covs %in% names(indivsam.vpc))
+    stopifnot(names(vachette.covs) %in% names(indivsam.vpc))
     if (IIV_CORR) {
       warning("indivsam.vpc argument used with IIV_CORR = TRUE, setting IIV_CORR = FALSE")
       IIV_CORR <- FALSE
@@ -67,23 +65,23 @@ vachette_data <-
 
   # Retain required columns
   indivsam.obs  <-
-    indivsam.obs %>% dplyr::select(isim, ID, x, PRED, IPRED, OBS, dplyr::all_of(vachette.covs), dosenr)
+    indivsam.obs %>% dplyr::select(isim, ID, x, PRED, IPRED, OBS, dplyr::all_of(names(vachette.covs)), dosenr)
   indivsam.vpc  <-
-    indivsam.vpc %>% dplyr::select(isim, ID, x, PRED, IPRED, OBS, dplyr::all_of(vachette.covs), dosenr)
+    indivsam.vpc %>% dplyr::select(isim, ID, x, PRED, IPRED, OBS, dplyr::all_of(names(vachette.covs)), dosenr)
 
   # Extract last observed x (look for max x/time in obs and sim data)
   xstop <- max(indivsam.obs$x,indivsam.vpc$x)
   # Define unique covariate combination as new 'COV' column.
   obs.orig <- indivsam.obs %>%
-    mutate(COV = paste(!!!syms(vachette.covs)))
+    mutate(COV = paste(!!!syms(names(vachette.covs))))
   sim.orig <- indivsam.vpc %>%
-    mutate(COV = paste(!!!syms(vachette.covs)))
+    mutate(COV = paste(!!!syms(names(vachette.covs))))
   output.typ <- output.typ %>%
-    mutate(COV = paste(!!!syms(vachette.covs)))
+    mutate(COV = paste(!!!syms(names(vachette.covs))))
 
   vachette_data_env <- environment()
 
-  .define_and_enumerate_regions(output.typ, obs.orig, sim.orig, vachette.covs, ref.cov1, ref.dose, ref.region) %>%
+  .define_and_enumerate_regions(output.typ, obs.orig, sim.orig, vachette.covs, ref.dose, ref.region) %>%
     list2env(envir = vachette_data_env)
 
   # Apply IIV Correction
@@ -110,7 +108,6 @@ vachette_data <-
     obs.orig = obs.orig,
     sim.orig = sim.orig,
     tab.ucov = tab.ucov,
-    ref.cov1 = ref.cov1,
     ref.region = ref.region,
     ref.dose = ref.dose,
     xstop = xstop,
@@ -128,7 +125,7 @@ update.vachette_data <- function(vachette_data, ...) {
   vachette_data
 }
 
-.define_and_enumerate_regions <- function(output.typ, obs.orig, sim.orig, vachette.covs, ref.cov1, ref.dose, ref.region) {
+.define_and_enumerate_regions <- function(output.typ, obs.orig, sim.orig, vachette.covs, ref.dose, ref.region) {
   # ----- Define regions and provide a number to all combined covariate effects ----
   # Region number
   output.typ$region  <- NA
@@ -149,7 +146,7 @@ update.vachette_data <- function(vachette_data, ...) {
   tab.ucov  <- NULL # Table with ucov properties
 
   # Get all covariate combinations
-  comb.ucov <- output.typ %>% tidyr::expand(!!!syms(vachette.covs))
+  comb.ucov <- output.typ %>% tidyr::expand(!!!syms(names(vachette.covs)))
 
   # Collect unique covariate/dose combinations and define region.type
   # Add to info to data frames
@@ -158,7 +155,7 @@ update.vachette_data <- function(vachette_data, ...) {
     for(i in c(1:dim(comb.ucov)[1])) #e.g., unique values of covariates nrow(comb.ucov)
     {
       # Get number of doses for each covariate combination:
-      z <- output.typ %>% filter(!!sym(vachette.covs) == comb.ucov[vachette.covs][[1]][i])
+      z <- output.typ %>% filter(!!sym(names(vachette.covs)) == comb.ucov[names(vachette.covs)][[1]][i])
       ndose <- length(unique(z$dosenr))
       for(idose in c(1:ndose))
       {
@@ -168,17 +165,17 @@ update.vachette_data <- function(vachette_data, ...) {
         # New unique combination
         n.ucov <- n.ucov + 1
         add <- data.frame(ucov = n.ucov) %>%
-          mutate(!!vachette.covs := comb.ucov[vachette.covs][[1]][i],
+          mutate(!!names(vachette.covs) := comb.ucov[names(vachette.covs)][[1]][i],
                  region = idose,
                  region.type = region.type)
         tab.ucov <- rbind(tab.ucov, add)
 
         # Selection of new unique combination
-        sel.typ  <- output.typ[[vachette.covs]] == comb.ucov[vachette.covs][[1]][i] &
+        sel.typ  <- output.typ[[names(vachette.covs)]] == comb.ucov[names(vachette.covs)][[1]][i] &
           output.typ$dosenr == idose
-        sel.obs  <- obs.orig[[vachette.covs]] == comb.ucov[vachette.covs][[1]][i] &
+        sel.obs  <- obs.orig[[names(vachette.covs)]] == comb.ucov[names(vachette.covs)][[1]][i] &
           obs.orig$dosenr == idose
-        sel.sim  <- sim.orig[[vachette.covs]] == comb.ucov[vachette.covs][[1]][i] &
+        sel.sim  <- sim.orig[[names(vachette.covs)]] == comb.ucov[names(vachette.covs)][[1]][i] &
           sim.orig$dosenr == idose
 
         # Add new unique combination info
@@ -198,69 +195,93 @@ update.vachette_data <- function(vachette_data, ...) {
   }
 
   # To do, improve to account for n vachette.covs
-  # if(length(vachette.covs)==2)
-  # {
-  #   for(i in c(1:dim(comb.ucov)[1]))
-  #   {
-  #     # Get number of doses for covariate combination:
-  #     z <- output.typ %>% filter(vachette.cov1 == comb.ucov$vachette.cov1[i] &
-  #                                  vachette.cov2 == comb.ucov$vachette.cov2[i])
-  #     ndose <- length(unique(z$dosenr))
-  #
-  #     for(idose in c(1:ndose))
-  #     {
-  #       if (idose == ndose) region.type <- 'open'
-  #       if (idose <  ndose) region.type <- 'closed'
-  #
-  #       # New unique combination
-  #       n.ucov <- n.ucov + 1
-  #       add <- data.frame(ucov = n.ucov,
-  #                         vachette.cov1 = comb.ucov$vachette.cov1[i],
-  #                         vachette.cov2 = comb.ucov$vachette.cov2[i],
-  #                         region = idose,
-  #                         region.type = region.type)
-  #       tab.ucov <- rbind(tab.ucov, add)
-  #
-  #       # Selection of new unique combination
-  #       sel.typ  <- output.typ$vachette.cov1 == comb.ucov$vachette.cov1[i] &
-  #         output.typ$vachette.cov2 == comb.ucov$vachette.cov2[i] &
-  #         output.typ$dosenr == idose
-  #       sel.obs  <- obs.orig$vachette.cov1 == comb.ucov$vachette.cov1[i] &
-  #         obs.orig$vachette.cov2 == comb.ucov$vachette.cov2[i] &
-  #         obs.orig$dosenr == idose
-  #       sel.sim  <- sim.orig$vachette.cov1 == comb.ucov$vachette.cov1[i] &
-  #         sim.orig$vachette.cov2 == comb.ucov$vachette.cov2[i] &
-  #         sim.orig$dosenr == idose
-  #
-  #       # Add new unique combination info
-  #       output.typ$region[sel.typ]   <- idose
-  #       obs.orig$region[sel.obs]     <- idose
-  #       sim.orig$region[sel.sim]     <- idose
-  #
-  #       output.typ$ucov[sel.typ]   <- n.ucov
-  #       obs.orig$ucov[sel.obs]     <- n.ucov
-  #       sim.orig$ucov[sel.sim]     <- n.ucov
-  #
-  #       output.typ$region.type[sel.typ]   <- region.type
-  #       obs.orig$region.type[sel.obs]     <- region.type
-  #       sim.orig$region.type[sel.sim]     <- region.type
-  #     }
-  #   }
-  # }
+  if(length(vachette.covs) > 1)
+  {
+    vars <- names(vachette.covs)
+
+    for(i in c(1:dim(comb.ucov)[1]))
+    {
+      filter_query <- paste0(vars, "==", "comb.ucov$", vars, "[i]", collapse = " & ")
+      # Get number of doses for covariate combination:
+      z <- output.typ %>% filter(eval(parse(text = filter_query)))
+
+      ndose <- length(unique(z$dosenr))
+
+      for(idose in c(1:ndose))
+      {
+        if (idose == ndose) region.type <- 'open'
+        if (idose <  ndose) region.type <- 'closed'
+
+        # New unique combination
+        n.ucov <- n.ucov + 1
+
+        add <- data.frame(ucov = n.ucov)
+        vals <- comb.ucov %>% slice(i)
+        add[vars] <- vals
+        add <- mutate(add, region = idose,
+                      region.type = region.type)
+
+        tab.ucov <- rbind(tab.ucov, add)
+        filter_query_typ <- paste0(
+          paste0("output.typ$", vars, "==", "comb.ucov$", vars, "[i]", collapse = " & "),
+          " & output.typ$dosenr == idose"
+        )
+        filter_query_obs <- paste0(
+          paste0("obs.orig$", vars, "==", "comb.ucov$", vars, "[i]", collapse = " & "),
+          " & obs.orig$dosenr == idose"
+        )
+        filter_query_sim <- paste0(
+          paste0("sim.orig$", vars, "==", "comb.ucov$", vars, "[i]", collapse = " & "),
+          " & sim.orig$dosenr == idose"
+        )
+        # Selection of new unique combination
+        sel.typ <- eval(parse(text=filter_query_typ))
+        sel.obs <- eval(parse(text=filter_query_obs))
+        sel.sim <- eval(parse(text=filter_query_sim))
+        # sel.typ  <- output.typ$vachette.cov1 == comb.ucov$vachette.cov1[i] &
+        #   output.typ$vachette.cov2 == comb.ucov$vachette.cov2[i] &
+        #   output.typ$dosenr == idose
+        # sel.obs  <- obs.orig$vachette.cov1 == comb.ucov$vachette.cov1[i] &
+        #   obs.orig$vachette.cov2 == comb.ucov$vachette.cov2[i] &
+        #   obs.orig$dosenr == idose
+        # sel.sim  <- sim.orig$vachette.cov1 == comb.ucov$vachette.cov1[i] &
+        #   sim.orig$vachette.cov2 == comb.ucov$vachette.cov2[i] &
+        #   sim.orig$dosenr == idose
+
+        # Add new unique combination info
+        output.typ$region[sel.typ]   <- idose
+        obs.orig$region[sel.obs]     <- idose
+        sim.orig$region[sel.sim]     <- idose
+
+        output.typ$ucov[sel.typ]   <- n.ucov
+        obs.orig$ucov[sel.obs]     <- n.ucov
+        sim.orig$ucov[sel.sim]     <- n.ucov
+
+        output.typ$region.type[sel.typ]   <- region.type
+        obs.orig$region.type[sel.obs]     <- region.type
+        sim.orig$region.type[sel.sim]     <- region.type
+      }
+    }
+  }
   # output.typ <<- output.typ
   # obs.orig <<- obs.orig
   # sim.orig <<- sim.orig
 
   tab.ucov$ref <- "No"
+
   for(i.ucov in c(1:dim(tab.ucov)[1]))
   {
-    if(length(vachette.covs)==1)
-      if(tab.ucov[i.ucov, vachette.covs] == ref.cov1 && tab.ucov[i.ucov, "region"] == ref.region)
-        tab.ucov[i.ucov, "ref"] <- "Yes"
-    #make working for n covs
-    # if(nvachette.covs==2)
-    #   if(tab.ucov$vachette.cov1[i.ucov] == ref.cov1 & tab.ucov$vachette.cov2[i.ucov] == ref.cov2 & tab.ucov$region[i.ucov] == ref.region)
-    #     tab.ucov$ref[i.ucov] <- "Yes"
+    # if(length(vachette.covs)==1)
+    #   if(tab.ucov[i.ucov, vachette.covs] == ref.cov1 && tab.ucov[i.ucov, "region"] == ref.region)
+    #     tab.ucov[i.ucov, "ref"] <- "Yes"
+    # # where both covs equal ref values in table, set yes
+    # if(length(vachette.covs)>1)
+      condition <- paste0(
+      paste0("tab.ucov$", names(vachette.covs), "[i.ucov]", "==", vachette.covs, collapse = " & "),
+      " & tab.ucov$region[i.ucov] == ref.region"
+    )
+      if(eval(parse(text = condition)))
+        tab.ucov$ref[i.ucov] <- "Yes"
   }
 
   # Add reference flag to output.typ
@@ -282,13 +303,15 @@ update.vachette_data <- function(vachette_data, ...) {
 #' Apply vachette transformations
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#' @param LM_REFINE
-#' @param tolend
-#' @param tolnoise
-#' @param step.x.factor
-#' @param ngrid.open.end
+#' @param LM_REFINE Logical; Set to \code{TRUE} to refine landmark
+#' @param tolend Numeric;
+#' @param tolnoise Numeric;
+#' @param step.x.factor Numeric;
+#' @param ngrid.open.end Numeric;
+#' @param w.init Numeric; Savitzky Golay smoothing.
+#' @param w1.refine Numeric; Savitzky Golay smoothing, first derivative.
+#' @param w2.refine Numeric; Savitzky Golay smoothing, second derivative.
 #'
-#' @export
 #' @name apply_transformations
 #' @export
 apply_transformations <- function(vachette_data, ...) UseMethod("apply_transformations")
@@ -301,7 +324,10 @@ apply_transformations.vachette_data <-
            tolend = 0.001,
            tolnoise = 1e-8,
            step.x.factor = 1.5,
-           ngrid.open.end = 100) {
+           ngrid.open.end = 100,
+           w.init = 17,     # Savitzky Golay smoothing - initial landmarks
+           w1.refine = 7,     # Savitzky Golay smoothing - refine landmarks - first derivative
+           w2.refine = 5) {
 
 
   stopifnot(inherits(vachette_data, "vachette_data"))
@@ -322,7 +348,6 @@ apply_transformations.vachette_data <-
   stopifnot(!is.null(sim.orig))
 
   vachette.covs <- vachette_data$vachette.covs
-  ref.cov1 <- vachette_data$ref.cov1
   ref.region <- vachette_data$ref.region
   ref.dose <- vachette_data$ref.dose
   #lines 399-760
@@ -333,16 +358,23 @@ apply_transformations.vachette_data <-
     # A. ----- Define reference and query typical curves and observations to transform  ----------
 
     # Ref: may change (by extensions), so define (again) every new combination
-    if(length(vachette.covs)==1) ref <- output.typ %>% filter(!is.na(region) & !!sym(vachette.covs) == ref.cov1 & region == ref.region)
-    if(length(vachette.covs)==2) ref <- output.typ %>% filter(!is.na(region) & vachette.cov1 == ref.cov1 & vachette.cov2 == ref.cov2 & region == ref.region)
+    # if(length(vachette.covs)==1) {
+    #    ref <- output.typ %>% filter(!is.na(region) & !!sym(names(vachette.covs)) == vachette.covs & region == ref.region)
+    # }
+    # if(length(vachette.covs)> 1) {
+    filter_query <- paste0("!is.na(region) & ", paste0(names(vachette.covs), "==", vachette.covs, collapse = " & "), " & region == ref.region")
+    ref <- output.typ %>% filter(eval(parse(text=filter_query)))
+    #}
     ref.ucov <- unique(ref$ucov)
     if(length(ref.ucov) != 1) stop("Error: length ref.ucov != 1")     # A single ref only possible
     ref.region.type <- tab.ucov$region.type[tab.ucov$ucov==ref.ucov]
     # ref = Typical reference curve
 
-    # Query: may be the same as reference
-    query.cov1         <- tab.ucov$vachette.cov1[tab.ucov$ucov==i.ucov]
-    if(length(vachette.covs)==2) query.cov2         <- tab.ucov$vachette.cov2[tab.ucov$ucov==i.ucov]
+    # Query: may be the same as reference - code does not appear to be used?
+    # query.cov1         <- tab.ucov$vachette.cov1[tab.ucov$ucov==i.ucov]
+    # if(length(vachette.covs)==2) {
+    #   query.cov2         <- tab.ucov$vachette.cov2[tab.ucov$ucov==i.ucov]
+    # }
     query.region       <- tab.ucov$region[tab.ucov$ucov==i.ucov]
     query.region.type  <- tab.ucov$region.type[tab.ucov$ucov==i.ucov]
 
@@ -377,10 +409,10 @@ apply_transformations.vachette_data <-
     # Large stepsize -> large tol
     tolapply <- tolnoise*(output.typ$x[2]-output.typ$x[1])   # Grid stepsize
     # get ref landmarks
-    my.ref.lm.init    <- get.x.multi.landmarks(ref$x,ref$y,w=17,tol=tolapply) #w argument, user specified?
+    my.ref.lm.init    <- get.x.multi.landmarks(ref$x,ref$y,w=w.init,tol=tolapply) #w argument, user specified?
     my.ref.lm.init$y  <- approx(ref$x,ref$y, xout=my.ref.lm.init$x)$y #interpolation
     # get query landmarks
-    my.query.lm.init    <- get.x.multi.landmarks(query$x,query$y,w=17,tol=tolapply)
+    my.query.lm.init    <- get.x.multi.landmarks(query$x,query$y,w=w.init,tol=tolapply)
     my.query.lm.init$y  <- approx(query$x,query$y, xout=my.query.lm.init$x)$y
 
     if(!LM_REFINE)
@@ -390,10 +422,10 @@ apply_transformations.vachette_data <-
     }
     if(LM_REFINE)
     {
-      my.ref.lm.refined    <- refine.x.multi.landmarks(x=ref$x,y=ref$y,lm=my.ref.lm.init,tol=0.01*tolapply)
+      my.ref.lm.refined    <- refine.x.multi.landmarks(x=ref$x,y=ref$y,lm=my.ref.lm.init,tol=0.01*tolapply, w1=w1.refine,w2=w2.refine)
       my.ref.lm.refined$y  <- approx(ref$x, ref$y, xout=my.ref.lm.refined$x)$y
 
-      my.query.lm.refined    <- refine.x.multi.landmarks(query$x,query$y,lm=my.query.lm.init,tol=0.01*tolapply)
+      my.query.lm.refined    <- refine.x.multi.landmarks(query$x,query$y,lm=my.query.lm.init,tol=0.01*tolapply, w1=w1.refine,w2=w2.refine)
       my.query.lm.refined$y  <- approx(query$x,query$y, xout=my.query.lm.refined$x)$y
     }
 
