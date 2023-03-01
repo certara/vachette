@@ -7,7 +7,7 @@
 #' @param vachette.covs Named character vector of covariate names and reference values
 #' @param ref.dose Reference dose value in data
 #' @param IIV_CORR Logical; if IIV corrections performed
-#' @param error Character; options are \code{"proportional"} or \code{"additive"}
+#' @param error Character; options are \code{"proportional"} or \code{"additive"}. Default is \code{"proportional"}
 #' @param model.name Character; optional model name for plot output
 #'
 #' @return `vachette_data`

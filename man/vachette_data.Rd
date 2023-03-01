@@ -28,7 +28,7 @@ vachette_data(
 
 \item{IIV_CORR}{Logical; if IIV corrections performed}
 
-\item{error}{Character; options are \code{"proportional"} or \code{"additive"}}
+\item{error}{Character; options are \code{"proportional"} or \code{"additive"}. Default is \code{"proportional"}}
 
 \item{model.name}{Character; optional model name for plot output}
 }
