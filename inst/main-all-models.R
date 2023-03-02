@@ -35,7 +35,7 @@ models <- c("iv",
 nmodels <- length(models)
 
 # Model example to run
-run.model  <- "oral-two-cov"
+run.model  <- "sigmoid"
 # run.model  <- "pembro"
 
 tag        <- "v56"
@@ -240,33 +240,33 @@ if(SIM_OBS)
 if(!SIM_OBS) # Read flat file
 {
   # iv
-  if(model=='iv')        output.typ   <- read.csv("./examples/iv-v35-typ.csv",stringsAsFactors = F)
-  if(model=='iv')        indivsam.obs <- read.csv("./examples/iv-v35-obs.csv",stringsAsFactors = F)
-  if(model=='iv' & VVPC) indivsam.vpc <- read.csv("./examples/iv-v35-vpc.csv",stringsAsFactors = F)
+  if(model=='iv')        output.typ   <- read.csv("./examples/iv-typ.csv",stringsAsFactors = F)
+  if(model=='iv')        indivsam.obs <- read.csv("./examples/iv-obs.csv",stringsAsFactors = F)
+  if(model=='iv' & VVPC) indivsam.vpc <- read.csv("./examples/iv-vpc.csv",stringsAsFactors = F)
   # sigmoid
-  if(model=='sigmoid')        output.typ   <- read.csv("./examples/sigmoid-v30-typ.csv",stringsAsFactors = F)
-  if(model=='sigmoid')        indivsam.obs <- read.csv("./examples/sigmoid-v30-obs.csv",stringsAsFactors = F)
-  if(model=='sigmoid' & VVPC) indivsam.vpc <- read.csv("./examples/sigmoid-v30-vpc.csv",stringsAsFactors = F)
+  if(model=='sigmoid')        output.typ   <- read.csv("./examples/sigmoid-typ.csv",stringsAsFactors = F)
+  if(model=='sigmoid')        indivsam.obs <- read.csv("./examples/sigmoid-obs.csv",stringsAsFactors = F)
+  if(model=='sigmoid' & VVPC) indivsam.vpc <- read.csv("./examples/sigmoid-vpc.csv",stringsAsFactors = F)
   # oral-absorption
-  if(model=='oral-absorption')        output.typ   <- read.csv("./examples/oral-absorption-v38-typ.csv",stringsAsFactors = F)
-  if(model=='oral-absorption')        indivsam.obs <- read.csv("./examples/oral-absorption-v38-obs.csv",stringsAsFactors = F)
-  if(model=='oral-absorption' & VVPC) indivsam.vpc <- read.csv("./examples/oral-absorption-v38-vpc.csv",stringsAsFactors = F)
+  if(model=='oral-absorption')        output.typ   <- read.csv("./examples/oral-absorption-typ.csv",stringsAsFactors = F)
+  if(model=='oral-absorption')        indivsam.obs <- read.csv("./examples/oral-absorption-obs.csv",stringsAsFactors = F)
+  if(model=='oral-absorption' & VVPC) indivsam.vpc <- read.csv("./examples/oral-absorption-vpc.csv",stringsAsFactors = F)
   # oral-absorption two dose
   if(model=='oral-two-dose')        output.typ   <- read.csv("./examples/oral-two-dose-v33-typ.csv",stringsAsFactors = F)
   if(model=='oral-two-dose')        indivsam.obs <- read.csv("./examples/oral-two-dose-v33-obs.csv",stringsAsFactors = F)
   if(model=='oral-two-dose' & VVPC) indivsam.vpc <- read.csv("./examples/oral-two-dose-v33-vpc.csv",stringsAsFactors = F)
   # oral-absorption two dose
-  if(model=='oral-two-cov')        output.typ   <- read.csv("./examples/oral-two-cov-v1-typ.csv",stringsAsFactors = F)
-  if(model=='oral-two-cov')        indivsam.obs <- read.csv("./examples/oral-two-cov-v1-obs.csv",stringsAsFactors = F)
-  if(model=='oral-two-cov' & VVPC) indivsam.vpc <- read.csv("./examples/oral-two-cov-v1-vpc.csv",stringsAsFactors = F)
+  if(model=='oral-two-cov')        output.typ   <- read.csv("./examples/oral-two-cov-typ.csv",stringsAsFactors = F)
+  if(model=='oral-two-cov')        indivsam.obs <- read.csv("./examples/oral-two-cov-obs.csv",stringsAsFactors = F)
+  if(model=='oral-two-cov' & VVPC) indivsam.vpc <- read.csv("./examples/oral-two-cov-vpc.csv",stringsAsFactors = F)
   # indirect-response
-  if(model=='indirect-response')        output.typ   <- read.csv("./examples/indirect-response-v30-typ.csv",stringsAsFactors = F)
-  if(model=='indirect-response')        indivsam.obs <- read.csv("./examples/indirect-response-v30-obs.csv",stringsAsFactors = F)
-  if(model=='indirect-response' & VVPC) indivsam.vpc <- read.csv("./examples/indirect-response-v30-vpc.csv",stringsAsFactors = F)
+  if(model=='indirect-response')        output.typ   <- read.csv("./examples/indirect-response-typ.csv",stringsAsFactors = F)
+  if(model=='indirect-response')        indivsam.obs <- read.csv("./examples/indirect-response-obs.csv",stringsAsFactors = F)
+  if(model=='indirect-response' & VVPC) indivsam.vpc <- read.csv("./examples/indirect-response-vpc.csv",stringsAsFactors = F)
   # indirect-response
-  if(model=='pembro')        output.typ   <- read.csv("./examples/pembro-v1-typ.csv",stringsAsFactors = F)
-  if(model=='pembro')        indivsam.obs <- read.csv("./examples/pembro-v1-obs.csv",stringsAsFactors = F)
-  if(model=='pembro' & VVPC) indivsam.vpc <- read.csv("./examples/pembro-v1-vpc.csv",stringsAsFactors = F)
+  if(model=='pembro')        output.typ   <- read.csv("./examples/pembro-typ.csv",stringsAsFactors = F)
+  if(model=='pembro')        indivsam.obs <- read.csv("./examples/pembro-obs.csv",stringsAsFactors = F)
+  if(model=='pembro' & VVPC) indivsam.vpc <- read.csv("./examples/pembro-vpc.csv",stringsAsFactors = F)
 }
 
 # -------------------------------------------------
