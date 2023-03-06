@@ -245,7 +245,8 @@ if(!SIM_OBS) # Read flat file
   if(model=='iv' & VVPC) indivsam.vpc <- read.csv("./examples/iv-vpc.csv",stringsAsFactors = F)
   # sigmoid
   if(model=='sigmoid')        output.typ   <- read.csv("./examples/sigmoid-typ.csv",stringsAsFactors = F)
-  if(model=='sigmoid')        indivsam.obs <- read.csv("./examples/sigmoid-obs.csv",stringsAsFactors = F)
+  if(model=='sigmoid')        indivsam.obs <- read.csv("./examples/sigmoid-obs.csv",stringsAsFactors = F) |>
+                                              rename("ID" = id)
   if(model=='sigmoid' & VVPC) indivsam.vpc <- read.csv("./examples/sigmoid-vpc.csv",stringsAsFactors = F)
   # oral-absorption
   if(model=='oral-absorption')        output.typ   <- read.csv("./examples/oral-absorption-typ.csv",stringsAsFactors = F)
