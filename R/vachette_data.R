@@ -386,7 +386,6 @@ apply_transformations.vachette_data <-
       mutate(ref = tab.ucov$ref[i.ucov])    # Flag for reference
 
     # We have to run Vachette twice if observation AND simulated replicates have to be generated (for VPC)
-    # @James: you may be able to do this more efficient - leverage tidyvpc here?
 
     VVPC <- vachette_data$VVPC
     # Observations
