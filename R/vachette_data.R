@@ -263,9 +263,6 @@ update.vachette_data <- function(vachette_data, ...) {
       }
     }
   }
-  # output.typ <<- output.typ
-  # obs.orig <<- obs.orig
-  # sim.orig <<- sim.orig
 
   tab.ucov$ref <- "No"
 
@@ -277,7 +274,7 @@ update.vachette_data <- function(vachette_data, ...) {
     # # where both covs equal ref values in table, set yes
     # if(length(vachette.covs)>1)
       condition <- paste0(
-      paste0("tab.ucov$", names(vachette.covs), "[i.ucov]", "==", vachette.covs, collapse = " & "),
+      paste0("as.character(tab.ucov$", names(vachette.covs), "[i.ucov])", "==", "'", vachette.covs, "'", collapse = " && "),
       " & tab.ucov$region[i.ucov] == ref.region"
     )
       if(eval(parse(text = condition)))
@@ -353,28 +350,33 @@ apply_transformations.vachette_data <-
   #lines 399-760
   # # Loop for all combinations of covariates
   for(i.ucov in c(1:dim(tab.ucov)[1])) {
-    # i.ucov <- 1
-
     # A. ----- Define reference and query typical curves and observations to transform  ----------
 
     # Ref: may change (by extensions), so define (again) every new combination
-    # if(length(vachette.covs)==1) {
-    #    ref <- output.typ %>% filter(!is.na(region) & !!sym(names(vachette.covs)) == vachette.covs & region == ref.region)
-    # }
-    # if(length(vachette.covs)> 1) {
-    filter_query <- paste0("!is.na(region) & ", paste0(names(vachette.covs), "==", vachette.covs, collapse = " & "), " & region == ref.region")
-    ref <- output.typ %>% filter(eval(parse(text=filter_query)))
-    #}
+    filter_query <-
+      paste0(
+        "!is.na(region) & ",
+        paste0(
+          'as.character(',
+          names(vachette.covs),
+          ')',
+          "==",
+          "'",
+          vachette.covs,
+          "'",
+          collapse = " & "
+        ),
+        " & region == ref.region"
+      )
+
+    ref <- output.typ %>% filter(eval(parse(text = filter_query)))
+
     ref.ucov <- unique(ref$ucov)
+
     if(length(ref.ucov) != 1) stop("Error: length ref.ucov != 1")     # A single ref only possible
+
     ref.region.type <- tab.ucov$region.type[tab.ucov$ucov==ref.ucov]
     # ref = Typical reference curve
-
-    # Query: may be the same as reference - code does not appear to be used?
-    # query.cov1         <- tab.ucov$vachette.cov1[tab.ucov$ucov==i.ucov]
-    # if(length(vachette.covs)==2) {
-    #   query.cov2         <- tab.ucov$vachette.cov2[tab.ucov$ucov==i.ucov]
-    # }
     query.region       <- tab.ucov$region[tab.ucov$ucov==i.ucov]
     query.region.type  <- tab.ucov$region.type[tab.ucov$ucov==i.ucov]
 
