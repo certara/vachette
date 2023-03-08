@@ -3,6 +3,7 @@
 #' @import dplyr
 #' @import tidyr
 #' @import prospectr
+#' @importFrom Hmisc approxExtrap
 #' @rawNamespace import(stats, except = c(filter, lag))
 #'
 NULL

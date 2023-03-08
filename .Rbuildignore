@@ -16,4 +16,5 @@
 ^_pkgdown\.yml$
 ^plots$
 ^vachette\.Rproj$
-
+^README\.Rmd$
+^README_files

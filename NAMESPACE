@@ -30,3 +30,4 @@ import(prospectr)
 import(stats, except = c(filter, lag))
 
 import(tidyr)
+importFrom(Hmisc,approxExtrap)

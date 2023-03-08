@@ -1,23 +1,25 @@
+---
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 # vachette
-
 A method for visualization of PMx models.
 
-Vachette builds off previous work done in
-[V2ACHER](https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.12679),
-providing a method to visualize PKPD analyses which are impacted by
-covariate effects.
+Vachette builds off previous work done in [V2ACHER](https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.12679), providing a method to visualize PKPD analyses which are impacted by covariate effects.
 
 ## Installation
 
-**Installation instructions will be available once the Github repository
-has been made public**
+**Installation instructions will be available once the Github repository has been made public**
 
 ## Examples
 
 ### IV
 
-``` r
+```{r iv}
 # Import Example Data
 indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv")) |> 
   dplyr::rename(WT = "vachette.cov1")
@@ -39,13 +41,13 @@ vd <- vd |>
   apply_transformations()
 
 p.vachette(vd)
+  
 ```
 
-![](README_files/figure-gfm/iv-1.png)<!-- -->
 
-### Oral Two-Cov
+### Oral Two-Cov 
 
-``` r
+```{r oral_two_cov}
 indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "oral-two-cov-obs.csv"))
 output.typ  <- read.csv(system.file(package = "vachette", "examples", "oral-two-cov-typ.csv"))
 
@@ -64,13 +66,12 @@ vd <- vd |>
                         w2.refine = 5)
 
 p.vachette(vd)
-```
 
-![](README_files/figure-gfm/oral_two_cov-1.png)<!-- -->
+```
 
 ### Sigmoid
 
-``` r
+```{r sigmoid}
 indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "sigmoid-obs.csv")) |>
   dplyr::rename("ID" = id)
 output.typ  <- read.csv(system.file(package = "vachette", "examples", "sigmoid-typ.csv"))
@@ -90,13 +91,14 @@ vd <- vd |>
                         w2.refine = 5)
 
 p.vachette(vd)
+
+
 ```
 
-![](README_files/figure-gfm/sigmoid-1.png)<!-- -->
 
 ### Oral-Absorption
 
-``` r
+```{r oral_absorption}
 indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "oral-absorption-obs.csv"))
 output.typ  <- read.csv(system.file(package = "vachette", "examples", "oral-absorption-typ.csv"))
 
@@ -115,13 +117,12 @@ vd <- vd |>
                         w2.refine = 5)
 
 p.vachette(vd)
-```
 
-![](README_files/figure-gfm/oral_absorption-1.png)<!-- -->
+```
 
 ### Indirect-Response
 
-``` r
+```{r indirect_response}
 indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "indirect-response-obs.csv"))
 output.typ  <- read.csv(system.file(package = "vachette", "examples", "indirect-response-typ.csv"))
 
@@ -140,16 +141,16 @@ vd <- vd |>
                         w2.refine = 5)
 
 p.vachette(vd)
+
 ```
 
-![](README_files/figure-gfm/indirect_response-1.png)<!-- -->
+
 
 ### Pembro
 
-**Note: The Pemrbo data set contains a categorical covariate e.g.,
-`SCHED`**
+**Note: The Pemrbo data set contains a categorical covariate e.g., `SCHED`**
 
-``` r
+```{r pembro, message=FALSE}
 indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "pembro-obs.csv"))
 output.typ  <- read.csv(system.file(package = "vachette", "examples", "pembro-typ.csv"))
 
@@ -166,23 +167,5 @@ vd <- vd |>
   apply_transformations(w.init = 17,
                         w1.refine = 7,
                         w2.refine = 5)
-```
-
-    ## [1] "**** EXTEND REFERENCE CURVE FOR query i.ucov 1 (Region: 1) *****"
-    ## [1] "**** END EXTENSION *****"
-    ## [1] "**** EXTEND REFERENCE CURVE FOR query i.ucov 2 (Region: 2) *****"
-    ## [1] "**** END EXTENSION *****"
-    ## [1] "**** EXTEND REFERENCE CURVE FOR query i.ucov 4 (Region: 1) *****"
-    ## [1] "**** END EXTENSION *****"
-    ## [1] "**** EXTEND REFERENCE CURVE FOR query i.ucov 5 (Region: 2) *****"
-    ## [1] "**** END EXTENSION *****"
-    ## [1] "**** EXTEND REFERENCE CURVE FOR query i.ucov 7 (Region: 1) *****"
-    ## [1] "**** END EXTENSION *****"
-    ## [1] "**** EXTEND REFERENCE CURVE FOR query i.ucov 9 (Region: 1) *****"
-    ## [1] "**** END EXTENSION *****"
-
-``` r
 p.vachette(vd)
 ```
-
-![](README_files/figure-gfm/pembro-1.png)<!-- -->
