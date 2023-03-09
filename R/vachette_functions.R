@@ -432,3 +432,23 @@ get.y.diff.ref.query <- function(x, query.x.start, query, refGrid, ngrid=100, sc
   return(diff)
 }
 
+
+#' Print \code{vachette_data}
+#'
+#' Print generic used to return information about \code{vachette_data} object
+#'
+#' @param x An \code{vachette_data}.
+#' @param ... Additional args.
+#' @return Returns \code{x} invisibly.
+#' @export
+print.vachette_data <- function(x, ...) {
+  stopifnot(inherits(x, "vachette_data"))
+
+  cat(sprintf("Model Name:\t\t%s", x$model.name), "\n")
+  cat(sprintf("Covariate Names:\t%s", paste0(names(x$vachette.covs), collapse=", ")), "\n")
+  cat(sprintf("Reference Values:\t%s", paste0(paste0(names(x$vachette.covs), "=", x$vachette.covs), collapse = " , ")))
+
+  invisible(x)
+}
+
+
