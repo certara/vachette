@@ -26,8 +26,8 @@ test_that("vachette curves are accurate for oral-two-cov", {
   set.seed(121)
 
   vd <- vachette_data(
-    indivsam.obs = read.csv(system.file(package = "vachette", "examples", "oral-two-cov-v1-obs.csv")),
-    output.typ = read.csv(system.file(package = "vachette", "examples", "oral-two-cov-v1-typ.csv")),
+    indivsam.obs = read.csv(system.file(package = "vachette", "examples", "oral-two-cov-obs.csv")),
+    output.typ = read.csv(system.file(package = "vachette", "examples", "oral-two-cov-typ.csv")),
     vachette.covs =  c("vachette.cov1" = 70, "vachette.cov2" = 30),
     ref.dose = 1
   )
