@@ -29,10 +29,8 @@ vachette_data <-
            error = c("proportional", "additive"),
            model.name = NULL) {
 
-  # *Enhancement support tidy evaluation of vachette.covs
-
-  # data QC checks to perform on obs, typ, vpc data
-  stopifnot(names(vachette.covs) %in% names(indivsam.obs))
+  # Validation Check
+  vachette.covs <- .process_covariates(vachette.covs, indivsam.obs)
   # Region is the Vachette terminology for the time between two dose administrations
   ref.region <- ref.dose
   # "Dummy" observations replicate number
@@ -746,4 +744,48 @@ apply_transformations.vachette_data <-
   update(vachette_data, obs.all=obs.all, curves.all = curves.all, lm.all = lm.all, nseg = nseg)
 
 
+  }
+
+
+.process_covariates <- function(vachette.covs, indivsam.obs) {
+  if (is.null(names(vachette.covs))) {
+    names(vachette.covs) <- vachette.covs
+    cov_names <- vachette.covs
+  } else {
+    cov_names <- names(vachette.covs)
+  }
+  for (i in seq_along(cov_names)) {
+    #browser()
+    cov_name <- cov_names[i]
+    cov_ref_val <- vachette.covs[i]
+    # If name not supplied, expect value as name, then assign name
+    if (cov_name == "") {
+      cov_name <- cov_ref_val
+      names(vachette.covs)[i] <- cov_name
+    }
+    stopifnot(cov_name %in% colnames(indivsam.obs))
+    # Automatically set ref value to median/mode given cont/cat covariate type, if ref value not given
+    # Account for case median is used with even number of values in dataset
+    # - compute median for each subject first, then compute median from there
+
+    if (cov_name == cov_ref_val) {
+      if (suppressWarnings(all(is.na(as.numeric(unlist(indivsam.obs[, cov_name])))))) {
+        cov_ref_val <- .mode(unlist(indivsam.obs[, cov_name]))
+      } else {
+        if (nrow(indivsam.obs) %% 2 == 0) {
+          #indivsam.obs <- dplyr::slice(indivsam.obs, -1) #before midpoint
+          indivsam.obs <- dplyr::slice(indivsam.obs, -nrow(indivsam.obs)) #after midpoint
+        }
+        cov_ref_val <- median(unlist(indivsam.obs[, cov_name]))
+      }
+      stopifnot(cov_ref_val %in% as.character(unlist(indivsam.obs[, cov_name])))
+      vachette.covs[i] <- cov_ref_val
+    }
+  }
+  return(vachette.covs)
+}
+
+.mode <- function(x){
+  uniqv <- unique(x)
+  uniqv[which.max(tabulate(match(x, uniqv)))]
 }

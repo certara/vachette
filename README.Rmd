@@ -44,7 +44,6 @@ p.vachette(vd)
   
 ```
 
-
 ### Oral Two-Cov 
 
 ```{r oral_two_cov}
@@ -148,7 +147,7 @@ p.vachette(vd)
 
 ### Pembro
 
-**Note: The Pemrbo data set contains a categorical covariate e.g., `SCHED`**
+**Note: The Pembro data set contains a categorical covariate e.g., `SCHED`**
 
 ```{r pembro, message=FALSE}
 indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "pembro-obs.csv"))
@@ -158,14 +157,35 @@ vd <-
   vachette_data(
     indivsam.obs,
     output.typ,
-    vachette.covs =  c(SCHED = 'Q2W', ALB = 16),
+    vachette.covs =  c(SCHED = 'Q3W', ALB = 53.5),
     ref.dose = 3,
     model.name = "pembro"
   )
 
+print(vd)
+
+```
+
+If no reference value is specified, the covariate central tendency is used e.g., median for continuous and mode for categorical covariate.
+
+```{r pembro2, message=FALSE}
+vd <-
+  vachette_data(
+    indivsam.obs,
+    output.typ,
+    vachette.covs =  c("SCHED", "ALB"),
+    ref.dose = 3,
+    model.name = "pembro"
+  )
+
+print(vd)
+
+```
+```{r pembro3, message = FALSE}
 vd <- vd |>
   apply_transformations(w.init = 17,
                         w1.refine = 7,
                         w2.refine = 5)
+
 p.vachette(vd)
 ```
