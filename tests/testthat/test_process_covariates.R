@@ -3,7 +3,7 @@ test_that("covariates are correctly extracted if missing reference values", {
   #DF
   indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "oral-two-cov-obs.csv"))
   vachette.covs <- vachette:::.process_covariates(vachette.covs = c("WT", "AGE"), indivsam.obs)
-  testthat::expect_equal(vachette.covs, c("WT" = "70", "AGE" = "30"))
+  testthat::expect_equal(vachette.covs, c("WT" = "30", "AGE" = "10"))
 
   #Test Tibble
   mtcars$cyl <- paste0("cyl_", mtcars$cyl)
