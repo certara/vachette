@@ -146,7 +146,7 @@ p.vachette(vd)
 
 ### Pembro
 
-**Note: The Pemrbo data set contains a categorical covariate e.g.,
+**Note: The Pembro data set contains a categorical covariate e.g.,
 `SCHED`**
 
 ``` r
@@ -157,11 +157,39 @@ vd <-
   vachette_data(
     indivsam.obs,
     output.typ,
-    vachette.covs =  c(SCHED = 'Q2W', ALB = 16),
+    vachette.covs =  c(SCHED = 'Q3W', ALB = 53.5),
     ref.dose = 3,
     model.name = "pembro"
   )
 
+print(vd)
+```
+
+    ## Model Name:      pembro 
+    ## Covariate Names: SCHED, ALB 
+    ## Reference Values:    SCHED=Q3W , ALB=53.5
+
+If no reference value is specified, the covariate central tendency is
+used e.g., median for continuous and mode for categorical covariate.
+
+``` r
+vd <-
+  vachette_data(
+    indivsam.obs,
+    output.typ,
+    vachette.covs =  c("SCHED", "ALB"),
+    ref.dose = 3,
+    model.name = "pembro"
+  )
+
+print(vd)
+```
+
+    ## Model Name:      pembro 
+    ## Covariate Names: SCHED, ALB 
+    ## Reference Values:    SCHED=Q2W , ALB=16
+
+``` r
 vd <- vd |>
   apply_transformations(w.init = 17,
                         w1.refine = 7,
@@ -185,4 +213,4 @@ vd <- vd |>
 p.vachette(vd)
 ```
 
-![](README_files/figure-gfm/pembro-1.png)<!-- -->
+![](README_files/figure-gfm/pembro3-1.png)<!-- -->
