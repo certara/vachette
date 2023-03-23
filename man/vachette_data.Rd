@@ -12,7 +12,8 @@ vachette_data(
   ref.dose,
   IIV_CORR = FALSE,
   error = c("proportional", "additive"),
-  model.name = NULL
+  model.name = NULL,
+  mappings = NULL
 )
 }
 \arguments{
@@ -31,12 +32,25 @@ vachette_data(
 \item{error}{Character; options are \code{"proportional"} or \code{"additive"}. Default is \code{"proportional"}}
 
 \item{model.name}{Character; optional model name for plot output}
+
+\item{mappings}{Named character vector specifying model variable name to column name in input data}
 }
 \value{
 `vachette_data`
 }
 \description{
 Initialize vachette object with required data
+}
+\details{
+Required column names in input \code{data.frame} are:
+\itemize{
+ \item{"ID"}{ - Subject ID}
+ \item{"x"}{ - Typically time}
+ \item{"PRED"}{ - Individual prediction}
+ \item{"IPRED"}{ - Population prediction}
+ \item{"OBS"}{ - DV}
+}
+If the above column names are different in your input data, use the \code{mappings} argument.
 }
 \examples{
 indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv"))

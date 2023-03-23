@@ -9,6 +9,17 @@
 #' @param IIV_CORR Logical; if IIV corrections performed
 #' @param error Character; options are \code{"proportional"} or \code{"additive"}. Default is \code{"proportional"}
 #' @param model.name Character; optional model name for plot output
+#' @param mappings Named character vector specifying model variable name to column name in input data
+#' @details Required column names in input \code{data.frame} are:
+#' \itemize{
+#'  \item{"ID"}{ - Subject ID}
+#'  \item{"x"}{ - Typically time}
+#'  \item{"PRED"}{ - Individual prediction}
+#'  \item{"IPRED"}{ - Population prediction}
+#'  \item{"OBS"}{ - DV}
+#' }
+#' If the above column names are different in your input data, use the \code{mappings} argument.
+#'
 #'
 #' @return `vachette_data`
 #' @export
@@ -27,10 +38,16 @@ vachette_data <-
            ref.dose,
            IIV_CORR = FALSE,
            error = c("proportional", "additive"),
-           model.name = NULL) {
+           model.name = NULL,
+           mappings = NULL) {
 
+  vachette_data_env <- environment()
   # Validation Check
+  .validate_columns(mappings, indivsam.obs, output.typ) %>%
+    list2env(envir = vachette_data_env)
+
   vachette.covs <- .process_covariates(vachette.covs, indivsam.obs)
+
   # Region is the Vachette terminology for the time between two dose administrations
   ref.region <- ref.dose
   # "Dummy" observations replicate number
@@ -76,8 +93,6 @@ vachette_data <-
     mutate(COV = paste(!!!syms(names(vachette.covs))))
   output.typ <- output.typ %>%
     mutate(COV = paste(!!!syms(names(vachette.covs))))
-
-  vachette_data_env <- environment()
 
   .define_and_enumerate_regions(output.typ, obs.orig, sim.orig, vachette.covs, ref.dose, ref.region) %>%
     list2env(envir = vachette_data_env)
@@ -406,6 +421,7 @@ apply_transformations.vachette_data <-
     # Tolerance to apply for finding maximums, minimums and inflection points
     # Small stepsize -> small tolerance
     # Large stepsize -> large tol
+    #tolapply = distance between second and first x obs * tolnoise
     tolapply <- tolnoise*(output.typ$x[2]-output.typ$x[1])   # Grid stepsize
     # get ref landmarks
     my.ref.lm.init    <- get.x.multi.landmarks(ref$x,ref$y,w=w.init,tol=tolapply) #w argument, user specified?
@@ -413,6 +429,9 @@ apply_transformations.vachette_data <-
     # get query landmarks
     my.query.lm.init    <- get.x.multi.landmarks(query$x,query$y,w=w.init,tol=tolapply)
     my.query.lm.init$y  <- approx(query$x,query$y, xout=my.query.lm.init$x)$y
+
+    #Validation check
+    #If y contiguous y values in series are the same, provide error, increase tolnoise
 
     if(!LM_REFINE)
     {
@@ -454,7 +473,7 @@ apply_transformations.vachette_data <-
     {
       my.ref.lm   <- get.ref.x.open.end(ref$x,ref$y,my.ref.lm.refined,step.x.factor=step.x.factor,tol=tolend)
       my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.open.end,scaling=scaling)
-    }
+    } #error is in above line
     # 2. Fit ref last x, Fix query last x
     if(ref.region.type == 'open' & query.region.type == 'closed')
     {
@@ -746,6 +765,59 @@ apply_transformations.vachette_data <-
 
   }
 
+`%notin%` <- Negate(`%in%`)
+
+.validate_columns <- function(mappings, indivsam.obs, output.typ) {
+
+  req_cols <- c("ID", "PRED", "IPRED", "OBS", "x", "dosenr")
+  obs_cols <- colnames(indivsam.obs)
+  sim_cols <- colnames(output.typ)
+
+  if (is.null(mappings)) {
+    if (any(req_cols %notin% obs_cols)) {
+      missing_cols <- setdiff(req_cols, obs_cols)
+      stop(
+        paste0(missing_cols, collapse = " "),
+        " column(s) not found in observed data. Use the 'mappings' argument to manually specify columns mappings."
+      , call. = FALSE)
+    }
+
+    if (any(req_cols[-3] %notin% sim_cols)) {
+      missing_cols <- setdiff(req_cols, sim_cols)
+      stop(
+        paste0(missing_cols, collapse = " "),
+        " column(s) not found in simulated data. Use the 'mappings' argument to manually specify columns mappings."
+        , call. = FALSE)
+    }
+  } else {
+    if (any(mappings %notin% obs_cols)) {
+      missing_cols <- setdiff(mappings, obs_cols)
+      stop(
+        paste0(missing_cols, collapse = " "),
+        " column(s) provided in mappings argument are not found in observed data."
+        , call. = FALSE)
+    }
+
+    sim_mappings <- mappings[names(mappings) %notin% c("IPRED", "OBS")]
+
+    if (any(sim_mappings %notin% sim_cols)) {
+      missing_cols <- setdiff(sim_mappings, sim_cols)
+      stop(
+        paste0(missing_cols, collapse = " "),
+        " column(s) provided in mappings argument are not found in simulated data."
+        , call. = FALSE)
+    }
+
+    indivsam.obs <- dplyr::rename(indivsam.obs, dplyr::all_of(mappings))
+    output.typ <- dplyr::rename(output.typ, dplyr::all_of(sim_mappings))
+  }
+  return(
+    list(
+      indivsam.obs = indivsam.obs,
+      output.typ = output.typ
+    )
+  )
+}
 
 .process_covariates <- function(vachette.covs, indivsam.obs) {
   if (is.null(names(vachette.covs))) {
@@ -773,14 +845,14 @@ apply_transformations.vachette_data <-
         cov_ref_val <- .mode(unlist(indivsam.obs[, cov_name]))
       } else {
         if (nrow(indivsam.obs) %% 2 == 0) {
-          #indivsam.obs <- dplyr::slice(indivsam.obs, -1) #before midpoint
-          indivsam.obs <- dplyr::slice(indivsam.obs, -nrow(indivsam.obs)) #after midpoint
+          #indivsam.obs <- dplyr::slice(indivsam.obs, -1) #before midpoint, drop first value
+          indivsam.obs <- dplyr::slice(indivsam.obs, -nrow(indivsam.obs)) #after midpoint, drop last value
         }
         cov_ref_val <- median(unlist(indivsam.obs[, cov_name]))
       }
       stopifnot(cov_ref_val %in% as.character(unlist(indivsam.obs[, cov_name])))
       vachette.covs[i] <- cov_ref_val
-    }
+    } #else add check for provided cov value, ensuring exists in simulated data
   }
   return(vachette.covs)
 }
