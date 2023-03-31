@@ -769,27 +769,39 @@ apply_transformations.vachette_data <-
 
 .validate_columns <- function(mappings, indivsam.obs, output.typ) {
 
-  req_cols <- c("ID", "PRED", "IPRED", "OBS", "x", "dosenr")
+  obs_req_cols <- c("ID", "PRED", "IPRED", "OBS", "x", "dosenr")
+  sim_req_cols <- c("ID", "PRED", "x", "dosenr")
+
   obs_cols <- colnames(indivsam.obs)
   sim_cols <- colnames(output.typ)
 
   if (is.null(mappings)) {
-    if (any(req_cols %notin% obs_cols)) {
-      missing_cols <- setdiff(req_cols, obs_cols)
+    if (any(obs_req_cols %notin% obs_cols)) {
+      missing_cols <- setdiff(obs_req_cols, obs_cols)
       stop(
         paste0(missing_cols, collapse = " "),
         " column(s) not found in observed data. Use the 'mappings' argument to manually specify columns mappings."
       , call. = FALSE)
     }
 
-    if (any(req_cols[-3] %notin% sim_cols)) {
-      missing_cols <- setdiff(req_cols, sim_cols)
+    if (any(sim_req_cols %notin%  sim_cols)) {
+      missing_cols <- setdiff(sim_req_cols, sim_cols)
       stop(
         paste0(missing_cols, collapse = " "),
         " column(s) not found in simulated data. Use the 'mappings' argument to manually specify columns mappings."
         , call. = FALSE)
     }
   } else {
+    diff_req_mappings <- setdiff(obs_req_cols, names(mappings))
+    cols_not_mapped <- setdiff(diff_req_mappings, obs_cols)
+
+    if (length(cols_not_mapped) > 0) {
+      stop(
+        paste0(cols_not_mapped, collapse = " "),
+        " column(s) not found in observed data and not provided in 'mappings'. Use the 'mappings' argument to manually specify columns mappings."
+        , call. = FALSE)
+      }
+
     if (any(mappings %notin% obs_cols)) {
       missing_cols <- setdiff(mappings, obs_cols)
       stop(
