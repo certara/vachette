@@ -448,6 +448,7 @@ print.vachette_data <- function(x, ...) {
   cat(sprintf("Covariate Names:\t%s", paste0(names(x$vachette.covs), collapse=", ")), "\n")
   cat(sprintf("Reference Values:\t%s", paste0(paste0(names(x$vachette.covs), "=", x$vachette.covs), collapse = " , ")))
 
+  # output error type
   invisible(x)
 }
 
