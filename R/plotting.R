@@ -125,7 +125,7 @@ p.scaled.typical.full.curves.landmarks <- function(vachette_data) {
 #'
 #' @export
 p.scaling.factor <- function(vachette_data) {
-  curves.all <- vachette_data$curves.all
+  curves.scaled.all <- vachette_data$curves.scaled.all
   obs.all <- vachette_data$obs.all
   model.name <- vachette_data$model.name
 
@@ -135,7 +135,7 @@ p.scaling.factor <- function(vachette_data) {
   geom_line(lwd=1)+
   facet_wrap(~paste(mycurve," covariate =",COV))+
   coord_cartesian(xlim=c(NA,max(obs.all$x,obs.all$x.scaled)),
-                  ylim=c(0,max(curves.all$x.scaling[curves.all$x<=max(obs.all$x,obs.all$x.scaled)])))+
+                  ylim=c(0,max(curves.scaled.all$x.scaling[curves.scaled.all$x<=max(obs.all$x,obs.all$x.scaled)])))+
   labs(title=paste0(model.name," - x-scaling factors"),
        subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error"),
        #caption=script,

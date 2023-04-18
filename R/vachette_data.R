@@ -341,10 +341,12 @@ apply_transformations.vachette_data <-
 
 
   stopifnot(inherits(vachette_data, "vachette_data"))
-  # Collect all Vachette query curves and original/transformed observations (incl reference)
-  curves.all    <- NULL
-  obs.all       <- NULL
-  my.ref.lm.all   <- NULL
+    # Collect all Vachette query curves and original/transformed observations (incl reference)
+    curves.all           <- NULL
+    curves.scaled.all    <- NULL
+    obs.all              <- NULL
+
+    my.ref.lm.all   <- NULL
   my.query.lm.all <- NULL
   lm.all <- NULL
 
@@ -397,6 +399,27 @@ apply_transformations.vachette_data <-
     query <- output.typ %>%
       filter(ucov == i.ucov) %>%
       mutate(ref = tab.ucov$ref[i.ucov])    # Flag for reference
+
+    # 230418 - extrapolate region last-x region by one gridstep size if region.type = 'closed'
+    # Currently simple extra x value with same y value ("horizontal" extrapolation - LOCF)
+    if(ref.region.type == 'closed')
+    {
+      ref.grid.step.size = ref$x[dim(ref)[1]] - ref$x[dim(ref)[1]-1]
+      ref.curve.last.point <- ref[dim(ref)[1],]
+      # Change x only, assume change of y is negligible
+      ref.curve.last.point$x <- ref.curve.last.point$x + ref.grid.step.size
+      # Add
+      ref <- rbind(ref,ref.curve.last.point)
+    }
+    if(query.region.type == 'closed')
+    {
+      query.grid.step.size = query$x[dim(query)[1]] - query$x[dim(query)[1]-1]
+      query.curve.last.point <- query[dim(query)[1],]
+      # Change x only, assume change of y is negligible
+      query.curve.last.point$x <- query.curve.last.point$x + query.grid.step.size
+      # Add
+      query <- rbind(query,query.curve.last.point)
+    }
 
     # We have to run Vachette twice if observation AND simulated replicates have to be generated (for VPC)
 
@@ -480,17 +503,12 @@ apply_transformations.vachette_data <-
       my.ref.lm   <- get.query.x.open.end(query,ref,my.query.lm.refined,my.ref.lm.refined,ngrid=ngrid.open.end,scaling=scaling)
       my.query.lm <- my.query.lm.refined
     }
-    # 3. Fix ref last x, Fit query last x
-    if(ref.region.type == 'closed' & query.region.type == 'open')
+    # 230418 - Update
+    # 3+4. Fix ref last x, Fit query last x
+    if(ref.region.type == 'closed')
     {
       my.ref.lm   <- my.ref.lm.refined
       my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.open.end,scaling=scaling)
-    }
-    # 4. Fit ref last x, Fix query last x
-    if(ref.region.type == 'closed' & query.region.type == 'closed')
-    {
-      my.ref.lm   <- get.query.x.open.end(query,ref,my.query.lm.refined,my.ref.lm.refined,ngrid=ngrid.open.end,scaling=scaling)
-      my.query.lm <- my.query.lm.refined
     }
 
     # @James recent developments
@@ -539,7 +557,7 @@ apply_transformations.vachette_data <-
 
     # E. ---- x-scaled query segments -----------
 
-    # New query.scaled data frame
+    # 230418 New query.scaled curve data frame by contracting/expanding to x-range ref
     query.scaled <- NULL
     for(iseg in c(1:nseg))
     {
@@ -564,10 +582,11 @@ apply_transformations.vachette_data <-
       query.scaled <- rbind(query.scaled,my.query.add)
     }
 
-    # F. ---- Check for need of extended reference curve by extrapolation -----------
+    # F. ---- Check for need of extended **reference** curve by extrapolation -----------
 
     # Default no extension for extrapolation
-    tab.extension <- NULL
+    # tab.extension <- NULL
+    EXTENSION <- FALSE
 
     # Check if there are observation at all
     OBSERV <- ifelse(dim(obs.query)[1]>0,T,F)
@@ -575,54 +594,51 @@ apply_transformations.vachette_data <-
     # If all observations are not before query last x, then extrapolate and add to reference region curve
     if (OBSERV)
     {
+      # Only needed when there are observation outside the segment last landmark
       if(max(my.query.lm$x) < max(obs.query$x))
       {
 
         # @James: I have to check this part of the code using a suitable example
 
-        message('---------------------------------------------------')
-        message('EXTENSION REF CURVE >> extrapolation needs checking')
-        message('---------------------------------------------------')
-        print(paste0("**** EXTEND REFERENCE CURVE FOR query i.ucov ",i.ucov," (Region: ",tab.ucov$region[tab.ucov$ucov==i.ucov],") *****"))
+        EXTENSION <- TRUE
 
+        message('--------------------------------------------------------')
+        message('EXTENSION REF CURVE UPDATED >> further checking required')
+        message('--------------------------------------------------------')
+
+        # max x observation on query
         max.obs.x <- max(obs.query$x)
-        # On the typical query curve:
-        max.obs.y <- approx(query$x,query$y,xout=max.obs.x)$y
+        # y observation on query at x max
+        max.obs.y <- obs.query$y[obs.query$x==max.obs.x]
+        # y typical on query at x max
+        max.obs.y.typ <- obs.query$PRED[obs.query$x==max.obs.x]
 
-        # Extrapolate (linear) max.obs.x in translated x of query curve
-        xmax.scaling <- approxExtrap(x=query.scaled$x.trans, query.scaled$x.scaling, xout = (max.obs.x+query.scaled$x.shift.query[1]))$y
-        ymax.scaling <- approxExtrap(x=query.scaled$x.trans, query.scaled$y.scaling, xout = (max.obs.x+query.scaled$x.shift.query[1]))$y
-        xmax.scaled  <- xmax.scaling * (max.obs.x+query.scaled$x.shift.query[1])
-        ymax.scaled  <- ymax.scaling * max.obs.y
+        # scaled max x observation: (x+x.shift)*scaling
+        lastpoint        <- dim(query.scaled)[1]
+        max.obs.x.scaled <- (max.obs.x + query.scaled$x.shift.query[lastpoint])*query.scaled$x.scaling[lastpoint]
 
-        # Add to scaling data frame
-        # Last known query segment "continues"
+        # QUERY
         cur.query.seg <- query$seg[dim(query[!is.na(query$seg),])[1]]
-        query.scaled.add <- query.scaled %>%
-          slice(1) %>%
-          mutate(x=max.obs.x, # By default will be last observation x too, so OK with segment assignment
-                 y=max.obs.y,
-                 x.trans  = max.obs.x+query.scaled$x.shift.query[1],
-                 x.scaled = xmax.scaled,
-                 y.scaled = ymax.scaled,
-                 x.scaling = xmax.scaling,
-                 y.scaling = ymax.scaling) %>%
-          mutate(seg=cur.query.seg)
-        query.scaled <- rbind(query.scaled,query.scaled.add)
+        # Adjust my.query.lm (always last point of last segment)
+        my.query.lm.extension <- my.query.lm
+        my.query.lm.extension$x[nseg+1] <- max.obs.x
+        my.query.lm.extension$y[nseg+1] <- max.obs.y.typ
 
-        tab.extension <- rbind(tab.extension,query.scaled.add)
+        # REFERENCE
+        # Reference curve has to be extrapolated up to max.obs.x.scaled
+        # Last segment reference with last two typical datapoints extrapolated to scaled max x for obs
+        lastpoint        <- dim(ref)[1]
+        add.x <- max.obs.x.scaled
+        add.y <- approxExtrap(c(ref$x[lastpoint-1],ref$x[lastpoint]),
+                              c(ref$y[lastpoint-1],ref$y[lastpoint]),
+                              xout = add.x)$y
 
-        # The method ensures (?) that query last x superimposes on reference last x after scaling
-        # So in principle we just have to add the additional query x.scaled/y.scaled to ref
-
-        # Last ref point is extrapolated, so segment "continues"
-        cur.ref.seg <- ref$seg[dim(ref[!is.na(ref$seg),])[1]]
+        cur.ref.seg   <- ref$seg[dim(ref[!is.na(ref$seg),])[1]]
         ref.add <- ref %>%
           slice(1) %>%
-          mutate(x=xmax.scaled,
-                 y=ymax.scaled) %>%
+          mutate(x=add.x,
+                 y=add.y) %>%
           mutate(seg=cur.ref.seg)
-
         ref <- rbind(ref,ref.add)
 
         # Check:
@@ -634,9 +650,9 @@ apply_transformations.vachette_data <-
 
     # Collect all typical curves with scaling factors and scaled x,y values
     query.scaled$y.scaled <- approx(ref$x,ref$y,xout=query.scaled$x.scaled)$y
-    curves.all            <- rbind(curves.all,query.scaled)
+    curves.all            <- rbind(curves.all,query)
+    curves.scaled.all     <- rbind(curves.scaled.all,query.scaled)
 
-    #  Carry out x,y, transformation of observation only if there are query observations for this covariate combination
     if(dim(obs.query)[1]>0)
     {
       # Steps
@@ -648,15 +664,20 @@ apply_transformations.vachette_data <-
       obs.query$seg <- NA
       for(iseg in c(1:nseg))
       {
-        extended.query.x <- ifelse(length(tab.extension$x[tab.extension$seg==iseg])>0,tab.extension$x[tab.extension$seg==iseg],NA)
+        # extended.query.x <- ifelse(length(tab.extension$x[tab.extension$seg==iseg])>0,
+        #                            tab.extension$x[tab.extension$seg==iseg],NA)
         first.query.x    <- my.query.lm$x[iseg]
-        last.query.x     <- ifelse(!is.na(extended.query.x),extended.query.x,my.query.lm$x[iseg+1])
+        # last.query.x     <- ifelse(!is.na(extended.query.x),extended.query.x,my.query.lm$x[iseg+1])
+        if(!EXTENSION) last.query.x     <- my.query.lm$x[iseg+1]
+        if(EXTENSION)  last.query.x     <- my.query.lm.extension$x[iseg+1]
 
         obs.query <- obs.query %>% mutate(seg = ifelse((nseg==1 & x>=first.query.x & x<=last.query.x) |
                                                          (nseg>1 & x>first.query.x & x<=last.query.x),iseg, seg))
         query     <- query     %>% mutate(seg = ifelse((nseg==1 & x>=first.query.x & x<=last.query.x) |
                                                          (nseg>1 & x>first.query.x & x<=last.query.x),iseg, seg))
       }
+
+      # obs.query still OK
 
       # ----- Steps 3: Vachette x transformation -----
 
@@ -665,14 +686,19 @@ apply_transformations.vachette_data <-
       obs.query      <- NULL
       for(iseg in c(1:nseg))
       {
+        # Original query.lm needed for scaling factor
         # Ref segment length
         ref.seg.length <- my.ref.lm$x[iseg+1] - my.ref.lm$x[iseg]
         # Query segment length
         query.seg.length <- my.query.lm$x[iseg+1] - my.query.lm$x[iseg]
         # Scaling factor
-        obs.query.add <- obs.query.orig %>%
+        if(!EXTENSION) obs.query.tmp <- obs.query.orig %>%
           filter((nseg==1 & x>=my.query.lm$x[iseg] & x<=my.query.lm$x[iseg+1]) |
-                   (nseg>1 & x>my.query.lm$x[iseg] & x<=my.query.lm$x[iseg+1])) %>%
+                   (nseg>1 & x>my.query.lm$x[iseg] & x<=my.query.lm$x[iseg+1]))
+        if(EXTENSION) obs.query.tmp <- obs.query.orig %>%
+          filter((nseg==1 & x>=my.query.lm.extension$x[iseg] & x<=my.query.lm.extension$x[iseg+1]) |
+                   (nseg>1 & x>my.query.lm.extension$x[iseg] & x<=my.query.lm.extension$x[iseg+1]))
+        obs.query.add <- obs.query.tmp %>%
           mutate(seg=iseg) %>%
           mutate(y.scaling     = 1, y.scaled =1) %>%               # dummies, To remove
           mutate(x.shift.ref   = 0 - my.ref.lm$x[iseg]) %>%

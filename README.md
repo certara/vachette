@@ -34,7 +34,11 @@ vd <-
     ref.dose = 1,
     model.name = "Intravenous (i.v)"
   )
+```
 
+    ## TEST JOS
+
+``` r
 vd <- vd |>
   apply_transformations()
 
@@ -57,7 +61,11 @@ vd <-
     ref.dose = 1,
     model.name = "oral-two-cov"
   )
+```
 
+    ## TEST JOS
+
+``` r
 vd <- vd |>
   apply_transformations(w.init = 23,
                         w1.refine = 7,
@@ -83,7 +91,11 @@ vd <-
     ref.dose = 1,
     model.name = "sigmoid"
   )
+```
 
+    ## TEST JOS
+
+``` r
 vd <- vd |>
   apply_transformations(w.init = 17,
                         w1.refine = 7,
@@ -108,7 +120,11 @@ vd <-
     ref.dose = 1,
     model.name = "oral-absorption"
   )
+```
 
+    ## TEST JOS
+
+``` r
 vd <- vd |>
   apply_transformations(w.init = 17,
                         w1.refine = 7,
@@ -118,31 +134,6 @@ p.vachette(vd)
 ```
 
 ![](README_files/figure-gfm/oral_absorption-1.png)<!-- -->
-
-### Indirect-Response
-
-``` r
-indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "indirect-response-obs.csv"))
-output.typ  <- read.csv(system.file(package = "vachette", "examples", "indirect-response-typ.csv"))
-
-vd <-
-  vachette_data(
-    indivsam.obs,
-    output.typ,
-    vachette.covs =  c("vachette.cov1" = 70),
-    ref.dose = 1,
-    model.name = "indirect-response"
-  )
-
-vd <- vd |>
-  apply_transformations(w.init = 17,
-                        w1.refine = 7,
-                        w2.refine = 5)
-
-p.vachette(vd)
-```
-
-![](README_files/figure-gfm/indirect_response-1.png)<!-- -->
 
 ### Pembro
 
