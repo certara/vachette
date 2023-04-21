@@ -148,8 +148,8 @@ vd <-
   vachette_data(
     indivsam.obs,
     output.typ,
-    vachette.covs =  c("SCHED", "ALB"),
-    ref.dose = 3,
+    vachette.covs =  c("SCHED" = "Q2W", "ALB" = "16"),
+    ref.dose = 1,
     model.name = "pembro"
   )
 

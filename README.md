@@ -34,11 +34,7 @@ vd <-
     ref.dose = 1,
     model.name = "Intravenous (i.v)"
   )
-```
 
-    ## TEST JOS
-
-``` r
 vd <- vd |>
   apply_transformations()
 
@@ -61,11 +57,7 @@ vd <-
     ref.dose = 1,
     model.name = "oral-two-cov"
   )
-```
 
-    ## TEST JOS
-
-``` r
 vd <- vd |>
   apply_transformations(w.init = 23,
                         w1.refine = 7,
@@ -91,11 +83,7 @@ vd <-
     ref.dose = 1,
     model.name = "sigmoid"
   )
-```
 
-    ## TEST JOS
-
-``` r
 vd <- vd |>
   apply_transformations(w.init = 17,
                         w1.refine = 7,
@@ -120,11 +108,7 @@ vd <-
     ref.dose = 1,
     model.name = "oral-absorption"
   )
-```
 
-    ## TEST JOS
-
-``` r
 vd <- vd |>
   apply_transformations(w.init = 17,
                         w1.refine = 7,
@@ -185,22 +169,7 @@ vd <- vd |>
   apply_transformations(w.init = 17,
                         w1.refine = 7,
                         w2.refine = 5)
-```
 
-    ## [1] "**** EXTEND REFERENCE CURVE FOR query i.ucov 1 (Region: 1) *****"
-    ## [1] "**** END EXTENSION *****"
-    ## [1] "**** EXTEND REFERENCE CURVE FOR query i.ucov 2 (Region: 2) *****"
-    ## [1] "**** END EXTENSION *****"
-    ## [1] "**** EXTEND REFERENCE CURVE FOR query i.ucov 4 (Region: 1) *****"
-    ## [1] "**** END EXTENSION *****"
-    ## [1] "**** EXTEND REFERENCE CURVE FOR query i.ucov 5 (Region: 2) *****"
-    ## [1] "**** END EXTENSION *****"
-    ## [1] "**** EXTEND REFERENCE CURVE FOR query i.ucov 7 (Region: 1) *****"
-    ## [1] "**** END EXTENSION *****"
-    ## [1] "**** EXTEND REFERENCE CURVE FOR query i.ucov 9 (Region: 1) *****"
-    ## [1] "**** END EXTENSION *****"
-
-``` r
 p.vachette(vd)
 ```
 
