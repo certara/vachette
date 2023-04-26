@@ -25,15 +25,15 @@ library(vachette)
 `SCHED`**
 
 ``` r
-indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "pembro-obs.csv"))
-output.typ  <- read.csv(system.file(package = "vachette", "examples", "pembro-typ.csv"))
+obs.data <- read.csv(system.file(package = "vachette", "examples", "pembro-obs.csv"))
+typ.data  <- read.csv(system.file(package = "vachette", "examples", "pembro-typ.csv"))
 
 vd <-
   vachette_data(
-    indivsam.obs,
-    output.typ,
-    vachette.covs =  c(SCHED = 'Q3W', ALB = 53.5),
-    ref.dose = 3,
+    obs.data,
+    typ.data,
+    covariates =  c(SCHED = 'Q3W', ALB = 53.5),
+    ref.dosenr = 3,
     model.name = "pembro"
   )
 
@@ -50,10 +50,10 @@ used e.g., median for continuous and mode for categorical covariate.
 ``` r
 vd <-
   vachette_data(
-    indivsam.obs,
-    output.typ,
-    vachette.covs =  c("SCHED", "ALB"),
-    ref.dose = 3,
+    obs.data,
+    typ.data,
+    covariates =  c("SCHED", "ALB"),
+    ref.dosenr = 3,
     model.name = "pembro"
   )
 
@@ -66,9 +66,9 @@ print(vd)
 
 ``` r
 vd <- vd |>
-  apply_transformations(w.init = 17,
-                        w1.refine = 7,
-                        w2.refine = 5)
+  apply_transformations(window = 17,
+                        window.d1.refine = 7,
+                        window.d2.refine = 5)
 ```
 
     ## [1] "**** EXTEND REFERENCE CURVE FOR query i.ucov 1 (Region: 1) *****"

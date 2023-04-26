@@ -297,7 +297,7 @@ get.ref.x.open.end <- function(x,y,lm,step.x.factor=1.5,tol=0.01) {
   ydiff      <- abs(ylast - ylastNext)
 
   # Find xNext position
-  xsol <- multi.approx(xlast,ydiff,yout=ytol)   # tolend
+  xsol <- multi.approx(xlast,ydiff,yout=ytol)   # tol.end
   # Note: For emax we have 2 solutions: one at start when curve is slowly increasing, one at end when curve is slowly flattening out
   # Always take open end = last solution
   xhit <- xsol[length(xsol)]
@@ -445,8 +445,8 @@ print.vachette_data <- function(x, ...) {
   stopifnot(inherits(x, "vachette_data"))
 
   cat(sprintf("Model Name:\t\t%s", x$model.name), "\n")
-  cat(sprintf("Covariate Names:\t%s", paste0(names(x$vachette.covs), collapse=", ")), "\n")
-  cat(sprintf("Reference Values:\t%s", paste0(paste0(names(x$vachette.covs), "=", x$vachette.covs), collapse = " , ")))
+  cat(sprintf("Covariate Names:\t%s", paste0(names(x$covariates), collapse=", ")), "\n")
+  cat(sprintf("Reference Values:\t%s", paste0(paste0(names(x$covariates), "=", x$covariates), collapse = " , ")))
 
   # output error type
   invisible(x)

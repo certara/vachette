@@ -9,34 +9,34 @@ apply_transformations(vachette_data, ...)
 
 \method{apply_transformations}{vachette_data}(
   vachette_data,
-  LM_REFINE = FALSE,
-  tolend = 0.001,
-  tolnoise = 1e-08,
+  lm.refine = FALSE,
+  tol.end = 0.001,
+  tol.noise = 1e-08,
   step.x.factor = 1.5,
-  ngrid.open.end = 100,
-  w.init = 17,
-  w1.refine = 7,
-  w2.refine = 5
+  ngrid.fit = 100,
+  window = 17,
+  window.d1.refine = 7,
+  window.d2.refine = 5
 )
 }
 \arguments{
-\item{vachette_data}{Object of class \code{vachette_data}}
+\item{vachette_data}{object of class \code{vachette_data}}
 
-\item{LM_REFINE}{Logical; Set to \code{TRUE} to refine landmark}
+\item{lm.refine}{logical; Refine landmark x-position. Default \code{FALSE}}
 
-\item{tolend}{Numeric;}
+\item{tol.end}{numeric; Relative tolerance to determine last x open end reference}
 
-\item{tolnoise}{Numeric;}
+\item{tol.noise}{numeric; Relative tolerance for landmark determination typical curves}
 
-\item{step.x.factor}{Numeric;}
+\item{step.x.factor}{numeric; x-axis extension factor to search for last x, i.e., to determine where close enough to asymptote}
 
-\item{ngrid.open.end}{Numeric;}
+\item{ngrid.fit}{numeric; number of grid points in last query segment for matching last reference segment}
 
-\item{w.init}{Numeric; Savitzky Golay smoothing.}
+\item{window}{integer; size (gridpoints) of Savitzky Golay smoothing window for landmark position determination}
 
-\item{w1.refine}{Numeric; Savitzky Golay smoothing, first derivative.}
+\item{window.d1.refine}{integer; size (gridpoints) of Savitzky Golay smoothing window for refinement of first derivative landmark position}
 
-\item{w2.refine}{Numeric; Savitzky Golay smoothing, second derivative.}
+\item{window.d2.refine}{integer; size (gridpoints) of Savitzky Golay smoothing window for refinement of second derivative landmark position.}
 }
 \description{
 Apply vachette transformations

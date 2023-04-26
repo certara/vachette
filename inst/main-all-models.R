@@ -60,32 +60,32 @@ nsim.vpc         <- 100         # nsim.vpc number of reps --> ntimepoints*nsim.i
 
 # ----- Vachette transformation -----
 
-# Before Vachette transformation, carry out IIV correction? (For VPC, IIV_CORR should be F)
-IIV_CORR          <- F
-if(VVPC) IIV_CORR <- F
+# Before Vachette transformation, carry out IIV correction? (For VPC, iiv.correction should be F)
+iiv.correction          <- F
+if(VVPC) iiv.correction <- F
 
 # Proportional or additive error for Vachette transformation
 PROP_TR           <- T
 ADD_TR            <- ifelse(PROP_TR,F,T)
 
 # Carry out landmark position refinement step?
-LM_REFINE         <- F  # Landmark refinement
+lm.refine         <- F  # Landmark refinement
 
 # Plot with log-x axis?
 XLOG              <- F
 
 # ------ General defaults (can be adjusted by user if required) ----------
-tolend        <- 0.001  # Max tolerance to determine last.x (allowed minimizing difference open end ref and query)
-tolnoise      <- 1e-8   # Max tolerance allowed between gridpoints to identify landmarks for stepsize=1 (first and second derivative extremes)
+tol.end        <- 0.001  # Max tolerance to determine last.x (allowed minimizing difference open end ref and query)
+tol.noise      <- 1e-8   # Max tolerance allowed between gridpoints to identify landmarks for stepsize=1 (first and second derivative extremes)
 step.x.factor <- 1.5    # Factor x-steps between which y-values are lower than the SCALED tolerance
-ngrid.open.end<- 100    # Number of grid points to characterize open end curves
-w.init        <- 17     # Savitzky Golay smoothing - initial landmarks
-w1.refine     <- 7      # Savitzky Golay smoothing - refine landmarks - first derivative
-w2.refine     <- 5      # Savitzky Golay smoothing - refine landmarks - second derivative
+ngrid.fit<- 100    # Number of grid points to characterize open end curves
+window        <- 17     # Savitzky Golay smoothing - initial landmarks
+window.d1.refine     <- 7      # Savitzky Golay smoothing - refine landmarks - first derivative
+window.d2.refine     <- 5      # Savitzky Golay smoothing - refine landmarks - second derivative
 
 # Required for "oral-two-cov":
-if(run.model=="oral-two-cov") w.init <- 23
-# if(run.model=="pembro")       w.init <- 29
+if(run.model=="oral-two-cov") window <- 23
+# if(run.model=="pembro")       window <- 29
 
 # =================================================================
 
@@ -150,21 +150,21 @@ model  <- run.model
 if(model=='iv')
 {
   ref.cov1   <- 70    # e.g. (kg)
-  ref.dose   <- 1     # First (and only) dose
+  ref.dosenr   <- 1     # First (and only) dose
 }
 
 # ---------------- IV ----------------------------
 if(model=='sigmoid')
 {
   ref.cov1   <- 70    # e.g. (kg)
-  ref.dose   <- 1     # First (and only) dose
+  ref.dosenr   <- 1     # First (and only) dose
 }
 
 # ---------------- SINGLE DOSE ORAL ----------------------------
 if(model=='oral-absorption' | model == 'oral-two-dose')
 {
   ref.cov1   <- 70
-  ref.dose   <- 1     # First (and only) dose
+  ref.dosenr   <- 1     # First (and only) dose
 }
 
 # ---------------- SINGLE DOSE ORAL, TWO COVARIATES  -------------
@@ -172,14 +172,14 @@ if(model=='oral-two-cov')
 {
   ref.cov1   <- 70    # WT
   ref.cov2   <- 30    # AGE
-  ref.dose   <- 1     # First (and only) dose
+  ref.dosenr   <- 1     # First (and only) dose
 }
 
 # ---------------- INDIRECT RESPONSE PKPD ----------------------------
 if(model=='indirect-response')
 {
   ref.cov1   <- 70
-  ref.dose   <- 1     # First (and only) dose
+  ref.dosenr   <- 1     # First (and only) dose
 }
 
 # ---------------- PEMBRO ----------------------------
@@ -187,7 +187,7 @@ if(model=='pembro')
 {
   ref.cov1   <- 'Q2W' # or 'Q2W'
   ref.cov2   <- "16"  # ALB, Other extreme is 53.5
-  ref.dose   <- 3     # First dose
+  ref.dosenr   <- 3     # First dose
 }
 
 ###########################################################################
@@ -197,7 +197,7 @@ if(model=='pembro')
 ###########################################################################
 
 # Region is the Vachette terminology for the time between two dose administrations
-ref.region <- ref.dose
+ref.region <- ref.dosenr
 
 # ------ Simulate ----
 
@@ -205,33 +205,33 @@ ref.region <- ref.dose
 if(SIM_OBS)
 {
   # iv
-  if(model=='iv')        output.typ   <- sim.iv(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
-  if(model=='iv')        indivsam.obs <- sim.iv(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
-  if(model=='iv' & VVPC) indivsam.vpc <- sim.iv(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='iv')        typ.data   <- sim.iv(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='iv')        obs.data <- sim.iv(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='iv' & VVPC) sim.data <- sim.iv(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
   # sigmoid/Emax
-  if(model=='sigmoid')        output.typ   <- sim.sigmoid(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
-  if(model=='sigmoid')        indivsam.obs <- sim.sigmoid(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
-  if(model=='sigmoid' & VVPC) indivsam.vpc <- sim.sigmoid(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='sigmoid')        typ.data   <- sim.sigmoid(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='sigmoid')        obs.data <- sim.sigmoid(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='sigmoid' & VVPC) sim.data <- sim.sigmoid(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
   # oral
-  if(model=='oral-absorption')        output.typ   <- sim.oral.absorption(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
-  if(model=='oral-absorption')        indivsam.obs <- sim.oral.absorption(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
-  if(model=='oral-absorption' & VVPC) indivsam.vpc <- sim.oral.absorption(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='oral-absorption')        typ.data   <- sim.oral.absorption(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='oral-absorption')        obs.data <- sim.oral.absorption(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='oral-absorption' & VVPC) sim.data <- sim.oral.absorption(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
   # oral
-  if(model=='oral-two-dose')        output.typ   <- sim.oral.two.dose(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
-  if(model=='oral-two-dose')        indivsam.obs <- sim.oral.two.dose(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
-  if(model=='oral-two-dose' & VVPC) indivsam.vpc <- sim.oral.two.dose(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='oral-two-dose')        typ.data   <- sim.oral.two.dose(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='oral-two-dose')        obs.data <- sim.oral.two.dose(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='oral-two-dose' & VVPC) sim.data <- sim.oral.two.dose(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
   # oral - two covariates
-  if(model=='oral-two-cov')        output.typ   <- sim.oral.two.cov(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
-  if(model=='oral-two-cov')        indivsam.obs <- sim.oral.two.cov(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
-  if(model=='oral-two-cov' & VVPC) indivsam.vpc <- sim.oral.two.cov(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='oral-two-cov')        typ.data   <- sim.oral.two.cov(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='oral-two-cov')        obs.data <- sim.oral.two.cov(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='oral-two-cov' & VVPC) sim.data <- sim.oral.two.cov(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
   # oral
-  if(model=='indirect-response')        output.typ   <- sim.indirect.response(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
-  if(model=='indirect-response')        indivsam.obs <- sim.indirect.response(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
-  if(model=='indirect-response' & VVPC) indivsam.vpc <- sim.indirect.response(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='indirect-response')        typ.data   <- sim.indirect.response(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='indirect-response')        obs.data <- sim.indirect.response(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='indirect-response' & VVPC) sim.data <- sim.indirect.response(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
   # pembro
-  if(model=='pembro')        output.typ   <- sim.pembro(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
-  if(model=='pembro')        indivsam.obs <- sim.pembro(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
-  if(model=='pembro' & VVPC) indivsam.vpc <- sim.pembro(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='pembro')        typ.data   <- sim.pembro(nsim.indiv, iiv=0, ruv=0, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='pembro')        obs.data <- sim.pembro(nsim.indiv, iiv=1, ruv=1, nvpc=0, SAVE=SIM_SAVE,PROP=PROP_SIM)
+  if(model=='pembro' & VVPC) sim.data <- sim.pembro(nsim.indiv, iiv=1, ruv=1, nvpc=nsim.vpc, SAVE=SIM_SAVE,PROP=PROP_SIM)
 }
 
 # ------ Retrieve from flat files ----
@@ -240,34 +240,34 @@ if(SIM_OBS)
 if(!SIM_OBS) # Read flat file
 {
   # iv
-  if(model=='iv')        output.typ   <- read.csv("./examples/iv-typ.csv",stringsAsFactors = F)
-  if(model=='iv')        indivsam.obs <- read.csv("./examples/iv-obs.csv",stringsAsFactors = F)
-  if(model=='iv' & VVPC) indivsam.vpc <- read.csv("./examples/iv-vpc.csv",stringsAsFactors = F)
+  if(model=='iv')        typ.data   <- read.csv("./examples/iv-typ.csv",stringsAsFactors = F)
+  if(model=='iv')        obs.data <- read.csv("./examples/iv-obs.csv",stringsAsFactors = F)
+  if(model=='iv' & VVPC) sim.data <- read.csv("./examples/iv-vpc.csv",stringsAsFactors = F)
   # sigmoid
-  if(model=='sigmoid')        output.typ   <- read.csv("./examples/sigmoid-typ.csv",stringsAsFactors = F)
-  if(model=='sigmoid')        indivsam.obs <- read.csv("./examples/sigmoid-obs.csv",stringsAsFactors = F) |>
+  if(model=='sigmoid')        typ.data   <- read.csv("./examples/sigmoid-typ.csv",stringsAsFactors = F)
+  if(model=='sigmoid')        obs.data <- read.csv("./examples/sigmoid-obs.csv",stringsAsFactors = F) |>
                                               rename("ID" = id)
-  if(model=='sigmoid' & VVPC) indivsam.vpc <- read.csv("./examples/sigmoid-vpc.csv",stringsAsFactors = F)
+  if(model=='sigmoid' & VVPC) sim.data <- read.csv("./examples/sigmoid-vpc.csv",stringsAsFactors = F)
   # oral-absorption
-  if(model=='oral-absorption')        output.typ   <- read.csv("./examples/oral-absorption-typ.csv",stringsAsFactors = F)
-  if(model=='oral-absorption')        indivsam.obs <- read.csv("./examples/oral-absorption-obs.csv",stringsAsFactors = F)
-  if(model=='oral-absorption' & VVPC) indivsam.vpc <- read.csv("./examples/oral-absorption-vpc.csv",stringsAsFactors = F)
+  if(model=='oral-absorption')        typ.data   <- read.csv("./examples/oral-absorption-typ.csv",stringsAsFactors = F)
+  if(model=='oral-absorption')        obs.data <- read.csv("./examples/oral-absorption-obs.csv",stringsAsFactors = F)
+  if(model=='oral-absorption' & VVPC) sim.data <- read.csv("./examples/oral-absorption-vpc.csv",stringsAsFactors = F)
   # oral-absorption two dose
-  if(model=='oral-two-dose')        output.typ   <- read.csv("./examples/oral-two-dose-v33-typ.csv",stringsAsFactors = F)
-  if(model=='oral-two-dose')        indivsam.obs <- read.csv("./examples/oral-two-dose-v33-obs.csv",stringsAsFactors = F)
-  if(model=='oral-two-dose' & VVPC) indivsam.vpc <- read.csv("./examples/oral-two-dose-v33-vpc.csv",stringsAsFactors = F)
+  if(model=='oral-two-dose')        typ.data   <- read.csv("./examples/oral-two-dose-v33-typ.csv",stringsAsFactors = F)
+  if(model=='oral-two-dose')        obs.data <- read.csv("./examples/oral-two-dose-v33-obs.csv",stringsAsFactors = F)
+  if(model=='oral-two-dose' & VVPC) sim.data <- read.csv("./examples/oral-two-dose-v33-vpc.csv",stringsAsFactors = F)
   # oral-absorption two dose
-  if(model=='oral-two-cov')        output.typ   <- read.csv("./examples/oral-two-cov-typ.csv",stringsAsFactors = F)
-  if(model=='oral-two-cov')        indivsam.obs <- read.csv("./examples/oral-two-cov-obs.csv",stringsAsFactors = F)
-  if(model=='oral-two-cov' & VVPC) indivsam.vpc <- read.csv("./examples/oral-two-cov-vpc.csv",stringsAsFactors = F)
+  if(model=='oral-two-cov')        typ.data   <- read.csv("./examples/oral-two-cov-typ.csv",stringsAsFactors = F)
+  if(model=='oral-two-cov')        obs.data <- read.csv("./examples/oral-two-cov-obs.csv",stringsAsFactors = F)
+  if(model=='oral-two-cov' & VVPC) sim.data <- read.csv("./examples/oral-two-cov-vpc.csv",stringsAsFactors = F)
   # indirect-response
-  if(model=='indirect-response')        output.typ   <- read.csv("./examples/indirect-response-typ.csv",stringsAsFactors = F)
-  if(model=='indirect-response')        indivsam.obs <- read.csv("./examples/indirect-response-obs.csv",stringsAsFactors = F)
-  if(model=='indirect-response' & VVPC) indivsam.vpc <- read.csv("./examples/indirect-response-vpc.csv",stringsAsFactors = F)
+  if(model=='indirect-response')        typ.data   <- read.csv("./examples/indirect-response-typ.csv",stringsAsFactors = F)
+  if(model=='indirect-response')        obs.data <- read.csv("./examples/indirect-response-obs.csv",stringsAsFactors = F)
+  if(model=='indirect-response' & VVPC) sim.data <- read.csv("./examples/indirect-response-vpc.csv",stringsAsFactors = F)
   # indirect-response
-  if(model=='pembro')        output.typ   <- read.csv("./examples/pembro-typ.csv",stringsAsFactors = F)
-  if(model=='pembro')        indivsam.obs <- read.csv("./examples/pembro-obs.csv",stringsAsFactors = F)
-  if(model=='pembro' & VVPC) indivsam.vpc <- read.csv("./examples/pembro-vpc.csv",stringsAsFactors = F)
+  if(model=='pembro')        typ.data   <- read.csv("./examples/pembro-typ.csv",stringsAsFactors = F)
+  if(model=='pembro')        obs.data <- read.csv("./examples/pembro-obs.csv",stringsAsFactors = F)
+  if(model=='pembro' & VVPC) sim.data <- read.csv("./examples/pembro-vpc.csv",stringsAsFactors = F)
 }
 
 # -------------------------------------------------
@@ -275,10 +275,10 @@ if(!SIM_OBS) # Read flat file
 # ---- For the script flow ----
 
 # "Dummy" observations replicate number
-indivsam.obs$isim      <- 1
+obs.data$isim      <- 1
 # "Dummy" vpc simulated observations dataset
 # @James: also fine to add if-statements throughout the code up to "VACHETTE TRANSFORMATION STEPS"
-if(!VVPC) indivsam.vpc <- indivsam.obs
+if(!VVPC) sim.data <- obs.data
 
 ###########################################################################
 #                                                                         #
@@ -288,42 +288,42 @@ if(!VVPC) indivsam.vpc <- indivsam.obs
 ###########################################################################
 
 # Extract covariates/regimens (cov1, cov2, ....)
-vachette.covs  <- names(output.typ)[grepl("vachette.cov",names(output.typ))]
-nvachette.covs <- length(vachette.covs)
+covariates  <- names(typ.data)[grepl("vachette.cov",names(typ.data))]
+ncovariates <- length(covariates)
 
 # Keep required data fields only:
-if(nvachette.covs==1) indivsam.obs  <- indivsam.obs %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,dosenr)
-if(nvachette.covs==1) indivsam.vpc  <- indivsam.vpc %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,dosenr)
-if(nvachette.covs==2) indivsam.obs  <- indivsam.obs %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,vachette.cov2,dosenr)
-if(nvachette.covs==2) indivsam.vpc  <- indivsam.vpc %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,vachette.cov2,dosenr)
+if(ncovariates==1) obs.data  <- obs.data %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,dosenr)
+if(ncovariates==1) sim.data  <- sim.data %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,dosenr)
+if(ncovariates==2) obs.data  <- obs.data %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,vachette.cov2,dosenr)
+if(ncovariates==2) sim.data  <- sim.data %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,vachette.cov2,dosenr)
 
 # Extract last observed x
-xstop <- max(indivsam.obs$x,indivsam.vpc$x)
+xstop <- max(obs.data$x,sim.data$x)
 
-# output.typ %>% ggplot(aes(x=x,y=y))+geom_line()+facet_grid(vachette.cov1~vachette.cov2)
-# output.typ %>%
+# typ.data %>% ggplot(aes(x=x,y=y))+geom_line()+facet_grid(vachette.cov1~vachette.cov2)
+# typ.data %>%
 #   ggplot(aes(x=x,y=y,
 #              group=paste(vachette.cov1,vachette.cov2),
 #              col=paste(vachette.cov1,vachette.cov2)))+
 #   geom_line()+coord_cartesian(xlim=c(0,xstop))
 
 # Define unique covariate combination: To be improved
-if(nvachette.covs==1)
+if(ncovariates==1)
 {
-  obs.orig   <- indivsam.obs %>%
+  obs.orig   <- obs.data %>%
     mutate(COV = paste(paste(vachette.cov1)))
-  sim.orig   <- indivsam.vpc %>%
+  sim.orig   <- sim.data %>%
     mutate(COV = paste(paste(vachette.cov1)))
-  output.typ   <- output.typ %>%
+  typ.data   <- typ.data %>%
     mutate(COV = paste(paste(vachette.cov1)))
 }
-if(nvachette.covs==2)
+if(ncovariates==2)
 {
-  obs.orig   <- indivsam.obs %>%
+  obs.orig   <- obs.data %>%
     mutate(COV = paste(paste(vachette.cov1,vachette.cov2)))
-  sim.orig   <- indivsam.vpc %>%
+  sim.orig   <- sim.data %>%
     mutate(COV = paste(paste(vachette.cov1,vachette.cov2)))
-  output.typ <- output.typ  %>%
+  typ.data <- typ.data  %>%
     mutate(COV = paste(paste(vachette.cov1,vachette.cov2)))
 }
 # Etc. for 3, 4 5 etc different covariates/covariate values
@@ -332,17 +332,17 @@ if(nvachette.covs==2)
 # ----- Define regions and provide a number to all combined covariate effects ----
 
 # Region number
-output.typ$region  <- NA
+typ.data$region  <- NA
 obs.orig$region    <- NA
 sim.orig$region    <- NA
 
 # Region type (open/closed)
-output.typ$region.type  <- NA
+typ.data$region.type  <- NA
 obs.orig$region.type    <- NA
 sim.orig$region.type    <- NA
 
 # Covariate combinations number
-output.typ$ucov  <- NA
+typ.data$ucov  <- NA
 obs.orig$ucov    <- NA
 sim.orig$ucov    <- NA
 
@@ -350,17 +350,17 @@ n.ucov    <- 0
 tab.ucov  <- NULL # Table with ucov properties
 
 # All covariate combinations:
-if(nvachette.covs==1) comb.ucov <- output.typ %>% expand(vachette.cov1)
-if(nvachette.covs==2) comb.ucov <- output.typ %>% expand(vachette.cov1,vachette.cov2)
+if(ncovariates==1) comb.ucov <- typ.data %>% expand(vachette.cov1)
+if(ncovariates==2) comb.ucov <- typ.data %>% expand(vachette.cov1,vachette.cov2)
 
 # Collect unique covariate/dose combinations and define region.type
 # Add to info to data frames
-if(nvachette.covs==1)
+if(ncovariates==1)
 {
   for(i in c(1:dim(comb.ucov)[1]))
   {
     # Get number of doses for each covariate combination:
-    z <- output.typ %>% filter(vachette.cov1 == comb.ucov$vachette.cov1[i])
+    z <- typ.data %>% filter(vachette.cov1 == comb.ucov$vachette.cov1[i])
     ndose <- length(unique(z$dosenr))
 
     for(idose in c(1:ndose))
@@ -377,35 +377,35 @@ if(nvachette.covs==1)
       tab.ucov <- rbind(tab.ucov, add)
 
       # Selection of new unique combination
-      sel.typ  <- output.typ$vachette.cov1 == comb.ucov$vachette.cov1[i] &
-        output.typ$dosenr == idose
+      sel.typ  <- typ.data$vachette.cov1 == comb.ucov$vachette.cov1[i] &
+        typ.data$dosenr == idose
       sel.obs  <- obs.orig$vachette.cov1 == comb.ucov$vachette.cov1[i] &
         obs.orig$dosenr == idose
       sel.sim  <- sim.orig$vachette.cov1 == comb.ucov$vachette.cov1[i] &
         sim.orig$dosenr == idose
 
       # Add new unique combination info
-      output.typ$region[sel.typ]   <- idose
+      typ.data$region[sel.typ]   <- idose
       obs.orig$region[sel.obs]     <- idose
       sim.orig$region[sel.sim]     <- idose
 
-      output.typ$ucov[sel.typ]   <- n.ucov
+      typ.data$ucov[sel.typ]   <- n.ucov
       obs.orig$ucov[sel.obs]     <- n.ucov
       sim.orig$ucov[sel.sim]     <- n.ucov
 
-      output.typ$region.type[sel.typ]   <- region.type
+      typ.data$region.type[sel.typ]   <- region.type
       obs.orig$region.type[sel.obs]     <- region.type
       sim.orig$region.type[sel.sim]     <- region.type
     }
   }
 }
 
-if(nvachette.covs==2)
+if(ncovariates==2)
 {
   for(i in c(1:dim(comb.ucov)[1]))
   {
     # Get number of doses for covariate combination:
-    z <- output.typ %>% filter(vachette.cov1 == comb.ucov$vachette.cov1[i] &
+    z <- typ.data %>% filter(vachette.cov1 == comb.ucov$vachette.cov1[i] &
                                  vachette.cov2 == comb.ucov$vachette.cov2[i])
     ndose <- length(unique(z$dosenr))
 
@@ -424,9 +424,9 @@ if(nvachette.covs==2)
       tab.ucov <- rbind(tab.ucov, add)
 
       # Selection of new unique combination
-      sel.typ  <- output.typ$vachette.cov1 == comb.ucov$vachette.cov1[i] &
-        output.typ$vachette.cov2 == comb.ucov$vachette.cov2[i] &
-        output.typ$dosenr == idose
+      sel.typ  <- typ.data$vachette.cov1 == comb.ucov$vachette.cov1[i] &
+        typ.data$vachette.cov2 == comb.ucov$vachette.cov2[i] &
+        typ.data$dosenr == idose
       sel.obs  <- obs.orig$vachette.cov1 == comb.ucov$vachette.cov1[i] &
         obs.orig$vachette.cov2 == comb.ucov$vachette.cov2[i] &
         obs.orig$dosenr == idose
@@ -435,15 +435,15 @@ if(nvachette.covs==2)
         sim.orig$dosenr == idose
 
       # Add new unique combination info
-      output.typ$region[sel.typ]   <- idose
+      typ.data$region[sel.typ]   <- idose
       obs.orig$region[sel.obs]     <- idose
       sim.orig$region[sel.sim]     <- idose
 
-      output.typ$ucov[sel.typ]   <- n.ucov
+      typ.data$ucov[sel.typ]   <- n.ucov
       obs.orig$ucov[sel.obs]     <- n.ucov
       sim.orig$ucov[sel.sim]     <- n.ucov
 
-      output.typ$region.type[sel.typ]   <- region.type
+      typ.data$region.type[sel.typ]   <- region.type
       obs.orig$region.type[sel.obs]     <- region.type
       sim.orig$region.type[sel.sim]     <- region.type
     }
@@ -455,16 +455,16 @@ if(nvachette.covs==2)
 tab.ucov$ref <- "No"
 for(i.ucov in c(1:dim(tab.ucov)[1]))
 {
-  if(nvachette.covs==1)
+  if(ncovariates==1)
     if(tab.ucov$vachette.cov1[i.ucov] == ref.cov1 & tab.ucov$region[i.ucov] == ref.region)
       tab.ucov$ref[i.ucov] <- "Yes"
-  if(nvachette.covs==2)
+  if(ncovariates==2)
     if(tab.ucov$vachette.cov1[i.ucov] == ref.cov1 & tab.ucov$vachette.cov2[i.ucov] == ref.cov2 & tab.ucov$region[i.ucov] == ref.region)
       tab.ucov$ref[i.ucov] <- "Yes"
 }
 
-# Add reference flag to output.typ
-output.typ <- output.typ %>%
+# Add reference flag to typ.data
+typ.data <- typ.data %>%
   left_join(tab.ucov[,c('ucov','ref')],by='ucov')
 
 ###########################################################################
@@ -479,15 +479,15 @@ output.typ <- output.typ %>%
 # ----- Step 2: Correct for IIV (or omit) -----
 
 # Determine dependent variable value y's
-output.typ   <- output.typ   %>% mutate(y=PRED)
+typ.data   <- typ.data   %>% mutate(y=PRED)
 
 # iiv correction for both for query and reference
-if(IIV_CORR) obs.orig$y <- obs.orig$OBS  - obs.orig$IPRED + obs.orig$PRED
-if(IIV_CORR) sim.orig$y <- sim.orig$OBS  - sim.orig$IPRED + sim.orig$PRED
+if(iiv.correction) obs.orig$y <- obs.orig$OBS  - obs.orig$IPRED + obs.orig$PRED
+if(iiv.correction) sim.orig$y <- sim.orig$OBS  - sim.orig$IPRED + sim.orig$PRED
 
 # omit iiv correction:
-if(!IIV_CORR) obs.orig$y <- obs.orig$OBS
-if(!IIV_CORR) sim.orig$y <- sim.orig$OBS
+if(!iiv.correction) obs.orig$y <- obs.orig$OBS
+if(!iiv.correction) sim.orig$y <- sim.orig$OBS
 
 # ---------- Preparation step 3+4 (Vachette x,y-transformations) ----------
 
@@ -511,8 +511,8 @@ for(i.ucov in c(1:dim(tab.ucov)[1]))
   # A. ----- Define reference and query typical curves and observations to transform  ----------
 
   # Ref: may change (by extensions), so define (again) every new combination
-  if(nvachette.covs==1) ref <- output.typ %>% filter(!is.na(region) & vachette.cov1 == ref.cov1 & region == ref.region)
-  if(nvachette.covs==2) ref <- output.typ %>% filter(!is.na(region) & vachette.cov1 == ref.cov1 & vachette.cov2 == ref.cov2 & region == ref.region)
+  if(ncovariates==1) ref <- typ.data %>% filter(!is.na(region) & vachette.cov1 == ref.cov1 & region == ref.region)
+  if(ncovariates==2) ref <- typ.data %>% filter(!is.na(region) & vachette.cov1 == ref.cov1 & vachette.cov2 == ref.cov2 & region == ref.region)
   ref.ucov <- unique(ref$ucov)
   if(length(ref.ucov) != 1) stop("Error: length ref.ucov != 1")     # A single ref only possible
   ref.region.type <- tab.ucov$region.type[tab.ucov$ucov==ref.ucov]
@@ -520,13 +520,13 @@ for(i.ucov in c(1:dim(tab.ucov)[1]))
 
   # Query: may be the same as reference
   query.cov1         <- tab.ucov$vachette.cov1[tab.ucov$ucov==i.ucov]
-  if(nvachette.covs==2)
+  if(ncovariates==2)
     query.cov2         <- tab.ucov$vachette.cov2[tab.ucov$ucov==i.ucov]
   query.region       <- tab.ucov$region[tab.ucov$ucov==i.ucov]
   query.region.type  <- tab.ucov$region.type[tab.ucov$ucov==i.ucov]
 
   # Typical query curve
-  query <- output.typ %>%
+  query <- typ.data %>%
     filter(ucov == i.ucov) %>%
     mutate(ref = tab.ucov$ref[i.ucov])    # Flag for reference
 
@@ -553,25 +553,25 @@ for(i.ucov in c(1:dim(tab.ucov)[1]))
   # Tolerance to apply for finding maximums, minimums and inflection points
   # Small stepsize -> small tolerance
   # Large stepsize -> large tol
-  tolapply <- tolnoise*(output.typ$x[2]-output.typ$x[1])   # Grid stepsize
+  tolapply <- tol.noise*(typ.data$x[2]-typ.data$x[1])   # Grid stepsize
 
-  my.ref.lm.init    <- get.x.multi.landmarks(ref$x,ref$y,w=w.init,tol=tolapply)
+  my.ref.lm.init    <- get.x.multi.landmarks(ref$x,ref$y,w=window,tol=tolapply)
   my.ref.lm.init$y  <- approx(ref$x,ref$y, xout=my.ref.lm.init$x)$y
 
-  my.query.lm.init    <- get.x.multi.landmarks(query$x,query$y,w=w.init,tol=tolapply)
+  my.query.lm.init    <- get.x.multi.landmarks(query$x,query$y,w=window,tol=tolapply)
   my.query.lm.init$y  <- approx(query$x,query$y, xout=my.query.lm.init$x)$y
 
-  if(!LM_REFINE)
+  if(!lm.refine)
   {
     my.ref.lm.refined      <- my.ref.lm.init
     my.query.lm.refined    <- my.query.lm.init
   }
-  if(LM_REFINE)
+  if(lm.refine)
   {
-    my.ref.lm.refined    <- refine.x.multi.landmarks(x=ref$x,y=ref$y,lm=my.ref.lm.init,tol=0.01*tolapply,w1=w1.refine,w2=w2.refine)
+    my.ref.lm.refined    <- refine.x.multi.landmarks(x=ref$x,y=ref$y,lm=my.ref.lm.init,tol=0.01*tolapply,w1=window.d1.refine,w2=window.d2.refine)
     my.ref.lm.refined$y  <- approx(ref$x, ref$y, xout=my.ref.lm.refined$x)$y
 
-    my.query.lm.refined    <- refine.x.multi.landmarks(query$x,query$y,lm=my.query.lm.init,tol=0.01*tolapply,w1=w1.refine,w2=w2.refine)
+    my.query.lm.refined    <- refine.x.multi.landmarks(query$x,query$y,lm=my.query.lm.init,tol=0.01*tolapply,w1=window.d1.refine,w2=window.d2.refine)
     my.query.lm.refined$y  <- approx(query$x,query$y, xout=my.query.lm.refined$x)$y
   }
 
@@ -579,7 +579,7 @@ for(i.ucov in c(1:dim(tab.ucov)[1]))
   if(dim(my.ref.lm.refined)[1] != dim(my.query.lm.refined)[1] |
      !sum(my.ref.lm.refined$type == my.query.lm.refined$type)>0)
   {
-    output.typ %>%
+    typ.data %>%
       ggplot(aes(x=x,y=y,group=ucov,col=factor(ucov)))+
       geom_line(lwd=1)+
       # Add landmark positions
@@ -593,7 +593,7 @@ for(i.ucov in c(1:dim(tab.ucov)[1]))
       render
 
     # ucov=1 only
-    output.typ %>%
+    typ.data %>%
       filter(ucov==1) %>%
       # filter(x>513,x<515,ucov==2) %>%
       ggplot(aes(x=x,y=y,group=ucov,col=factor(ucov)))+
@@ -631,25 +631,25 @@ for(i.ucov in c(1:dim(tab.ucov)[1]))
   # 1. Find ref last x, Fit query last x
   if(ref.region.type == 'open' & query.region.type == 'open')
   {
-    my.ref.lm   <- get.ref.x.open.end(ref$x,ref$y,my.ref.lm.refined,step.x.factor=step.x.factor,tol=tolend)
-    my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.open.end,scaling=scaling)
+    my.ref.lm   <- get.ref.x.open.end(ref$x,ref$y,my.ref.lm.refined,step.x.factor=step.x.factor,tol=tol.end)
+    my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.fit,scaling=scaling)
   }
   # 2. Fit ref last x, Fix query last x
   if(ref.region.type == 'open' & query.region.type == 'closed')
   {
-    my.ref.lm   <- get.query.x.open.end(query,ref,my.query.lm.refined,my.ref.lm.refined,ngrid=ngrid.open.end,scaling=scaling)
+    my.ref.lm   <- get.query.x.open.end(query,ref,my.query.lm.refined,my.ref.lm.refined,ngrid=ngrid.fit,scaling=scaling)
     my.query.lm <- my.query.lm.refined
   }
   # 3. Fix ref last x, Fit query last x
   if(ref.region.type == 'closed' & query.region.type == 'open')
   {
     my.ref.lm   <- my.ref.lm.refined
-    my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.open.end,scaling=scaling)
+    my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.fit,scaling=scaling)
   }
   # 4. Fit ref last x, Fix query last x
   if(ref.region.type == 'closed' & query.region.type == 'closed')
   {
-    my.ref.lm   <- get.query.x.open.end(query,ref,my.query.lm.refined,my.ref.lm.refined,ngrid=ngrid.open.end,scaling=scaling)
+    my.ref.lm   <- get.query.x.open.end(query,ref,my.query.lm.refined,my.ref.lm.refined,ngrid=ngrid.fit,scaling=scaling)
     my.query.lm <- my.query.lm.refined
   }
 
@@ -659,7 +659,7 @@ for(i.ucov in c(1:dim(tab.ucov)[1]))
   if(ref.region.type == 'closed')
   {
     my.ref.lm   <- my.ref.lm.refined
-    my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.open.end,scaling=scaling)
+    my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.fit,scaling=scaling)
   }
 
   # Recalc landmark y's
@@ -905,7 +905,7 @@ for(i.ucov in c(1:dim(tab.ucov)[1]))
 ###########################################################################
 
 # Save Vachette transformed data
-write.table(output.typ,paste0("./tables/vachette-curves-",model,"-",tag,".csv"),
+write.table(typ.data,paste0("./tables/vachette-curves-",model,"-",tag,".csv"),
             row.names=F,col.names=T,sep=',',na='.',quote=F)
 if (!VVPC) write.table(obs.all,paste0("./tables/vachette-obs-query-",model,"-",tag,".csv"),
                        row.names=F,col.names=T,sep=',',na='.',quote=F)
@@ -922,8 +922,8 @@ if (VVPC)  write.table(obs.all,paste0("./tables/vachette-sim-query-",model,"-",t
 
 for(i.ucov in c(1:n.ucov))
 {
-  typ.curve <- output.typ %>% filter(ucov==i.ucov)
-  ref.curve <- output.typ %>% filter(ucov==ref.ucov)
+  typ.curve <- typ.data %>% filter(ucov==i.ucov)
+  ref.curve <- typ.data %>% filter(ucov==ref.ucov)
   obs       <- obs.all    %>% filter(ucov==i.ucov)
 
   # Additive distances to original curves
@@ -1258,15 +1258,15 @@ print(lm.all.x)
 print(' ')
 
 print("VACHETTE TRANSFORMATION")
-if(IIV_CORR)   print(paste0("  Vachette IIV correction applied"))
-if(!IIV_CORR)  print(paste0("  Vachette IIV correction not applied"))
+if(iiv.correction)   print(paste0("  Vachette IIV correction applied"))
+if(!iiv.correction)  print(paste0("  Vachette IIV correction not applied"))
 if(PROP_TR)    print("  Vachette transformations based on preserving log scale distances (proportional)")
 if(ADD_TR)     print("  Vachette transformations based on preserving normal scale distances (additive)")
-if(LM_REFINE)  print("  Landmark position refinement carried out")
-print(paste0("  Tolerance determination last.x: ",tolend))
-print(paste0("  Tolerance identification maximums, minimums and inflection points: ",tolnoise))
+if(lm.refine)  print("  Landmark position refinement carried out")
+print(paste0("  Tolerance determination last.x: ",tol.end))
+print(paste0("  Tolerance identification maximums, minimums and inflection points: ",tol.noise))
 print(paste0("  Factor to extend curve to determine last.x: ",step.x.factor))
-print(paste0("  Number of gridpoints used for minimizing shape-difference open segments: ",ngrid.open.end))
+print(paste0("  Number of gridpoints used for minimizing shape-difference open segments: ",ngrid.fit))
 
 print(' ')
 print("----------------------")

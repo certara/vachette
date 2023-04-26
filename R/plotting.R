@@ -281,7 +281,7 @@ p.transformation <- function(vachette_data) {
       x = x,
       y = y,
       col = factor(seg),
-      pch = factor(paste(!!!syms(names(vachette_data$vachette.covs))))
+      pch = factor(paste(!!!syms(names(vachette_data$covariates))))
     )) +
     # geom_point(data = obs.all %>% filter(seg==2),size=2,alpha=0.25) +
     # geom_point(data = obs.all %>% filter(ref=="No",seg==2),aes(x=x.scaled,y=y.scaled),col='purple',size=2) +
@@ -393,7 +393,7 @@ obs.all %>%
 #' @export
 #'
 p.obs.ref.query <- function(vachette_data) {
-  #stopifnot(length(vachette_data$vachette.covs) == 1)
+  #stopifnot(length(vachette_data$covariates) == 1)
   obs.all <- vachette_data$obs.all
   curves.all <- vachette_data$curves.all
   obs.all %>%
@@ -425,7 +425,7 @@ p.obs.ref.query <- function(vachette_data) {
 #' @export
 #'
 p.obs.cov <- function(vachette_data) {
-  #stopifnot(length(vachette_data$vachette.covs) == 1)
+  #stopifnot(length(vachette_data$covariates) == 1)
   obs.all <- vachette_data$obs.all
   curves.all <- vachette_data$curves.all
 
@@ -496,7 +496,7 @@ p.vachette.arrow <- function(vachette_data) {
 #' @export
 #'
 p.vachette <- function(vachette_data) {
-  #stopifnot(length(vachette_data$vachette.covs) == 1)
+  #stopifnot(length(vachette_data$covariates) == 1)
   obs.all <- vachette_data$obs.all
   curves.all <- vachette_data$curves.all
 

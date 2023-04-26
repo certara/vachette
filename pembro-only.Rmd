@@ -28,15 +28,15 @@ library(vachette)
 **Note: The Pembro data set contains a categorical covariate e.g., `SCHED`**
 
 ```{r pembro, message=FALSE}
-indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "pembro-obs.csv"))
-output.typ  <- read.csv(system.file(package = "vachette", "examples", "pembro-typ.csv"))
+obs.data <- read.csv(system.file(package = "vachette", "examples", "pembro-obs.csv"))
+typ.data  <- read.csv(system.file(package = "vachette", "examples", "pembro-typ.csv"))
 
 vd <-
   vachette_data(
-    indivsam.obs,
-    output.typ,
-    vachette.covs =  c(SCHED = 'Q3W', ALB = 53.5),
-    ref.dose = 3,
+    obs.data,
+    typ.data,
+    covariates =  c(SCHED = 'Q3W', ALB = 53.5),
+    ref.dosenr = 3,
     model.name = "pembro"
   )
 
@@ -49,21 +49,22 @@ If no reference value is specified, the covariate central tendency is used e.g.,
 ```{r pembro2, message=FALSE}
 vd <-
   vachette_data(
-    indivsam.obs,
-    output.typ,
-    vachette.covs =  c("SCHED", "ALB"),
-    ref.dose = 3,
+    obs.data,
+    typ.data,
+    covariates =  c("SCHED", "ALB"),
+    ref.dosenr = 3,
     model.name = "pembro"
   )
 
 print(vd)
 
 ```
+
 ```{r pembro3, message = FALSE}
 vd <- vd |>
-  apply_transformations(w.init = 17,
-                        w1.refine = 7,
-                        w2.refine = 5)
+  apply_transformations(window = 17,
+                        window.d1.refine = 7,
+                        window.d2.refine = 5)
 
 p.vachette(vd)
 
