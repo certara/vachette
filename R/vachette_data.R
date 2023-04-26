@@ -42,11 +42,23 @@ vachette_data <-
            mappings = NULL) {
 
   vachette_data_env <- environment()
-  # Validation Check
-  .validate_columns(mappings, indivsam.obs, output.typ) %>%
+  # Column Validation Check
+  .validate_columns(mappings, indivsam.obs, output.typ, IIV_CORR) %>%
     list2env(envir = vachette_data_env)
 
+  # Process/assign covariates
   vachette.covs <- .process_covariates(vachette.covs, indivsam.obs)
+
+  # If ref.dosenr is missing, provide warning then set to 1
+  if (missing(ref.dose)) {
+    warning("ref.dosenr argument not given, setting ref.dosenr to 1")
+    ref.dose <- 1
+    #sigmoid model, does not need ref.dosenr
+    #if no AMT,
+  }
+
+  indivsam.obs <- .calculate_dose_number(indivsam.obs, ref.dosenr = ref.dose, data_type = "obs.data")
+  output.typ <- .calculate_dose_number(output.typ, ref.dosenr = ref.dose, data_type = "typ.data")
 
   # Region is the Vachette terminology for the time between two dose administrations
   ref.region <- ref.dose
@@ -445,16 +457,20 @@ apply_transformations.vachette_data <-
     # Small stepsize -> small tolerance
     # Large stepsize -> large tol
     #tolapply = distance between second and first x obs * tolnoise
-    tolapply <- tolnoise*(output.typ$x[2]-output.typ$x[1])   # Grid stepsize
+    tolapply <- tolnoise*(output.typ$x[2]-output.typ$x[1])
     # get ref landmarks
-    my.ref.lm.init    <- get.x.multi.landmarks(ref$x,ref$y,w=w.init,tol=tolapply) #w argument, user specified?
+    my.ref.lm.init    <- get.x.multi.landmarks(ref$x,ref$y,w=w.init,tol=tolapply) #contiguous inflec cause issue?
     my.ref.lm.init$y  <- approx(ref$x,ref$y, xout=my.ref.lm.init$x)$y #interpolation
     # get query landmarks
     my.query.lm.init    <- get.x.multi.landmarks(query$x,query$y,w=w.init,tol=tolapply)
     my.query.lm.init$y  <- approx(query$x,query$y, xout=my.query.lm.init$x)$y
 
+    # stop at this point, perhaps, allow user to visually inspect this plot, to assess what increase in stepsize
+    # do not error out, return data that is available, and provide to user for plotting, and provide suggestions for updating argument values
+
     #Validation check
     #If y contiguous y values in series are the same, provide error, increase tolnoise
+    #option 1: if multiple inflec in sequence, try decreasing tolnoise
 
     if(!LM_REFINE)
     {
@@ -793,10 +809,13 @@ apply_transformations.vachette_data <-
 
 `%notin%` <- Negate(`%in%`)
 
-.validate_columns <- function(mappings, indivsam.obs, output.typ) {
+.validate_columns <- function(mappings, indivsam.obs, output.typ, IIV_CORR) {
 
-  obs_req_cols <- c("ID", "PRED", "IPRED", "OBS", "x", "dosenr")
-  sim_req_cols <- c("ID", "PRED", "x", "dosenr")
+  obs_req_cols <- c("ID", "PRED", "OBS", "x") #, "dosenr")
+  if (isTRUE(IIV_CORR)) {
+    obs_req_cols <- c(obs_req_cols, "IPRED")
+  }
+  sim_req_cols <- c("ID", "PRED", "x") #, "dosenr")
 
   obs_cols <- colnames(indivsam.obs)
   sim_cols <- colnames(output.typ)
@@ -894,6 +913,64 @@ apply_transformations.vachette_data <-
   }
   return(vachette.covs)
 }
+
+
+.calculate_dose_number <- function(data, ref.dosenr, data_type = c("obs.data", "typ.data")) {
+
+  data_type <- match.arg(data_type)
+
+  # If dose number provided, and column in data, use that
+  if ("dosenr" %in% colnames(data)) {
+    message("`dosenr` column found in ", data_type, ", using `dosenr` column in data for corresponding ref.dosenr value")
+  } else {
+    if ("EVID" %in% colnames(data)) {
+      message("`EVID` column found in ", data_type, ", creating `dosenr` column in data for corresponding ref.dosenr value")
+      data <- data %>%
+        group_by(ID) %>%
+        mutate(dosenr = cumsum(EVID == 1)) %>%
+        ungroup()
+    } else if (all(c("ADDL", "II", "AMT") %in% colnames(data))) {
+      message("`ADDL`, `II`, `AMT` columns found in ", data_type, ", creating `dosenr` column in data for corresponding ref.dosenr value")
+      dose_data <- data %>%
+        select(x, ID, AMT, ADDL, II) %>%
+        filter(ADDL > 0)
+      dosing <- list()
+      for (i in 1:nrow(dose_data)) {
+        dose_data_row <- slice(dose_data, i)
+        dosing[[i]] <- data.frame(x = seq(from = dose_data_row$x,
+                                          by = as.numeric(dose_data_row$II),
+                                          length.out = as.numeric(dose_data_row$ADDL) + 1),
+                                  ID = dose_data_row$ID,
+                                  AMT = dose_data_row$AMT
+        )
+      }
+      dose_data_expanded <- do.call(rbind, dosing)
+      data <- filter(data, ADDL == 0) %>%
+        select(-ADDL, -II)
+
+      data_new <- bind_rows(data, dose_data_expanded) %>%
+        arrange(ID, x)
+
+      data <- data_new %>%
+        group_by(ID) %>%
+        mutate(dosenr = cumsum(AMT != 0)) %>%
+        ungroup()
+    } else if ("AMT" %in% colnames(data)) {
+      data <- data %>%
+        group_by(ID) %>%
+        mutate(dosenr = cumsum(AMT != 0)) %>% #if values NA: cumsum(!is.na(amt))
+        ungroup()
+    } # final control flow should be understood as no dose information in the data, no ref.dosnr, message such e.g., sigmoid model
+  }
+
+  # ensure value supplied to ref.dosenr exists inside dosenr column
+  if (ref.dosenr %notin% unique(data[["dosenr"]])) {
+    stop("ref.dosenr value of ", ref.dosenr, " not found in dosenr column in ", data_type)
+  }
+
+  return(data)
+}
+
 
 .mode <- function(x){
   uniqv <- unique(x)
