@@ -53,6 +53,8 @@ vachette_data <-
   if (missing(ref.dose)) {
     warning("ref.dosenr argument not given, setting ref.dosenr to 1")
     ref.dose <- 1
+    #sigmoid model, does not need ref.dosenr
+    #if no AMT,
   }
 
   indivsam.obs <- .calculate_dose_number(indivsam.obs, ref.dosenr = ref.dose, data_type = "obs.data")
@@ -432,13 +434,16 @@ apply_transformations.vachette_data <-
     # Small stepsize -> small tolerance
     # Large stepsize -> large tol
     #tolapply = distance between second and first x obs * tolnoise
-    tolapply <- tolnoise*(output.typ$x[2]-output.typ$x[1])   # Grid stepsize
+    tolapply <- tolnoise*(output.typ$x[2]-output.typ$x[1])
     # get ref landmarks
-    my.ref.lm.init    <- get.x.multi.landmarks(ref$x,ref$y,w=w.init,tol=tolapply) #w argument, user specified?
+    my.ref.lm.init    <- get.x.multi.landmarks(ref$x,ref$y,w=w.init,tol=tolapply) #contiguous inflec cause issue?
     my.ref.lm.init$y  <- approx(ref$x,ref$y, xout=my.ref.lm.init$x)$y #interpolation
     # get query landmarks
     my.query.lm.init    <- get.x.multi.landmarks(query$x,query$y,w=w.init,tol=tolapply)
     my.query.lm.init$y  <- approx(query$x,query$y, xout=my.query.lm.init$x)$y
+
+    # stop at this point, perhaps, allow user to visually inspect this plot, to assess what increase in stepsize
+    # do not error out, return data that is available, and provide to user for plotting, and provide suggestions for updating argument values
 
     #Validation check
     #If y contiguous y values in series are the same, provide error, increase tolnoise
@@ -929,7 +934,7 @@ apply_transformations.vachette_data <-
         group_by(ID) %>%
         mutate(dosenr = cumsum(AMT != 0)) %>% #if values NA: cumsum(!is.na(amt))
         ungroup()
-    }
+    } # final control flow should be understood as no dose information in the data, no ref.dosnr, message such e.g., sigmoid model
   }
 
   # ensure value supplied to ref.dosenr exists inside dosenr column
