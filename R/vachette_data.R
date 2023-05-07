@@ -664,15 +664,20 @@ apply_transformations.vachette_data <-
         #   mutate(seg=cur.ref.seg)
         # ref <- rbind(ref,ref.add)
 
-        # Same as for interregion gap extrapolation
+        # Same as for interregion gap extrapolation - multiple points
         cur.ref.seg   <- ref$seg[dim(ref[!is.na(ref$seg),])[1]]
 
         ref.grid.step.size   <- ref$x[dim(ref)[1]] - ref$x[dim(ref)[1]-1]
-        ref.curve.next       <- ref[dim(ref)[1],]
 
-        # Increase x:
-        ref.curve.next$x     <- ref.curve.next$x + ref.grid.step.size
-        ref.curve.next$x     <- max.obs.x.scaled
+        # Increase x by ref grid steps up to last point
+        # number of steps: ceiling((max.obs.x - max(ref$x))/ref.grid.step.size)
+        n.steps.x          <- c(1:ceiling((max.obs.x - max(ref$x))/ref.grid.step.size))
+        steps.x            <- max(ref$x) + n.steps.x*ref.grid.step.size
+
+        ref.curve.next     <- ref %>% slice(rep(n(),max(n.steps.x)))
+        ref.curve.next$x   <- steps.x
+        # Last x exactly matching max query obs x
+        ref.curve.next$x[n.steps.x] <- max.obs.x.scaled
 
         # Last 6 datapoints
         last6 <- ref %>% slice((n()-5):n()) %>% select(x,y)
