@@ -400,27 +400,50 @@ apply_transformations.vachette_data <-
       filter(ucov == i.ucov) %>%
       mutate(ref = tab.ucov$ref[i.ucov])    # Flag for reference
 
-    message("Test - LOCF interregion extrapolation")
+    message("Implement simple exp extrapolation")
 
     # 230418 - extrapolate region last-x region by one gridstep size if region.type = 'closed'
     # Currently simple extra x value with same y value ("horizontal" extrapolation - LOCF)
     if(ref.region.type == 'closed')
     {
-      ref.grid.step.size = ref$x[dim(ref)[1]] - ref$x[dim(ref)[1]-1]
-      ref.curve.last.point <- ref[dim(ref)[1],]
-      # Change x only, assume change of y is negligible
-      ref.curve.last.point$x <- ref.curve.last.point$x + ref.grid.step.size
-      # Add
-      ref <- rbind(ref,ref.curve.last.point)
+      ref.grid.step.size   <- ref$x[dim(ref)[1]] - ref$x[dim(ref)[1]-1]
+      ref.curve.next       <- ref[dim(ref)[1],]
+      # Increase x:
+      ref.curve.next$x     <- ref.curve.next$x + ref.grid.step.size
+
+      # Last 6 datapoints
+      last6 <- ref %>% slice((n()-5):n()) %>% select(x,y)
+
+      # Exponential fit
+      y  = last6$y
+      x  = last6$x
+      exp.model <-lm(log(y) ~ x)
+
+      # Extrapolate y
+      ref.curve.next$y     <- exp(predict(exp.model,list(x=ref.curve.next$x)))
+
+      ref <- rbind(ref,ref.curve.next)
+
     }
     if(query.region.type == 'closed')
     {
-      query.grid.step.size = query$x[dim(query)[1]] - query$x[dim(query)[1]-1]
-      query.curve.last.point <- query[dim(query)[1],]
-      # Change x only, assume change of y is negligible
-      query.curve.last.point$x <- query.curve.last.point$x + query.grid.step.size
-      # Add
-      query <- rbind(query,query.curve.last.point)
+      query.grid.step.size   <- query$x[dim(query)[1]] - query$x[dim(query)[1]-1]
+      query.curve.next       <- query[dim(query)[1],]
+      # Increase x:
+      query.curve.next$x     <- query.curve.next$x + query.grid.step.size
+
+      # Last 6 datapoints
+      last6 <- query %>% slice((n()-5):n()) %>% select(x,y)
+
+      # Exponential fit
+      y  = last6$y
+      x  = last6$x
+      exp.model <-lm(log(y) ~ x)
+
+      # Extrapolate y
+      query.curve.next$y     <- exp(predict(exp.model,list(x=query.curve.next$x)))
+
+      query <- rbind(query,query.curve.next)
     }
 
     # We have to run Vachette twice if observation AND simulated replicates have to be generated (for VPC)
