@@ -400,6 +400,8 @@ apply_transformations.vachette_data <-
       filter(ucov == i.ucov) %>%
       mutate(ref = tab.ucov$ref[i.ucov])    # Flag for reference
 
+    message("Test - LOCF interregion extrapolation")
+
     # 230418 - extrapolate region last-x region by one gridstep size if region.type = 'closed'
     # Currently simple extra x value with same y value ("horizontal" extrapolation - LOCF)
     if(ref.region.type == 'closed')
