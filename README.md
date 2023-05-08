@@ -35,13 +35,7 @@ vd <-
     iiv.correction = FALSE,
     model.name = "Intravenous (i.v)"
   )
-```
 
-    ## `dosenr` column found in obs.data, using `dosenr` column in data for corresponding ref.dosenr value
-
-    ## `dosenr` column found in typ.data, using `dosenr` column in data for corresponding ref.dosenr value
-
-``` r
 vd <- vd |>
   apply_transformations()
 
@@ -65,13 +59,7 @@ vd <-
     iiv.correction = FALSE,
     model.name = "oral-two-cov"
   )
-```
 
-    ## `dosenr` column found in obs.data, using `dosenr` column in data for corresponding ref.dosenr value
-
-    ## `dosenr` column found in typ.data, using `dosenr` column in data for corresponding ref.dosenr value
-
-``` r
 vd <- vd |>
   apply_transformations(window = 23,
                         window.d1.refine = 7,
@@ -98,13 +86,7 @@ vd <-
     iiv.correction = FALSE,
     model.name = "sigmoid"
   )
-```
 
-    ## `dosenr` column found in obs.data, using `dosenr` column in data for corresponding ref.dosenr value
-
-    ## `dosenr` column found in typ.data, using `dosenr` column in data for corresponding ref.dosenr value
-
-``` r
 vd <- vd |>
   apply_transformations(window = 17,
                         window.d1.refine = 7,
@@ -130,13 +112,7 @@ vd <-
     iiv.correction = FALSE,
     model.name = "oral-absorption"
   )
-```
 
-    ## `dosenr` column found in obs.data, using `dosenr` column in data for corresponding ref.dosenr value
-
-    ## `dosenr` column found in typ.data, using `dosenr` column in data for corresponding ref.dosenr value
-
-``` r
 vd <- vd |>
   apply_transformations(window = 17,
                         window.d1.refine = 7,
@@ -199,6 +175,7 @@ vd <- vd |>
   apply_transformations(window = 17,
                         window.d1.refine = 7,
                         window.d2.refine = 5)
+
 
 p.vachette(vd)
 ```

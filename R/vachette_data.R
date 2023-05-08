@@ -415,21 +415,48 @@ apply_transformations.vachette_data <-
     # Currently simple extra x value with same y value ("horizontal" extrapolation - LOCF)
     if(ref.region.type == 'closed')
     {
-      ref.grid.step.size = ref$x[dim(ref)[1]] - ref$x[dim(ref)[1]-1]
-      ref.curve.last.point <- ref[dim(ref)[1],]
-      # Change x only, assume change of y is negligible
-      ref.curve.last.point$x <- ref.curve.last.point$x + ref.grid.step.size
-      # Add
-      ref <- rbind(ref,ref.curve.last.point)
+      message(paste0("Reference region-",ref.region," gap extrapolation"))
+
+      ref.grid.step.size   <- ref$x[dim(ref)[1]] - ref$x[dim(ref)[1]-1]
+      ref.curve.next       <- ref[dim(ref)[1],]
+      # Increase x:
+      ref.curve.next$x     <- ref.curve.next$x + ref.grid.step.size
+
+      # Last 6 datapoints
+      last6 <- ref %>% slice((n()-5):n()) %>% select(x,y)
+
+      # Exponential fit
+      y  = last6$y
+      x  = last6$x
+      exp.model <-lm(log(y) ~ x)
+
+      # Extrapolate y
+      ref.curve.next$y     <- exp(predict(exp.model,list(x=ref.curve.next$x)))
+
+      ref <- rbind(ref,ref.curve.next)
+
     }
     if(query.region.type == 'closed')
     {
-      query.grid.step.size = query$x[dim(query)[1]] - query$x[dim(query)[1]-1]
-      query.curve.last.point <- query[dim(query)[1],]
-      # Change x only, assume change of y is negligible
-      query.curve.last.point$x <- query.curve.last.point$x + query.grid.step.size
-      # Add
-      query <- rbind(query,query.curve.last.point)
+      message(paste0("Query region-",query.region," gap extrapolation"))
+
+      query.grid.step.size   <- query$x[dim(query)[1]] - query$x[dim(query)[1]-1]
+      query.curve.next       <- query[dim(query)[1],]
+      # Increase x:
+      query.curve.next$x     <- query.curve.next$x + query.grid.step.size
+
+      # Last 6 datapoints
+      last6 <- query %>% slice((n()-5):n()) %>% select(x,y)
+
+      # Exponential fit
+      y  = last6$y
+      x  = last6$x
+      exp.model <-lm(log(y) ~ x)
+
+      # Extrapolate y
+      query.curve.next$y     <- exp(predict(exp.model,list(x=query.curve.next$x)))
+
+      query <- rbind(query,query.curve.next)
     }
 
     # We have to run Vachette twice if observation AND simulated replicates have to be generated (for VPC)
@@ -613,13 +640,9 @@ apply_transformations.vachette_data <-
       if(max(my.query.lm$x) < max(obs.query$x))
       {
 
-        # @James: I have to check this part of the code using a suitable example
-
         EXTENSION <- TRUE
 
-        message('--------------------------------------------------------')
-        message('EXTENSION REF CURVE UPDATED >> further checking required')
-        message('--------------------------------------------------------')
+        message('*** Extension reference curve by simple exponential extrapolation ***')
 
         # max x observation on query
         max.obs.x <- max(obs.query$x)
@@ -642,24 +665,50 @@ apply_transformations.vachette_data <-
         # REFERENCE
         # Reference curve has to be extrapolated up to max.obs.x.scaled
         # Last segment reference with last two typical datapoints extrapolated to scaled max x for obs
-        lastpoint        <- dim(ref)[1]
-        add.x <- max.obs.x.scaled
-        add.y <- approxExtrap(c(ref$x[lastpoint-1],ref$x[lastpoint]),
-                              c(ref$y[lastpoint-1],ref$y[lastpoint]),
-                              xout = add.x)$y
 
+        # lastpoint        <- dim(ref)[1]
+        # add.x <- max.obs.x.scaled
+        # add.y <- approxExtrap(c(ref$x[lastpoint-1],ref$x[lastpoint]),
+        #                       c(ref$y[lastpoint-1],ref$y[lastpoint]),
+        #                       xout = add.x)$y
+        #
+        # ref.add <- ref %>%
+        #   slice(1) %>%
+        #   mutate(x=add.x,
+        #          y=add.y) %>%
+        #   mutate(seg=cur.ref.seg)
+        # ref <- rbind(ref,ref.add)
+
+        # Same as for interregion gap extrapolation - multiple points
         cur.ref.seg   <- ref$seg[dim(ref[!is.na(ref$seg),])[1]]
-        ref.add <- ref %>%
-          slice(1) %>%
-          mutate(x=add.x,
-                 y=add.y) %>%
-          mutate(seg=cur.ref.seg)
-        ref <- rbind(ref,ref.add)
+
+        ref.grid.step.size   <- ref$x[dim(ref)[1]] - ref$x[dim(ref)[1]-1]
+
+        # Increase x by ref grid steps up to last point
+        # number of steps: ceiling((max.obs.x - max(ref$x))/ref.grid.step.size)
+        n.steps.x          <- c(1:ceiling((max.obs.x - max(ref$x))/ref.grid.step.size))
+        steps.x            <- max(ref$x) + n.steps.x*ref.grid.step.size
+
+        ref.curve.next     <- ref %>% slice(rep(n(),max(n.steps.x)))
+        ref.curve.next$x   <- steps.x
+        # Last x exactly matching max query obs x
+        ref.curve.next$x[n.steps.x] <- max.obs.x.scaled
+
+        # Last 6 datapoints
+        last6 <- ref %>% slice((n()-5):n()) %>% select(x,y)
+
+        # Exponential fit
+        y  = last6$y
+        x  = last6$x
+        exp.model <-lm(log(y) ~ x)
+
+        # Extrapolate y
+        ref.curve.next$y     <- exp(predict(exp.model,list(x=ref.curve.next$x)))
+
+        ref <- rbind(ref,ref.curve.next)
 
         # Check:
         if(cur.ref.seg != cur.query.seg) stop("Error segment number assignment in reference extrapolation block")
-
-        print("**** END EXTENSION *****")
       }
     }
 
