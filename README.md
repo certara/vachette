@@ -19,19 +19,20 @@ has been made public**
 
 ``` r
 # Import Example Data
-indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv")) |> 
+obs.data <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv")) |> 
   dplyr::rename(WT = "vachette.cov1")
-output.typ <- read.csv(system.file(package = "vachette", "examples", "iv-typ.csv")) |> 
+typ.data <- read.csv(system.file(package = "vachette", "examples", "iv-typ.csv")) |> 
   dplyr::rename(WT = "vachette.cov1")
 
 library(vachette)
 
 vd <-
   vachette_data(
-    indivsam.obs,
-    output.typ,
-    vachette.covs = c("WT" = 70),
-    ref.dose = 1,
+    obs.data,
+    typ.data,
+    covariates = c("WT" = 70),
+    ref.dosenr = 1,
+    iiv.correction = FALSE,
     model.name = "Intravenous (i.v)"
   )
 
@@ -46,22 +47,23 @@ p.vachette(vd)
 ### Oral Two-Cov
 
 ``` r
-indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "oral-two-cov-obs.csv"))
-output.typ  <- read.csv(system.file(package = "vachette", "examples", "oral-two-cov-typ.csv"))
+obs.data <- read.csv(system.file(package = "vachette", "examples", "oral-two-cov-obs.csv"))
+typ.data  <- read.csv(system.file(package = "vachette", "examples", "oral-two-cov-typ.csv"))
 
 vd <-
   vachette_data(
-    indivsam.obs,
-    output.typ,
-    vachette.covs =  c("WT" = 70, "AGE" = 30),
-    ref.dose = 1,
+    obs.data,
+    typ.data,
+    covariates =  c("WT" = 70, "AGE" = 30),
+    ref.dosenr = 1,
+    iiv.correction = FALSE,
     model.name = "oral-two-cov"
   )
 
 vd <- vd |>
-  apply_transformations(w.init = 23,
-                        w1.refine = 7,
-                        w2.refine = 5)
+  apply_transformations(window = 23,
+                        window.d1.refine = 7,
+                        window.d2.refine = 5)
 
 p.vachette(vd)
 ```
@@ -71,23 +73,24 @@ p.vachette(vd)
 ### Sigmoid
 
 ``` r
-indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "sigmoid-obs.csv")) |>
+obs.data <- read.csv(system.file(package = "vachette", "examples", "sigmoid-obs.csv")) |>
   dplyr::rename("ID" = id)
-output.typ  <- read.csv(system.file(package = "vachette", "examples", "sigmoid-typ.csv"))
+typ.data  <- read.csv(system.file(package = "vachette", "examples", "sigmoid-typ.csv"))
 
 vd <-
   vachette_data(
-    indivsam.obs,
-    output.typ,
-    vachette.covs =  c("vachette.cov1" = 70),
-    ref.dose = 1,
+    obs.data,
+    typ.data,
+    covariates =  c("vachette.cov1" = 70),
+    ref.dosenr = 1,
+    iiv.correction = FALSE,
     model.name = "sigmoid"
   )
 
 vd <- vd |>
-  apply_transformations(w.init = 17,
-                        w1.refine = 7,
-                        w2.refine = 5)
+  apply_transformations(window = 17,
+                        window.d1.refine = 7,
+                        window.d2.refine = 5)
 
 p.vachette(vd)
 ```
@@ -97,22 +100,23 @@ p.vachette(vd)
 ### Oral-Absorption
 
 ``` r
-indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "oral-absorption-obs.csv"))
-output.typ  <- read.csv(system.file(package = "vachette", "examples", "oral-absorption-typ.csv"))
+obs.data <- read.csv(system.file(package = "vachette", "examples", "oral-absorption-obs.csv"))
+typ.data  <- read.csv(system.file(package = "vachette", "examples", "oral-absorption-typ.csv"))
 
 vd <-
   vachette_data(
-    indivsam.obs,
-    output.typ,
-    vachette.covs =  c("vachette.cov1" = 70),
-    ref.dose = 1,
+    obs.data,
+    typ.data,
+    covariates =  c("vachette.cov1" = 70),
+    ref.dosenr = 1,
+    iiv.correction = FALSE,
     model.name = "oral-absorption"
   )
 
 vd <- vd |>
-  apply_transformations(w.init = 17,
-                        w1.refine = 7,
-                        w2.refine = 5)
+  apply_transformations(window = 17,
+                        window.d1.refine = 7,
+                        window.d2.refine = 5)
 
 p.vachette(vd)
 ```
@@ -125,15 +129,16 @@ p.vachette(vd)
 `SCHED`**
 
 ``` r
-indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "pembro-obs.csv"))
-output.typ  <- read.csv(system.file(package = "vachette", "examples", "pembro-typ.csv"))
+obs.data <- read.csv(system.file(package = "vachette", "examples", "pembro-obs.csv"))
+typ.data  <- read.csv(system.file(package = "vachette", "examples", "pembro-typ.csv"))
 
 vd <-
   vachette_data(
-    indivsam.obs,
-    output.typ,
-    vachette.covs =  c(SCHED = 'Q3W', ALB = 53.5),
-    ref.dose = 3,
+    obs.data,
+    typ.data,
+    covariates =  c(SCHED = 'Q3W', ALB = 53.5),
+    ref.dosenr = 3,
+    iiv.correction = FALSE,
     model.name = "pembro"
   )
 
@@ -150,10 +155,11 @@ used e.g., median for continuous and mode for categorical covariate.
 ``` r
 vd <-
   vachette_data(
-    indivsam.obs,
-    output.typ,
-    vachette.covs =  c("SCHED", "ALB"),
-    ref.dose = 3,
+    obs.data,
+    typ.data,
+    covariates =  c("SCHED", "ALB"),
+    ref.dosenr = 3,
+    iiv.correction = FALSE,
     model.name = "pembro"
   )
 
@@ -166,9 +172,10 @@ print(vd)
 
 ``` r
 vd <- vd |>
-  apply_transformations(w.init = 17,
-                        w1.refine = 7,
-                        w2.refine = 5)
+  apply_transformations(window = 17,
+                        window.d1.refine = 7,
+                        window.d2.refine = 5)
+
 
 p.vachette(vd)
 ```

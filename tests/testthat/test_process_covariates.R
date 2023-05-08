@@ -1,19 +1,19 @@
 test_that("covariates are correctly extracted if missing reference values", {
 
   #DF
-  indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "oral-two-cov-obs.csv"))
-  vachette.covs <- vachette:::.process_covariates(vachette.covs = c("WT", "AGE"), indivsam.obs)
-  testthat::expect_equal(vachette.covs, c("WT" = "30", "AGE" = "10"))
+  obs.data <- read.csv(system.file(package = "vachette", "examples", "oral-two-cov-obs.csv"))
+  covariates <- vachette:::.process_covariates(covariates = c("WT", "AGE"), obs.data)
+  testthat::expect_equal(covariates, c("WT" = "30", "AGE" = "10"))
 
   #Test Tibble
   mtcars$cyl <- paste0("cyl_", mtcars$cyl)
-  vachette.covs <- vachette:::.process_covariates(vachette.covs = c("mpg", "cyl"), mtcars)
-  testthat::expect_equal(vachette.covs, c("mpg" = "19.2", "cyl" = "cyl_8"))
+  covariates <- vachette:::.process_covariates(covariates = c("mpg", "cyl"), mtcars)
+  testthat::expect_equal(covariates, c("mpg" = "19.2", "cyl" = "cyl_8"))
 
-  vachette.covs <- vachette:::.process_covariates(vachette.covs = c("mpg" = 18.7, "cyl" = "cyl_6"), mtcars)
-  testthat::expect_equal(vachette.covs, c("mpg" = "18.7", "cyl" = "cyl_6"))
+  covariates <- vachette:::.process_covariates(covariates = c("mpg" = 18.7, "cyl" = "cyl_6"), mtcars)
+  testthat::expect_equal(covariates, c("mpg" = "18.7", "cyl" = "cyl_6"))
 
-  vachette.covs <- vachette:::.process_covariates(vachette.covs = c("cyl", "hp" = 123), mtcars)
-  testthat::expect_equal(vachette.covs, c("cyl" = "cyl_8", "hp" = "123"))
+  covariates <- vachette:::.process_covariates(covariates = c("cyl", "hp" = 123), mtcars)
+  testthat::expect_equal(covariates, c("cyl" = "cyl_8", "hp" = "123"))
 })
 

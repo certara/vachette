@@ -65,7 +65,7 @@ sim.sigmoid <- function(nsim.indiv,iiv,ruv,nvpc,SAVE=F,PROP=T)
   # ----------- Typical curves --------------
   
   # simulate pred
-  output.typ  <- expand_grid(bmx = 10**(c((-10*log10(xlast.user)):(10*log10(xlast.user)))/10),
+  typ.data  <- expand_grid(bmx = 10**(c((-10*log10(xlast.user)):(10*log10(xlast.user)))/10),
                              WT = c(wt1,wt2)) %>% 
     mutate(resp = ifelse(WT==wt1, emax.wt1*bmx**gamma.wt1/(bmx**gamma.wt1 + ic50.wt1**gamma.wt1),
                          ifelse(WT==wt2, emax.wt2*bmx**gamma.wt2/(bmx**gamma.wt2 + ic50.wt2**gamma.wt2),NA))) %>% 
@@ -142,7 +142,7 @@ sim.sigmoid <- function(nsim.indiv,iiv,ruv,nvpc,SAVE=F,PROP=T)
   # VPC, simulate nvpc times and pick same ID/timepoint combinations
   if(nvpc>0)
   {
-    indivsam.vpc <- NULL
+    sim.data <- NULL
     for(ivpc in c(1:nvpc))
     {
       imy.ipred <- NULL
@@ -196,7 +196,7 @@ sim.sigmoid <- function(nsim.indiv,iiv,ruv,nvpc,SAVE=F,PROP=T)
       mutate(isim=ivpc)
     
     # Collect but keep required variables only
-    indivsam.vpc <- rbindlist(list(indivsam.vpc, 
+    sim.data <- rbindlist(list(sim.data, 
                                    indivsam.ivpc %>% dplyr::select(isim,ID,x,PRED,IPRED,OBS,vachette.cov1,dosenr)))
   }
   
@@ -205,17 +205,17 @@ sim.sigmoid <- function(nsim.indiv,iiv,ruv,nvpc,SAVE=F,PROP=T)
     filetyp <- paste0("../flat-files/vachette-example-", simtag, "-typ.csv")
     fileobs <- paste0("../flat-files/vachette-example-", simtag, "-obs.csv")
     filevpc <- paste0("../flat-files/vachette-example-", simtag, "-vpc.csv")
-    if(iiv==0 & ruv==0 & nvpc==0 & !file.exists(filetyp))    write.csv(output.typ,file=filetyp,row.names=F)
+    if(iiv==0 & ruv==0 & nvpc==0 & !file.exists(filetyp))    write.csv(typ.data,file=filetyp,row.names=F)
     if((iiv!=0 | ruv!=0) & nvpc==0 & !file.exists(fileobs))  write.csv(indivsam.all,file=fileobs,row.names=F)
-    if((iiv!=0 | ruv!=0) & nvpc>0 & !file.exists(filevpc))   write.csv(indivsam.vpc,file=filevpc,row.names=F)
+    if((iiv!=0 | ruv!=0) & nvpc>0 & !file.exists(filevpc))   write.csv(sim.data,file=filevpc,row.names=F)
   }
   
-  if(iiv==0 & ruv==0 & nvpc==0)   print(dim(output.typ))
+  if(iiv==0 & ruv==0 & nvpc==0)   print(dim(typ.data))
   if((iiv!=0 | ruv!=0) & nvpc==0) print(dim(indivsam.all))
-  if((iiv!=0 | ruv!=0) & nvpc>0)  print(dim(indivsam.vpc))
+  if((iiv!=0 | ruv!=0) & nvpc>0)  print(dim(sim.data))
   
-  if(iiv==0 & ruv==0 & nvpc==0)   return(output.typ)
+  if(iiv==0 & ruv==0 & nvpc==0)   return(typ.data)
   if((iiv!=0 | ruv!=0) & nvpc==0) return(indivsam.all)
-  if((iiv!=0 | ruv!=0) & nvpc>0)  return(indivsam.vpc)
+  if((iiv!=0 | ruv!=0) & nvpc>0)  return(sim.data)
 }
 

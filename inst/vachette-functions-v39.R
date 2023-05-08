@@ -264,7 +264,7 @@ get.ref.x.open.end <- function(x,y,lm,step.x.factor=1.5,tol=0.01)
   ydiff      <- abs(ylast - ylastNext)
   
   # Find xNext position
-  xsol <- multi.approx(xlast,ydiff,yout=ytol)   # tolend
+  xsol <- multi.approx(xlast,ydiff,yout=ytol)   # tol.end
   # Note: For emax we have 2 solutions: one at start when curve is slowly increasing, one at end when curve is slowly flattening out
   # Always take open end = last solution
   xhit <- xsol[length(xsol)]

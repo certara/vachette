@@ -5,38 +5,38 @@
 \title{Initialize vachette object with required data}
 \usage{
 vachette_data(
-  indivsam.obs,
-  output.typ,
-  indivsam.vpc = NULL,
-  vachette.covs,
-  ref.dose,
-  IIV_CORR = FALSE,
-  error = c("proportional", "additive"),
+  obs.data,
+  typ.data,
+  sim.data = NULL,
+  covariates,
+  ref.dosenr,
+  iiv.correction = TRUE,
+  error.model = c("proportional", "additive"),
   model.name = NULL,
   mappings = NULL
 )
 }
 \arguments{
-\item{indivsam.obs}{Observed data of class \code{data.frame}}
+\item{obs.data}{data.frame; Observed data}
 
-\item{output.typ}{Typ data of class \code{data.frame}}
+\item{typ.data}{data.frame; Typical (population) curves}
 
-\item{indivsam.vpc}{VPC data of class  \code{data.frame}}
+\item{sim.data}{data.frame; Simulated (VPC) data}
 
-\item{vachette.covs}{Named character vector of covariate names and reference values}
+\item{covariates}{named character vector; Covariate names with reference values in vachette transformation}
 
-\item{ref.dose}{Reference dose value in data}
+\item{ref.dosenr}{integer; Number of doses given up through start of reference region}
 
-\item{IIV_CORR}{Logical; if IIV corrections performed}
+\item{iiv.correction}{logical; Apply inter-individual variability correction. Default \code{TRUE}}
 
-\item{error}{Character; options are \code{"proportional"} or \code{"additive"}. Default is \code{"proportional"}}
+\item{error.model}{character; Applied error model, \code{"proportional"} or \code{"additive"}. Default \code{"proportional"}}
 
-\item{model.name}{Character; optional model name for plot output}
+\item{model.name}{character; Optional model name for plot output}
 
-\item{mappings}{Named character vector specifying model variable name to column name in input data}
+\item{mappings}{named character vector;  Optional mappings to be included if column names in input \code{data.frame} differ from required column names}
 }
 \value{
-`vachette_data`
+\code{vachette_data}
 }
 \description{
 Initialize vachette object with required data
@@ -50,12 +50,11 @@ Required column names in input \code{data.frame} are:
  \item{"IPRED"}{ - Population prediction}
  \item{"OBS"}{ - DV}
 }
-If the above column names are different in your input data, use the \code{mappings} argument.
 }
 \examples{
-indivsam.obs <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv"))
-output.typ <- read.csv(system.file(package = "vachette", "examples", "iv-typ.csv"))
-indivsam.vpc <- read.csv(system.file(package = "vachette", "examples", "iv-vpc.csv"))
+obs.data <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv"))
+typ.data <- read.csv(system.file(package = "vachette", "examples", "iv-typ.csv"))
+sim.data <- read.csv(system.file(package = "vachette", "examples", "iv-vpc.csv"))
 
 
 }
