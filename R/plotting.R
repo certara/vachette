@@ -125,7 +125,6 @@ p.scaled.typical.full.curves.landmarks <- function(vachette_data) {
 #'
 #' @export
 p.scaling.factor <- function(vachette_data) {
-  curves.all        <- vachette_data$curves.all
   curves.scaled.all <- vachette_data$curves.scaled.all
   obs.all           <- vachette_data$obs.all
   model.name        <- vachette_data$model.name
