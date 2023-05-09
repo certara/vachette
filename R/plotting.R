@@ -126,10 +126,10 @@ p.scaled.typical.full.curves.landmarks <- function(vachette_data) {
 #' @export
 p.scaling.factor <- function(vachette_data) {
   curves.scaled.all <- vachette_data$curves.scaled.all
-  obs.all <- vachette_data$obs.all
-  model.name <- vachette_data$model.name
+  obs.all           <- vachette_data$obs.all
+  model.name        <- vachette_data$model.name
 
- curves.all %>%
+ curves.scaled.all %>%
   mutate(mycurve = ifelse(ref=='Yes','Reference','Query')) %>%
   ggplot(aes(x=x,y=x.scaling,col=factor(seg)))+
   geom_line(lwd=1)+
@@ -151,11 +151,14 @@ p.scaling.factor <- function(vachette_data) {
 #' @export
 #'
 p.scaled.typical.curves <- function(vachette_data) {
-  vachette_data$curves.all %>%
+  curves.scaled.all <- vachette_data$curves.scaled.all
+  model.name        <- vachette_data$model.name
+
+  curves.scaled.all %>%
   ggplot(aes(x=x,y=y,group=ucov))+
   # geom_line(lwd=1.5,alpha=0.5)+
-  geom_line(data=vachette_data$curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Yes'),lwd=1.5,alpha=0.60)+
-  geom_line(data=vachette_data$curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='No'),lwd=1.5)+
+  geom_line(data=curves.scaled.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Yes'),lwd=1.5,alpha=0.60)+
+  geom_line(data=curves.scaled.all %>% filter(ref=='No'),aes(x=x,y=y,col='No'),lwd=1.5)+
   geom_line(aes(x=x.scaled, y=y.scaled), col='black',lwd=0.75,lty=2)+
   # scale_color_manual(values=c('red','blue')) +
   # scale_linetype_manual(values = c(3, 1),
@@ -165,7 +168,7 @@ p.scaled.typical.curves <- function(vachette_data) {
                      breaks=c('No', 'Yes'),
                      values=c('No'='blue',
                               'Yes'='red'))+
-  labs(title=paste0(vachette_data$model.name," - Covariate typical curves"),
+  labs(title=paste0(model.name," - Covariate typical curves"),
        subtitle = "Dashed lines: Covariate typical curves after Vachette transformation",
       # caption=script,
        col="Covariate value\n(Reference)")+
