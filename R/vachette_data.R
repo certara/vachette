@@ -350,7 +350,6 @@ apply_transformations.vachette_data <-
            window.d1.refine = 7,     # Savitzky Golay smoothing - refine landmarks - first derivative
            window.d2.refine = 5) {
 
-
   stopifnot(inherits(vachette_data, "vachette_data"))
     # Collect all Vachette query curves and original/transformed observations (incl reference)
     curves.all           <- NULL
@@ -850,7 +849,8 @@ apply_transformations.vachette_data <-
     obs.all$dist.prop.transformed[obs.all$ucov==i.ucov] <- approx(ref.curve$x,log(ref.curve$y),xout=obs$x.scaled)$y - log(obs$y.scaled)
   }
 
-  update(vachette_data, obs.all=obs.all, curves.all = curves.all, lm.all = lm.all, nseg = nseg)
+    update(vachette_data, obs.all = obs.all, curves.all = curves.all,
+           curves.scaled.all = curves.scaled.all, lm.all = lm.all, nseg = nseg)
 
 
   }
