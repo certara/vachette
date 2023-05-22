@@ -88,7 +88,7 @@ p.scaled.typical.curves.landmarks <- function(vachette_data) {
   # Add landmark positions
   geom_point(data=lm.all,pch=3,size=4,col='black',stroke = 2)+
   coord_cartesian(xlim=c(0,xstop)) +
-  labs(title=paste0(model.name," - Typical curve segments"),
+  labs(title=paste0(model.name,". Typical curve segments"),
        subtitle = "Dashed line: Reference typical curve",
       # caption=script,
        col="Segment")+
@@ -112,7 +112,7 @@ p.scaled.typical.full.curves.landmarks <- function(vachette_data) {
   geom_line(data=curves.all %>% filter(ref=="Yes"),col='black',lty=2,lwd=1,alpha=0.5)+
   # Add landmark positions
   geom_point(data=lm.all,pch=3,size=4,col='black',stroke = 2)+
-  labs(title=paste0(model.name," - Typical curve segments"),
+  labs(title=paste0(model.name,". Typical curve segments"),
        subtitle = "Dashed line: Reference typical curve",
       # caption=script,
        col="Segment")+
@@ -136,7 +136,7 @@ p.scaling.factor <- function(vachette_data) {
   facet_wrap(~paste(mycurve," covariate =",COV))+
   coord_cartesian(xlim=c(NA,max(obs.all$x,obs.all$x.scaled)),
                   ylim=c(0,max(curves.scaled.all$x.scaling[curves.scaled.all$x<=max(obs.all$x,obs.all$x.scaled)])))+
-  labs(title=paste0(model.name," - x-scaling factors"),
+  labs(title=paste0(model.name,". x-scaling factors"),
        subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error"),
        #caption=script,
        col="Segment") +
@@ -168,7 +168,7 @@ p.scaled.typical.curves <- function(vachette_data) {
                      breaks=c('No', 'Yes'),
                      values=c('No'='blue',
                               'Yes'='red'))+
-  labs(title=paste0(model.name," - Covariate typical curves"),
+  labs(title=paste0(model.name,". Covariate typical curves"),
        subtitle = "Dashed lines: Covariate typical curves after Vachette transformation",
       # caption=script,
        col="Covariate value\n(Reference)")+
@@ -194,13 +194,13 @@ for(iid in c(1:length(myids))) {curves.all.ids <- rbind(curves.all.ids,curves.al
   obs.all %>%
   ggplot(aes(x=x,y=y,group=paste(ID,COV)))+
   geom_line(data=curves.all.ids %>% filter(ref=="Yes"),aes(x=x,y=y,col='Typical reference'),lwd=1)+
-  geom_line(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference observations'))+
-  geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference observations'))+
   geom_line(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query observations'))+
   geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query observations'))+
   geom_line(data=obs.all %>% filter(ref=='No'),aes(x=x.scaled, y=y.scaled, col='Query transformed'),lty=2)+
   geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x.scaled, y=y.scaled, col='Query transformed'))+
-  # scale_color_manual(values=c('red','blue')) +
+    geom_line(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference observations'))+
+    geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference observations'))+
+    # scale_color_manual(values=c('red','blue')) +
   # scale_linetype_manual(values = c(3, 1),
   #                       labels = c("Covariate", "Reference")) +
   scale_color_manual(name='Data type',
@@ -213,7 +213,7 @@ for(iid in c(1:length(myids))) {curves.all.ids <- rbind(curves.all.ids,curves.al
                               'Reference observations'='red',
                               'Typical reference'='black'))+
   coord_cartesian(xlim=c(0,vachette_data$xstop)) +
-  labs(title=paste0(vachette_data$model.name," - Individual observation curves"),
+  labs(title=paste0(vachette_data$model.name,". Individual observation curves"),
        subtitle = "Dashed lines: Individual observation curves after Vachette transformation",
       # caption=script,
        col="Covariate value\n(Reference)")+
@@ -237,13 +237,13 @@ for(iid in c(1:length(myids))) {curves.all.ids <- rbind(curves.all.ids,curves.al
   obs.all %>%
   ggplot(aes(x=x,y=y,group=paste(ID,COV)))+
   geom_line(data=curves.all.ids %>% filter(ref=="Yes"),aes(x=x,y=y,col='Typical reference'),lwd=1)+
-  geom_line(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference observations'))+
-  geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference observations'))+
   geom_line(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query observations'))+
   geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query observations'))+
   geom_line(data=obs.all %>% filter(ref=='No'),aes(x=x.scaled, y=y.scaled, col='Query transformed'),lty=2)+
   geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x.scaled, y=y.scaled, col='Query transformed'))+
-  # scale_color_manual(values=c('red','blue')) +
+    geom_line(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference observations'))+
+    geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference observations'))+
+    # scale_color_manual(values=c('red','blue')) +
   # scale_linetype_manual(values = c(3, 1),
   #                       labels = c("Covariate", "Reference")) +
   scale_color_manual(name='Data type',
@@ -257,7 +257,7 @@ for(iid in c(1:length(myids))) {curves.all.ids <- rbind(curves.all.ids,curves.al
                               'Typical reference'='black'))+
   facet_wrap(~ID)+
   coord_cartesian(xlim=c(0,vachette_data$xstop)) +
-  labs(title=paste0(vachette_data$model.name," - Individual observation curves"),
+  labs(title=paste0(vachette_data$model.name,". Individual observation curves"),
        subtitle = "Dashed lines: Individual observation curves after Vachette transformation",
        #caption=script,
        col="Covariate value\n(Reference)")+
@@ -356,7 +356,7 @@ obs.all %>%
   ggplot(aes(x=dist.add.orig,y=dist.add.transformed,col=factor(seg)))+
   geom_abline(slope=1)+
   geom_point()+
-  labs(title=paste0(vachette_data$model.name," - Normal distances: original and after transformation"),
+  labs(title=paste0(vachette_data$model.name,". Normal distances: original and after transformation"),
        subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error"),
        #caption=script,
        x = 'Original distance',
@@ -379,7 +379,7 @@ obs.all %>%
   ggplot(aes(x=dist.prop.orig,y=dist.prop.transformed,col=factor(seg)))+
   geom_abline(slope=1)+
   geom_point()+
-  labs(title=paste0(vachette_data$model.name," - Proportional distances: original and after transformation"),
+  labs(title=paste0(vachette_data$model.name,". Proportional distances: original and after transformation"),
        subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error"),
        #caption=script,
        x = 'Original distance on log scale',
@@ -411,14 +411,14 @@ p.obs.ref.query <- function(vachette_data) {
                               'Reference'),
                      values=c('Query'='blue',
                               'Reference'='red'))+
-  coord_cartesian(xlim=c(0,max(obs.all$x))) +
-  labs(title=paste0(vachette_data$model.name," - Observation + typical curves"),
+  # coord_cartesian(xlim=c(0,max(obs.all$x))) +
+    coord_cartesian(xlim=c(0,max(vachette_data$lm.all$x))) +
+  labs(title=paste0(vachette_data$model.name,". Observations + typical curves"),
        subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error")
        #caption=script
        )+
   render
 }
-
 
 #' p.obs.cov
 #'
@@ -434,10 +434,10 @@ p.obs.cov <- function(vachette_data) {
 
   obs.all %>%
   ggplot(aes(x=x,y=y)) +
-  geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
   geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),lwd=1) +
-  geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19) +
+    geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
   geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),pch=19) +
+    geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19) +
 
   scale_color_manual(name='Data type',
                      breaks=c('Query',
@@ -446,7 +446,7 @@ p.obs.cov <- function(vachette_data) {
                               'Reference'='red'))+
   facet_wrap(~paste("ucov",ucov)) +
   coord_cartesian(xlim=c(0,max(obs.all$x))) +
-  labs(title=paste0(vachette_data$model.name," - Observation + typical curves"),
+  labs(title=paste0(vachette_data$model.name,". Observations + typical curves"),
        subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error")
        #caption=script
        )+
@@ -469,11 +469,11 @@ p.vachette.arrow <- function(vachette_data) {
   geom_segment(aes(x=x,y=y,xend=x.scaled,yend=y.scaled),
                arrow = arrow(length = unit(0.2, "cm")),col='grey') +
 
-  geom_line(data=vachette_data$curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference',group=ucov),lwd=1) +
   geom_line(data=vachette_data$curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query',group=ucov),lwd=1) +
-  geom_point(data=vachette_data$obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference',group=ucov),pch=19,alpha=0.25) +
+    geom_line(data=vachette_data$curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference',group=ucov),lwd=1) +
   geom_point(data=vachette_data$obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query',group=ucov),pch=19,alpha=0.25) +
   geom_point(data=vachette_data$obs.all %>% filter(ref=='No'),aes(x=x.scaled,y=y.scaled,col='Transformed'),pch=19) +
+    geom_point(data=vachette_data$obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference',group=ucov),pch=19,alpha=0.25) +
 
   scale_color_manual(name='Data type',
                      breaks=c('Query',
@@ -484,7 +484,7 @@ p.vachette.arrow <- function(vachette_data) {
                               'Transformed' = 'purple'))+
 
   coord_cartesian(xlim=c(0,max(vachette_data$obs.all$x,vachette_data$obs.all$x.scaled))) +
-  labs(title=paste0(vachette_data$model.name," - Observations + transformations"),
+  labs(title=paste0(vachette_data$model.name,". Observations + transformations"),
        subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error",if(vachette_data$PROP_TR) "Proportional Error")
        #caption=script
        )+
@@ -535,7 +535,7 @@ p.vachette <- function(vachette_data) {
 
     coord_cartesian(xlim = c(0, max(obs.all$x, obs.all$x.scaled))) +
     labs(
-      title = paste0(vachette_data$model.name, " - Observations + transformations"),
+      title = paste0(vachette_data$model.name, ". Observations + transformations"),
       subtitle = paste0(if (vachette_data$ADD_TR)
         "Additive Error", if (vachette_data$PROP_TR)
           "Proportional Error")

@@ -20,6 +20,7 @@ Vachette builds off previous work done in [V2ACHER](https://ascpt.onlinelibrary.
 ### IV
 
 ```{r iv}
+
 # Import Example Data
 obs.data <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv")) |> 
   dplyr::rename(WT = "vachette.cov1")
@@ -102,7 +103,7 @@ p.vachette(vd)
 
 ```{r oral_absorption}
 obs.data <- read.csv(system.file(package = "vachette", "examples", "oral-absorption-obs.csv"))
-typ.data  <- read.csv(system.file(package = "vachette", "examples", "oral-absorption-typ.csv"))
+typ.data <- read.csv(system.file(package = "vachette", "examples", "oral-absorption-typ.csv"))
 
 vd <-
   vachette_data(

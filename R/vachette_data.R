@@ -456,6 +456,7 @@ apply_transformations.vachette_data <-
       query.curve.next$y     <- exp(predict(exp.model,list(x=query.curve.next$x)))
 
       query <- rbind(query,query.curve.next)
+
     }
 
     # We have to run Vachette twice if observation AND simulated replicates have to be generated (for VPC)
@@ -790,6 +791,7 @@ apply_transformations.vachette_data <-
         obs.query$ylog.query       <- ifelse(!is.na(obs.query$ylog),
                                              approx(x=query$x, y=query$ylog, xout = obs.query$x)$y,
                                              NA)
+
         # log difference obs.query to query curve
         obs.query$ylog.diff        <- obs.query$ylog - obs.query$ylog.query
 
