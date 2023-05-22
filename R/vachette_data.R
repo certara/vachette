@@ -977,8 +977,13 @@ apply_transformations.vachette_data <-
         group_by(ID) %>%
         mutate(dosenr = cumsum(EVID == 1)) %>%
         ungroup()
-    } else if (all(c("ADDL", "II", "AMT") %in% colnames(data))) {
-      message("`ADDL`, `II`, `AMT` columns found in ", data_type, ", creating `dosenr` column in data for corresponding ref.dosenr value")
+    } else if (all(c("ADDL", "II") %in% colnames(data))) {
+      message("`ADDL`, `II`, columns found in ", data_type, ", creating `dosenr` column in data for corresponding ref.dosenr value")
+
+      if ("AMT" %notin% colnames(data)) {
+        data <- data %>%
+          mutate(AMT = ifelse(II != 0, 1, 0))
+      }
       dose_data <- data %>%
         select(x, ID, AMT, ADDL, II) %>%
         filter(ADDL > 0)
@@ -1002,7 +1007,9 @@ apply_transformations.vachette_data <-
       data <- data_new %>%
         group_by(ID) %>%
         mutate(dosenr = cumsum(AMT != 0)) %>%
-        ungroup()
+        ungroup() %>%
+        filter(is.na(AMT) | AMT == 0) %>%
+        select(-AMT)
     } else if ("AMT" %in% colnames(data)) {
       data <- data %>%
         group_by(ID) %>%
