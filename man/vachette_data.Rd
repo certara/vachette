@@ -10,7 +10,7 @@ vachette_data(
   sim.data = NULL,
   covariates,
   ref.dosenr,
-  iiv.correction = TRUE,
+  iiv.correction = FALSE,
   error.model = c("proportional", "additive"),
   model.name = NULL,
   mappings = NULL
@@ -27,7 +27,7 @@ vachette_data(
 
 \item{ref.dosenr}{integer; Number of doses given up through start of reference region}
 
-\item{iiv.correction}{logical; Apply inter-individual variability correction. Default \code{TRUE}}
+\item{iiv.correction}{logical; Apply inter-individual variability correction. Default \code{FALSE}}
 
 \item{error.model}{character; Applied error model, \code{"proportional"} or \code{"additive"}. Default \code{"proportional"}}
 
