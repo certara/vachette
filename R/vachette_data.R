@@ -35,7 +35,7 @@ vachette_data <-
            sim.data = NULL,
            covariates,
            ref.dosenr,
-           iiv.correction = TRUE,
+           iiv.correction = FALSE,
            error.model = c("proportional", "additive"),
            model.name = NULL,
            mappings = NULL) {
