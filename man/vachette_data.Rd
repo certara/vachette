@@ -46,8 +46,8 @@ Required column names in input \code{data.frame} are:
 \itemize{
  \item{"ID"}{ - Subject ID}
  \item{"x"}{ - Typically time}
- \item{"PRED"}{ - Individual prediction}
- \item{"IPRED"}{ - Population prediction}
+ \item{"PRED"}{ - Population prediction, required if \code{iiv.correction = TRUE}}
+ \item{"IPRED"}{ - Individual prediction, required if \code{iiv.correction = TRUE}}
  \item{"OBS"}{ - DV}
 }
 }

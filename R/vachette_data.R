@@ -6,7 +6,7 @@
 #' @param sim.data data.frame; Simulated (VPC) data
 #' @param covariates named character vector; Covariate names with reference values in vachette transformation
 #' @param ref.dosenr integer; Number of doses given up through start of reference region
-#' @param iiv.correction logical; Apply inter-individual variability correction. Default \code{TRUE}
+#' @param iiv.correction logical; Apply inter-individual variability correction. Default \code{FALSE}
 #' @param error.model character; Applied error model, \code{"proportional"} or \code{"additive"}. Default \code{"proportional"}
 #' @param model.name character; Optional model name for plot output
 #' @param mappings named character vector;  Optional mappings to be included if column names in input \code{data.frame} differ from required column names
@@ -14,8 +14,8 @@
 #' \itemize{
 #'  \item{"ID"}{ - Subject ID}
 #'  \item{"x"}{ - Typically time}
-#'  \item{"PRED"}{ - Individual prediction}
-#'  \item{"IPRED"}{ - Population prediction}
+#'  \item{"PRED"}{ - Population prediction, required if \code{iiv.correction = TRUE}}
+#'  \item{"IPRED"}{ - Individual prediction, required if \code{iiv.correction = TRUE}}
 #'  \item{"OBS"}{ - DV}
 #' }
 #'
@@ -50,10 +50,8 @@ vachette_data <-
 
   # If ref.dosenr is missing, provide warning then set to 1
   if (missing(ref.dosenr)) {
-    warning("ref.dosenr argument not given, setting ref.dosenr to 1")
+    warning("ref.dosenr argument not given, setting ref.dosenr to 1", call. = FALSE)
     ref.dosenr <- 1
-    #sigmoid model, does not need ref.dosenr
-    #if no AMT,
   }
 
   obs.data <- .calculate_dose_number(obs.data, ref.dosenr = ref.dosenr, data_type = "obs.data")
@@ -90,10 +88,15 @@ vachette_data <-
 
 
   # Retain required columns
+  if (iiv.correction) {
+    cols_to_select <- c("isim", "ID", "x", "PRED", "IPRED", "OBS", "dosenr")
+  } else {
+    cols_to_select <- c("isim", "ID", "x", "OBS", "dosenr")
+  }
   obs.data  <-
-    obs.data %>% dplyr::select(isim, ID, x, PRED, IPRED, OBS, dplyr::all_of(names(covariates)), dosenr)
+    obs.data %>% dplyr::select(dplyr::all_of(cols_to_select), dplyr::all_of(names(covariates)))
   sim.data  <-
-    sim.data %>% dplyr::select(isim, ID, x, PRED, IPRED, OBS, dplyr::all_of(names(covariates)), dosenr)
+    sim.data %>% dplyr::select(dplyr::all_of(cols_to_select), dplyr::all_of(names(covariates)))
 
   # Extract last observed x (look for max x/time in obs and sim data)
   xstop <- max(obs.data$x,sim.data$x)
@@ -859,29 +862,31 @@ apply_transformations.vachette_data <-
 
 .validate_columns <- function(mappings, obs.data, typ.data, iiv.correction) {
 
-  obs_req_cols <- c("ID", "PRED", "OBS", "x") #, "dosenr")
+  obs_req_cols <- c("ID", "OBS", "x")
+  typ_req_cols <- c("ID", "PRED", "x")
+
   if (isTRUE(iiv.correction)) {
-    obs_req_cols <- c(obs_req_cols, "IPRED")
+    obs_req_cols <- c(obs_req_cols, "PRED", "IPRED")
+    typ_req_cols <- c(typ_req_cols, "IPRED")
   }
-  sim_req_cols <- c("ID", "PRED", "x") #, "dosenr")
 
   obs_cols <- colnames(obs.data)
-  sim_cols <- colnames(typ.data)
+  typ_cols <- colnames(typ.data)
 
   if (is.null(mappings)) {
     if (any(obs_req_cols %notin% obs_cols)) {
       missing_cols <- setdiff(obs_req_cols, obs_cols)
       stop(
         paste0(missing_cols, collapse = " "),
-        " column(s) not found in observed data. Use the 'mappings' argument to manually specify columns mappings."
+        " column(s) not found in obs.data. Use the 'mappings' argument to manually specify column mappings."
       , call. = FALSE)
     }
 
-    if (any(sim_req_cols %notin%  sim_cols)) {
-      missing_cols <- setdiff(sim_req_cols, sim_cols)
+    if (any(typ_req_cols %notin%  typ_cols)) {
+      missing_cols <- setdiff(typ_req_cols, typ_cols)
       stop(
         paste0(missing_cols, collapse = " "),
-        " column(s) not found in simulated data. Use the 'mappings' argument to manually specify columns mappings."
+        " column(s) not found in typ.data. Use the 'mappings' argument to manually specify column mappings."
         , call. = FALSE)
     }
   } else {
@@ -899,23 +904,24 @@ apply_transformations.vachette_data <-
       missing_cols <- setdiff(mappings, obs_cols)
       stop(
         paste0(missing_cols, collapse = " "),
-        " column(s) provided in mappings argument are not found in observed data."
+        " column(s) provided in mappings argument are not found in obs.data."
         , call. = FALSE)
     }
 
-    sim_mappings <- mappings[names(mappings) %notin% c("IPRED", "OBS")]
+    typ_mappings <- mappings[names(mappings) %notin% c("IPRED", "OBS")]
 
-    if (any(sim_mappings %notin% sim_cols)) {
-      missing_cols <- setdiff(sim_mappings, sim_cols)
+    if (any(typ_mappings %notin% typ_cols)) {
+      missing_cols <- setdiff(typ_mappings, typ_cols)
       stop(
         paste0(missing_cols, collapse = " "),
-        " column(s) provided in mappings argument are not found in simulated data."
+        " column(s) provided in mappings argument are not found in typ.data."
         , call. = FALSE)
     }
 
     obs.data <- dplyr::rename(obs.data, dplyr::all_of(mappings))
-    typ.data <- dplyr::rename(typ.data, dplyr::all_of(sim_mappings))
+    typ.data <- dplyr::rename(typ.data, dplyr::all_of(typ_mappings))
   }
+
   return(
     list(
       obs.data = obs.data,
@@ -969,58 +975,75 @@ apply_transformations.vachette_data <-
 
   # If dose number provided, and column in data, use that
   if ("dosenr" %in% colnames(data)) {
-    message("`dosenr` column found in ", data_type, ", using `dosenr` column in data for corresponding ref.dosenr value")
+    message(
+      "`dosenr` column found in ",
+      data_type,
+      ", using `dosenr` column in data for corresponding ref.dosenr value"
+    )
+  } else if ("EVID" %in% colnames(data)) {
+    message(
+      "`EVID` column found in ",
+      data_type,
+      ", creating `dosenr` column in data for corresponding ref.dosenr value"
+    )
+    data <- data %>%
+      group_by(ID) %>%
+      mutate(dosenr = cumsum(EVID == 1)) %>%
+      ungroup() #
+  } else if (all(c("ADDL", "II") %in% colnames(data))) {
+    message(
+      "`ADDL`, `II`, columns found in ",
+      data_type,
+      ", creating `dosenr` column in data for corresponding ref.dosenr value"
+    )
+
+    if ("AMT" %notin% colnames(data)) {
+      data <- data %>%
+        mutate(AMT = ifelse(II != 0, 1, 0))
+    }
+    dose_data <- data %>%
+      select(x, ID, AMT, ADDL, II) %>%
+      filter(ADDL > 0)
+    dosing <- list()
+    for (i in 1:nrow(dose_data)) {
+      dose_data_row <- slice(dose_data, i)
+      dosing[[i]] <- data.frame(
+        x = seq(
+          from = dose_data_row$x,
+          by = as.numeric(dose_data_row$II),
+          length.out = as.numeric(dose_data_row$ADDL) + 1
+        ),
+        ID = dose_data_row$ID,
+        AMT = dose_data_row$AMT
+      )
+    }
+    dose_data_expanded <- do.call(rbind, dosing)
+    data <- filter(data, ADDL == 0) %>%
+      select(-ADDL,-II)
+
+    data_new <- bind_rows(data, dose_data_expanded) %>%
+      arrange(ID, x)
+
+    data <- data_new %>%
+      group_by(ID) %>%
+      mutate(dosenr = cumsum(AMT != 0)) %>%
+      ungroup() %>%
+      filter(is.na(AMT) | AMT == 0) %>%
+      select(-AMT)
+  } else if ("AMT" %in% colnames(data)) {
+    data <- data %>%
+      group_by(ID) %>%
+      mutate(dosenr = cumsum(AMT != 0)) %>% #if values NA: cumsum(!is.na(amt))
+      ungroup()
   } else {
-    if ("EVID" %in% colnames(data)) {
-      message("`EVID` column found in ", data_type, ", creating `dosenr` column in data for corresponding ref.dosenr value")
-      data <- data %>%
-        group_by(ID) %>%
-        mutate(dosenr = cumsum(EVID == 1)) %>%
-        ungroup()
-    } else if (all(c("ADDL", "II") %in% colnames(data))) {
-      message("`ADDL`, `II`, columns found in ", data_type, ", creating `dosenr` column in data for corresponding ref.dosenr value")
-
-      if ("AMT" %notin% colnames(data)) {
-        data <- data %>%
-          mutate(AMT = ifelse(II != 0, 1, 0))
-      }
-      dose_data <- data %>%
-        select(x, ID, AMT, ADDL, II) %>%
-        filter(ADDL > 0)
-      dosing <- list()
-      for (i in 1:nrow(dose_data)) {
-        dose_data_row <- slice(dose_data, i)
-        dosing[[i]] <- data.frame(x = seq(from = dose_data_row$x,
-                                          by = as.numeric(dose_data_row$II),
-                                          length.out = as.numeric(dose_data_row$ADDL) + 1),
-                                  ID = dose_data_row$ID,
-                                  AMT = dose_data_row$AMT
-        )
-      }
-      dose_data_expanded <- do.call(rbind, dosing)
-      data <- filter(data, ADDL == 0) %>%
-        select(-ADDL, -II)
-
-      data_new <- bind_rows(data, dose_data_expanded) %>%
-        arrange(ID, x)
-
-      data <- data_new %>%
-        group_by(ID) %>%
-        mutate(dosenr = cumsum(AMT != 0)) %>%
-        ungroup() %>%
-        filter(is.na(AMT) | AMT == 0) %>%
-        select(-AMT)
-    } else if ("AMT" %in% colnames(data)) {
-      data <- data %>%
-        group_by(ID) %>%
-        mutate(dosenr = cumsum(AMT != 0)) %>% #if values NA: cumsum(!is.na(amt))
-        ungroup()
-    } # final control flow should be understood as no dose information in the data, no ref.dosnr, message such e.g., sigmoid model
+    # final control flow should be understood as no dose information in the data, no ref.dosnr, message such e.g., sigmoid model
+    message("`dosenr` column is required and not found in ", data_type," `dosenr` can be automatically calculated using `EVID`, `AMT`, or `ADDL/II` columns in the data. Use the 'mappings' argument if these columns are named differently in your input data.")
+    warning("Setting `dosenr` column to 1 in ", data_type, call. = FALSE)
+    data <- mutate(data, dosenr = 1)
   }
-
   # ensure value supplied to ref.dosenr exists inside dosenr column
   if (ref.dosenr %notin% unique(data[["dosenr"]])) {
-    stop("ref.dosenr value of ", ref.dosenr, " not found in dosenr column in ", data_type)
+    stop("ref.dosenr value of ", ref.dosenr, " not found in dosenr column in ", data_type, call. = FALSE)
   }
 
   return(data)
