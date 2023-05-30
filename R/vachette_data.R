@@ -980,16 +980,6 @@ apply_transformations.vachette_data <-
       data_type,
       ", using `dosenr` column in data for corresponding ref.dosenr value"
     )
-  } else if ("EVID" %in% colnames(data)) {
-    message(
-      "`EVID` column found in ",
-      data_type,
-      ", creating `dosenr` column in data for corresponding ref.dosenr value"
-    )
-    data <- data %>%
-      group_by(ID) %>%
-      mutate(dosenr = cumsum(EVID == 1)) %>%
-      ungroup() #
   } else if (all(c("ADDL", "II") %in% colnames(data))) {
     message(
       "`ADDL`, `II`, columns found in ",
@@ -1030,11 +1020,30 @@ apply_transformations.vachette_data <-
       ungroup() %>%
       filter(is.na(AMT) | AMT == 0) %>%
       select(-AMT)
-  } else if ("AMT" %in% colnames(data)) {
+
+    if ("EVID" %in% colnames(data)) {
+      data <- data %>%
+        select(-EVID)
+    }
+  } else if ("EVID" %in% colnames(data)) {
+    message(
+      "`EVID` column found in ",
+      data_type,
+      ", creating `dosenr` column in data for corresponding ref.dosenr value"
+    )
+    data <- data %>%
+      group_by(ID) %>%
+      mutate(dosenr = cumsum(EVID == 1)) %>%
+      ungroup() %>%
+      filter(EVID == 0) %>%
+      select(-EVID)
+  }  else if ("AMT" %in% colnames(data)) {
     data <- data %>%
       group_by(ID) %>%
       mutate(dosenr = cumsum(AMT != 0)) %>% #if values NA: cumsum(!is.na(amt))
-      ungroup()
+      ungroup() %>%
+      filter(is.na(AMT) | AMT == 0) %>%
+      select(-AMT)
   } else {
     # final control flow should be understood as no dose information in the data, no ref.dosnr, message such e.g., sigmoid model
     message("`dosenr` column is required and not found in ", data_type," `dosenr` can be automatically calculated using `EVID`, `AMT`, or `ADDL/II` columns in the data. Use the 'mappings' argument if these columns are named differently in your input data.")
