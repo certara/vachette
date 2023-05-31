@@ -453,3 +453,247 @@ print.vachette_data <- function(x, ...) {
 }
 
 
+`%notin%` <- Negate(`%in%`)
+
+.validate_columns <- function(mappings, obs.data, typ.data, sim.data = NULL, iiv.correction) {
+
+  obs_req_cols <- c("ID", "OBS", "x")
+  typ_req_cols <- c("ID", "PRED", "x")
+  sim_req_cols <- c("isim", obs_req_cols)
+
+  if (isTRUE(iiv.correction)) {
+    obs_req_cols <- c(obs_req_cols, "PRED", "IPRED")
+    #typ_req_cols <- c(typ_req_cols, "IPRED") #this should not be a requirement
+  }
+
+  obs_cols <- colnames(obs.data)
+  typ_cols <- colnames(typ.data)
+  sim_cols <- colnames(sim.data)
+
+  if (is.null(mappings)) {
+    if (any(obs_req_cols %notin% obs_cols)) {
+      missing_cols <- setdiff(obs_req_cols, obs_cols)
+      stop(
+        paste0(missing_cols, collapse = " "),
+        " column(s) not found in obs.data. Use the 'mappings' argument to manually specify column mappings."
+        , call. = FALSE)
+    }
+    if (!is.null(sim.data) && any(sim_req_cols %notin% sim_cols)) {
+      missing_cols <- setdiff(sim_req_cols, sim_cols)
+      stop(
+        paste0(missing_cols, collapse = " "),
+        " column(s) not found in sim.data. Use the 'mappings' argument to manually specify column mappings."
+        , call. = FALSE)
+    }
+
+    if (any(typ_req_cols %notin%  typ_cols)) {
+      missing_cols <- setdiff(typ_req_cols, typ_cols)
+      stop(
+        paste0(missing_cols, collapse = " "),
+        " column(s) not found in typ.data. Use the 'mappings' argument to manually specify column mappings."
+        , call. = FALSE)
+    }
+  } else {
+    diff_req_mappings_obs <- setdiff(obs_req_cols, names(mappings))
+    cols_not_mapped_obs <- setdiff(diff_req_mappings_obs, obs_cols)
+
+    obs_mappings <- mappings[names(mappings) %notin% c("isim")]
+    sim_mappings <- mappings
+    typ_mappings <- mappings[names(mappings) %notin% c("IPRED", "OBS", "isim")]
+
+
+    if (length(cols_not_mapped_obs) > 0) {
+      stop(
+        paste0(cols_not_mapped_obs, collapse = " "),
+        " column(s) not found in observed data and not provided in 'mappings'. Use the 'mappings' argument to manually specify columns mappings."
+        , call. = FALSE)
+    }
+
+    if (any(obs_mappings %notin% obs_cols)) {
+      missing_cols <- setdiff(obs_mappings, obs_cols)
+      stop(
+        paste0(missing_cols, collapse = " "),
+        " column(s) provided in mappings argument are not found in obs.data."
+        , call. = FALSE)
+    }
+
+    if (!is.null(sim.data)) {
+      diff_req_mappings_sim <- setdiff(sim_req_cols, names(sim_mappings))
+      cols_not_mapped_sim <- setdiff(diff_req_mappings_sim, sim_cols)
+
+      if (length(cols_not_mapped_sim) > 0) {
+        stop(
+          paste0(cols_not_mapped_sim, collapse = " "),
+          " column(s) not found in sim.data and not provided in 'mappings'. Use the 'mappings' argument to manually specify columns mappings."
+          , call. = FALSE)
+      }
+
+      if (any(sim_mappings %notin% sim_cols)) {
+        missing_cols <- setdiff(sim_mappings, sim_cols)
+        stop(
+          paste0(missing_cols, collapse = " "),
+          " column(s) provided in mappings argument are not found in sim.data."
+          , call. = FALSE)
+      }
+    }
+
+    typ_mappings <- mappings[names(mappings) %notin% c("IPRED", "OBS", "isim")]
+
+    if (any(typ_mappings %notin% typ_cols)) {
+      missing_cols <- setdiff(typ_mappings, typ_cols)
+      stop(
+        paste0(missing_cols, collapse = " "),
+        " column(s) provided in mappings argument are not found in typ.data."
+        , call. = FALSE)
+    }
+
+    obs.data <- dplyr::rename(obs.data, dplyr::all_of(obs_mappings))
+    if (!is.null(sim.data)) {
+      sim.data <- dplyr::rename(sim.data, dplyr::all_of(sim_mappings))
+    }
+    typ.data <- dplyr::rename(typ.data, dplyr::all_of(typ_mappings))
+  }
+
+  return(
+    list(
+      obs.data = obs.data,
+      sim.data = sim.data,
+      typ.data = typ.data
+    )
+  )
+}
+
+.process_covariates <- function(covariates, obs.data) {
+  if (is.null(names(covariates))) {
+    names(covariates) <- covariates
+    cov_names <- covariates
+  } else {
+    cov_names <- names(covariates)
+  }
+  for (i in seq_along(cov_names)) {
+    #browser()
+    cov_name <- cov_names[i]
+    cov_ref_val <- covariates[i]
+    # If name not supplied, expect value as name, then assign name
+    if (cov_name == "") {
+      cov_name <- cov_ref_val
+      names(covariates)[i] <- cov_name
+    }
+    stopifnot(cov_name %in% colnames(obs.data))
+    # Automatically set ref value to median/mode given cont/cat covariate type, if ref value not given
+    # Account for case median is used with even number of values in dataset
+    # - compute median for each subject first, then compute median from there
+
+    if (cov_name == cov_ref_val) {
+      if (suppressWarnings(all(is.na(as.numeric(unlist(obs.data[, cov_name])))))) {
+        cov_ref_val <- .mode(unlist(obs.data[, cov_name]))
+      } else {
+        if (nrow(obs.data) %% 2 == 0) {
+          #obs.data <- dplyr::slice(obs.data, -1) #before midpoint, drop first value
+          obs.data <- dplyr::slice(obs.data, -nrow(obs.data)) #after midpoint, drop last value
+        }
+        cov_ref_val <- median(unlist(obs.data[, cov_name]))
+      }
+      stopifnot(cov_ref_val %in% as.character(unlist(obs.data[, cov_name])))
+      covariates[i] <- cov_ref_val
+    } #else add check for provided cov value, ensuring exists in simulated data
+  }
+  return(covariates)
+}
+
+
+.calculate_dose_number <- function(data, ref.dosenr, data_type = c("obs.data", "typ.data", "sim.data")) {
+
+  data_type <- match.arg(data_type)
+
+  # If dose number provided, and column in data, use that
+  if ("dosenr" %in% colnames(data)) {
+    message(
+      "`dosenr` column found in ",
+      data_type,
+      ", using `dosenr` column in data for corresponding ref.dosenr value"
+    )
+  } else if (all(c("ADDL", "II") %in% colnames(data))) {
+    message(
+      "`ADDL`, `II`, columns found in ",
+      data_type,
+      ", creating `dosenr` column in data for corresponding ref.dosenr value"
+    )
+
+    if ("AMT" %notin% colnames(data)) {
+      data <- data %>%
+        mutate(AMT = ifelse(II != 0, 1, 0))
+    }
+    dose_data <- data %>%
+      select(x, ID, AMT, ADDL, II) %>%
+      filter(ADDL > 0)
+    dosing <- list()
+    for (i in 1:nrow(dose_data)) {
+      dose_data_row <- slice(dose_data, i)
+      dosing[[i]] <- data.frame(
+        x = seq(
+          from = dose_data_row$x,
+          by = as.numeric(dose_data_row$II),
+          length.out = as.numeric(dose_data_row$ADDL) + 1
+        ),
+        ID = dose_data_row$ID,
+        AMT = dose_data_row$AMT
+      )
+    }
+    dose_data_expanded <- do.call(rbind, dosing)
+    data <- filter(data, ADDL == 0) %>%
+      select(-ADDL,-II)
+
+    data_new <- bind_rows(data, dose_data_expanded) %>%
+      arrange(ID, x)
+
+    data <- data_new %>%
+      group_by(ID) %>%
+      mutate(dosenr = cumsum(AMT != 0)) %>%
+      ungroup() %>%
+      filter(is.na(AMT) | AMT == 0) %>%
+      select(-AMT)
+
+    if ("EVID" %in% colnames(data)) {
+      data <- data %>%
+        select(-EVID)
+    }
+  } else if ("EVID" %in% colnames(data)) {
+    message(
+      "`EVID` column found in ",
+      data_type,
+      ", creating `dosenr` column in data for corresponding ref.dosenr value"
+    )
+    data <- data %>%
+      group_by(ID) %>%
+      mutate(dosenr = cumsum(EVID == 1)) %>%
+      ungroup() %>%
+      filter(EVID == 0) %>%
+      select(-EVID)
+  }  else if ("AMT" %in% colnames(data)) {
+    data <- data %>%
+      group_by(ID) %>%
+      mutate(dosenr = cumsum(AMT != 0)) %>% #if values NA: cumsum(!is.na(amt))
+      ungroup() %>%
+      filter(is.na(AMT) | AMT == 0) %>%
+      select(-AMT)
+  } else {
+    # final control flow should be understood as no dose information in the data, no ref.dosnr, message such e.g., sigmoid model
+    message("`dosenr` column is required and not found in ", data_type," `dosenr` can be automatically calculated using `EVID`, `AMT`, or `ADDL/II` columns in the data. Use the 'mappings' argument if these columns are named differently in your input data.")
+    warning("Setting `dosenr` column to 1 in ", data_type, call. = FALSE)
+    data <- mutate(data, dosenr = 1)
+  }
+  # ensure value supplied to ref.dosenr exists inside dosenr column
+  if (ref.dosenr %notin% unique(data[["dosenr"]])) {
+    stop("ref.dosenr value of ", ref.dosenr, " not found in dosenr column in ", data_type, call. = FALSE)
+  }
+
+  return(data)
+}
+
+
+.mode <- function(x){
+  uniqv <- unique(x)
+  uniqv[which.max(tabulate(match(x, uniqv)))]
+}
+
