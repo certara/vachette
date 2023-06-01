@@ -842,6 +842,11 @@ apply_transformations.vachette_data <-
     ref.curve <- typ.data %>% filter(ucov==ref.ucov)
     obs       <- obs.all    %>% filter(ucov==i.ucov)
 
+    #Init columns
+    obs.all$dist.add.orig <- NA
+    obs.all$dist.add.transformed <- NA
+    obs.all$dist.prop.orig <- NA
+    obs.all$dist.prop.transformed <- NA
     # Additive distances to original curves
     obs.all$dist.add.orig[obs.all$ucov==i.ucov] <- approx(typ.curve$x,typ.curve$y,xout=obs$x)$y - obs$y
     # Vachette transformed - distances to ref curve
@@ -854,6 +859,9 @@ apply_transformations.vachette_data <-
     # obs.all$dist.prop.transformed[obs.all$ucov==i.ucov] <- log(approx(ref.curve$x,ref.curve$y,xout=obs$x.scaled)$y) - log(obs$y.scaled)
     obs.all$dist.prop.transformed[obs.all$ucov==i.ucov] <- approx(ref.curve$x,log(ref.curve$y),xout=obs$x.scaled)$y - log(obs$y.scaled)
   }
+
+  obs.all <- obs.all %>%
+    arrange(isim, ID, x)
 
     update(vachette_data, obs.all = obs.all, curves.all = curves.all,
            curves.scaled.all = curves.scaled.all, lm.all = lm.all, nseg = nseg)
