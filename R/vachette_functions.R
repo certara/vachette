@@ -571,7 +571,6 @@ print.vachette_data <- function(x, ...) {
     cov_names <- names(covariates)
   }
   for (i in seq_along(cov_names)) {
-    #browser()
     cov_name <- cov_names[i]
     cov_ref_val <- covariates[i]
     # If name not supplied, expect value as name, then assign name
@@ -596,7 +595,11 @@ print.vachette_data <- function(x, ...) {
       }
       stopifnot(cov_ref_val %in% as.character(unlist(obs.data[, cov_name])))
       covariates[i] <- cov_ref_val
-    } #else add check for provided cov value, ensuring exists in simulated data
+    } else {
+      if (cov_ref_val %notin% as.character(unlist(obs.data[, cov_name]))) {
+        stop("Reference value of ", cov_ref_val, " for covariate ", cov_name, " not found in data", call. = FALSE)
+      }
+    }
   }
   return(covariates)
 }
