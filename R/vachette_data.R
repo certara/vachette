@@ -358,6 +358,7 @@ apply_transformations.vachette_data <-
 
   stopifnot(inherits(vachette_data, "vachette_data"))
     # Collect all Vachette query curves and original/transformed observations (incl reference)
+    ref.extensions.all   <- NULL
     curves.all           <- NULL
     curves.scaled.all    <- NULL
     obs.all              <- NULL
@@ -481,6 +482,11 @@ apply_transformations.vachette_data <-
         filter(ucov == i.ucov)  %>%
         mutate(ref = tab.ucov$ref[i.ucov])  # Flag for reference data
     }
+
+    # JL 230606
+    # Create PRED for obs.query data points by linear interpolation
+    # May be needed for reference extrapolation, see obs.query$PRED
+    obs.query$PRED <- approx(x=query$x,y=query$y,xout=obs.query$x)$y
 
     #  B. -------- Get landmarks approximate positions ----
 
@@ -691,10 +697,12 @@ apply_transformations.vachette_data <-
 
         # Increase x by ref grid steps up to last point
         # number of steps: ceiling((max.obs.x - max(ref$x))/ref.grid.step.size)
-        n.steps.x          <- c(1:ceiling((max.obs.x - max(ref$x))/ref.grid.step.size))
-        steps.x            <- max(ref$x) + n.steps.x*ref.grid.step.size
+        # JL 230607. Correction, n.steps now defined as total number of steps, isteps as step counts
+        i.steps.x          <- c(1:ceiling((max.obs.x - max(ref$x))/ref.grid.step.size))
+        n.steps.x          <- length(i.steps.x)
+        steps.x            <- max(ref$x) + i.steps.x*ref.grid.step.size
 
-        ref.curve.next     <- ref %>% slice(rep(n(),max(n.steps.x)))
+        ref.curve.next     <- ref %>% slice(rep(n(),max(i.steps.x)))
         ref.curve.next$x   <- steps.x
         # Last x exactly matching max query obs x
         ref.curve.next$x[n.steps.x] <- max.obs.x.scaled
@@ -710,7 +718,15 @@ apply_transformations.vachette_data <-
         # Extrapolate y
         ref.curve.next$y     <- exp(predict(exp.model,list(x=ref.curve.next$x)))
 
+        # JL 230607 Assign extrapolation reference part to seg=-99 for plotting purposes
+        ref.curve.next$seg <- -99
+
         ref <- rbind(ref,ref.curve.next)
+
+        # JL 230607
+        # Keep extensions with associated query curve ucov
+        ref.curve.next$ucov <- i.ucov  # Included reference curve extrapolation
+        ref.extensions.all  <- rbind(ref.extensions.all,ref.curve.next)  # Included reference curve extrapolation
 
         # Check:
         if(cur.ref.seg != cur.query.seg) stop("Error segment number assignment in reference extrapolation block")
@@ -719,7 +735,13 @@ apply_transformations.vachette_data <-
 
     # Collect all typical curves with scaling factors and scaled x,y values
     query.scaled$y.scaled <- approx(ref$x,ref$y,xout=query.scaled$x.scaled)$y
-    curves.all            <- rbind(curves.all,query)
+
+    # JL 230607 Assign part of curve mapped to extrapolated part of reference curve, if required
+    # Only extension part....
+    if(EXTENSION) query.scaled$seg <- approx(ref$x,ref$seg,xout=query.scaled$x.scaled,
+                                             method = 'constant')$y
+
+    curves.all            <- rbind(curves.all,query)              # Included reference curve extrapolation
     curves.scaled.all     <- rbind(curves.scaled.all,query.scaled)
 
     if(dim(obs.query)[1]>0)
@@ -864,7 +886,9 @@ apply_transformations.vachette_data <-
     arrange(isim, ID, x)
 
     update(vachette_data, obs.all = obs.all, curves.all = curves.all,
-           curves.scaled.all = curves.scaled.all, lm.all = lm.all, nseg = nseg)
+           curves.scaled.all = curves.scaled.all,
+           ref.extensions.all = ref.extensions.all,
+           lm.all = lm.all, nseg = nseg)
 
 
   }
