@@ -417,6 +417,8 @@ apply_transformations.vachette_data <-
       filter(ucov == i.ucov) %>%
       mutate(ref = tab.ucov$ref[i.ucov])    # Flag for reference
 
+    # -------- INTERREGION GAP EXTRAPOLATION --------------
+
     # 230418 - extrapolate region last-x region by one gridstep size if region.type = 'closed'
     # Currently simple extra x value with same y value ("horizontal" extrapolation - LOCF)
     if(ref.region.type == 'closed')
@@ -493,8 +495,8 @@ apply_transformations.vachette_data <-
     # Tolerance to apply for finding maximums, minimums and inflection points
     # Small stepsize -> small tolerance
     # Large stepsize -> large tol
-    #tolapply = distance between second and first x obs * tol.noise
     tolapply <- tol.noise*(typ.orig$x[2]-typ.orig$x[1])
+
     # get ref landmarks
     my.ref.lm.init    <- get.x.multi.landmarks(ref$x,ref$y,w=window,tol=tolapply) #contiguous inflec cause issue?
     my.ref.lm.init$y  <- approx(ref$x,ref$y, xout=my.ref.lm.init$x)$y #interpolation
@@ -537,41 +539,89 @@ apply_transformations.vachette_data <-
     # 1. ref and query both open ends ("default")
     # 2. ref is open end, query is closed --> get.query.open.end() for last x **ref** only
     # 3. ref is closed, query is open end --> get.query.open.end() for last x query only
-    # 4. ref and query both closed        --> get.query.open.end() for last x query only
+    # 4. ref and query both closed        --> decide either fit ref.last.x or query.last.x
 
     query.region.type <- unique(query$region.type)
     if(length(query.region.type) != 1) stop("Error: length query.region.type != 1")
 
     # ---- Reference and query last x -----
 
-    # 1. Find ref last x, Fit query last x
+    # 1. "Default" Find ref last x, Fit query last x
     if(ref.region.type == 'open' & query.region.type == 'open')
     {
       my.ref.lm   <- get.ref.x.open.end(ref$x,ref$y,my.ref.lm.refined,step.x.factor=step.x.factor,tol=tol.end)
       my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.fit,scaling=scaling)
-    } #error is in above line
+    }
+
     # 2. Fit ref last x, Fix query last x
     if(ref.region.type == 'open' & query.region.type == 'closed')
     {
       my.ref.lm   <- get.query.x.open.end(query,ref,my.query.lm.refined,my.ref.lm.refined,ngrid=ngrid.fit,scaling=scaling)
       my.query.lm <- my.query.lm.refined
     }
-    # 230418 - Update
-    # 3+4. Fix ref last x, Fit query last x
-    if(ref.region.type == 'closed')
+
+    # 3. Fix ref last x, Fit query last x
+    if(ref.region.type == 'closed' & query.region.type == 'open')
     {
       my.ref.lm   <- my.ref.lm.refined
       my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.fit,scaling=scaling)
     }
 
+    # 4. Fix ref last x, Fit query last x *** OR **** reverse!!
+    if(ref.region.type == 'closed' & query.region.type == 'closed')
+    {
+      # 1. Try fit query.last.x
+      my.ref.lm1   <- my.ref.lm.refined
+      my.query.lm1 <- get.query.x.open.end(ref,query,my.ref.lm1,my.query.lm.refined,ngrid=ngrid.fit,scaling=scaling)
+
+      # 2. Try fit ref.last.x
+      my.query.lm2   <- my.query.lm.refined
+      my.ref.lm2     <- get.query.x.open.end(query,ref,my.query.lm2,my.ref.lm.refined,ngrid=ngrid.fit,scaling=scaling)
+
+      # difference query/ref last.x with original
+      diff.query.last.x.1 <- abs(my.query.lm1$x[dim(my.query.lm1)[1]] - my.query.lm.init$x[dim(my.query.lm.init)[1]])
+      diff.ref.last.x.2   <- abs(my.ref.lm2$x[dim(my.ref.lm2)[1]]     - my.ref.lm.init$x[dim(my.ref.lm.init)[1]])
+
+      # print(paste0("Diff last x query fit: ",diff.query.last.x.1))
+      # print(paste0("Diff last x ref fit:   ",diff.ref.last.x.2))
+
+      # Needs 3rd tolerance? Dependent on grid step size?
+      ref.grid.step.size   <- ref$x[dim(ref)[1]] - ref$x[dim(ref)[1]-1]
+      tol.fit.last.x       <- ref.grid.step.size*0.1
+      # query last x fitted:
+      if(diff.query.last.x.1>tol.fit.last.x & diff.ref.last.x.2 <= tol.fit.last.x)
+      {
+        my.ref.lm   <- my.ref.lm1
+        my.query.lm <- my.query.lm1
+      }
+      # ref last x fitted:
+      if(diff.ref.last.x.2>tol.fit.last.x & diff.query.last.x.1 <= tol.fit.last.x)
+      {
+        my.ref.lm   <- my.ref.lm2
+        my.query.lm <- my.query.lm2
+      }
+      # Same curve
+      if(diff.ref.last.x.2<=tol.fit.last.x & diff.query.last.x.1 <= tol.fit.last.x)
+      {
+        my.ref.lm   <- my.ref.lm1
+        my.query.lm <- my.query.lm1
+      }
+      # Error
+      if(diff.ref.last.x.2>tol.fit.last.x & diff.query.last.x.1 > tol.fit.last.x)
+      {
+        stop("Error finding last.x for two closed segments")
+      }
+    }
+
+    # JL 230608 - REMOVE: DUPLICATED CODE:
     # @James recent developments
     # Overrides above (above needs reprogramming)
     # Always FIX ref and FIT query to find best fitting x ("open"). Then extrapolate if required
-    if(ref.region.type == 'closed')
-    {
-      my.ref.lm   <- my.ref.lm.refined
-      my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.fit,scaling=scaling)
-    }
+    # if(ref.region.type == 'closed')
+    # {
+    #   my.ref.lm   <- my.ref.lm.refined
+    #   my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.fit,scaling=scaling)
+    # }
 
     # Recalc landmark y's
     my.query.lm$y  <- approx(query$x,query$y, xout=my.query.lm$x)$y
