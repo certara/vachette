@@ -26,7 +26,10 @@ render <- theme_bw() +
         axis.text.x = element_text(size=14),
         axis.text.y = element_text(size=14),
         plot.title = element_text(size=14),
-        plot.subtitle=element_text(size=12))
+        plot.subtitle=element_text(size=12),
+        plot.caption.position = "plot",
+        plot.caption = element_text(hjust = 0, vjust = 1, size = 10)
+  )
 
 # Multiple plots on one page:
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
@@ -90,8 +93,14 @@ p.scaled.typical.curves.landmarks <- function(vachette_data) {
     coord_cartesian(xlim=c(0,xstop)) +
     labs(title=paste0(model.name,"; Typical curve segments"),
          subtitle = "Dashed line: Reference typical curve\nGrey: unused part of typical curve",
-         # caption=script,
-         col="Segment")+
+         caption = paste0("Reference Covariate: ",
+                          paste0(
+                            names(vachette_data$covariates),
+                            "=",
+                            vachette_data$covariates,
+                            collapse = ", "
+                          )),
+         col="Segment") +
     render
 }
 
@@ -114,7 +123,13 @@ p.scaled.typical.full.curves.landmarks <- function(vachette_data) {
     geom_point(data=lm.all,pch=3,size=4,col='black',stroke = 2)+
     labs(title=paste0(model.name,"; Typical curve segments"),
          subtitle = "Dashed: Reference typical curve\nGrey: unused part of typical curve",
-         # caption=script,
+         caption = paste0("Reference Covariate: ",
+                          paste0(
+                            names(vachette_data$covariates),
+                            "=",
+                            vachette_data$covariates,
+                            collapse = ", "
+                          )),
          col="Segment")+
     render
 }
@@ -137,7 +152,13 @@ p.scaling.factor <- function(vachette_data) {
     coord_cartesian(xlim=c(NA,max(obs.all$x,obs.all$x.scaled)),
                     ylim=c(0,max(curves.scaled.all$x.scaling[curves.scaled.all$x<=max(obs.all$x,obs.all$x.scaled)])))+
     labs(title=paste0(model.name,"; x-scaling factors"),
-         #caption=script,
+         caption = paste0("Reference Covariate: ",
+                          paste0(
+                            names(vachette_data$covariates),
+                            "=",
+                            vachette_data$covariates,
+                            collapse = ", "
+                          )),
          col="Segment") +
     render
 }
@@ -169,8 +190,14 @@ p.scaled.typical.curves <- function(vachette_data) {
                                 'Yes'='red'))+
     labs(title=paste0(model.name,"; Covariate typical curves"),
          subtitle = "Dashed: Covariate typical curves after Vachette transformation",
-         # caption=script,
-         col="Covariate value\n(Reference)")+
+         caption = paste0("Reference Covariate: ",
+                          paste0(
+                            names(vachette_data$covariates),
+                            "=",
+                            vachette_data$covariates,
+                            collapse = ", "
+                          )),
+         col="Covariate value\n(Reference)") +
     render
 }
 
@@ -234,7 +261,13 @@ p.scaled.observation.curves <- function(vachette_data) {
     coord_cartesian(xlim=c(0,vachette_data$xstop)) +
     labs(title=paste0(vachette_data$model.name,"; Individual observation curves"),
          subtitle = "Dashed: Extrapolation of typical curve",
-         # caption=script,
+         caption = paste0("Reference Covariate: ",
+                          paste0(
+                            names(vachette_data$covariates),
+                            "=",
+                            vachette_data$covariates,
+                            collapse = ", "
+                          )),
          col="Covariate value\n(Reference)")+
     render
 
@@ -298,7 +331,13 @@ p.scaled.observation.curves.by.id <- function(vachette_data) {
     coord_cartesian(xlim=c(0,vachette_data$xstop)) +
     labs(title=paste0(vachette_data$model.name,"; Individual observation curves by ID"),
          subtitle = "Dashed: Extrapolation of typical curve",
-         #caption=script,
+         caption = paste0("Reference Covariate: ",
+                          paste0(
+                            names(vachette_data$covariates),
+                            "=",
+                            vachette_data$covariates,
+                            collapse = ", "
+                          )),
          col="Covariate value\n(Reference)")+
     render
 
@@ -377,7 +416,13 @@ p.transformation <- function(vachette_data) {
       subtitle = paste0(if (vachette_data$ADD_TR)
         "Additive Error", if (vachette_data$PROP_TR)
           "Proportional Error"),
-      # caption = script,
+      caption = paste0("Reference Covariate: ",
+                       paste0(
+                         names(vachette_data$covariates),
+                         "=",
+                         vachette_data$covariates,
+                         collapse = ", "
+                       )),
       col = "Segm",
       shape = "Covs"
     ) +
@@ -400,7 +445,13 @@ p.add.distances <- function(vachette_data) {
     geom_point()+
     labs(title=paste0(vachette_data$model.name,"; Normal distances: original and after transformation"),
          subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error Transformation",if(vachette_data$PROP_TR) "Proportional Error Transformation"),
-         #caption=script,
+         caption = paste0("Reference Covariate: ",
+                          paste0(
+                            names(vachette_data$covariates),
+                            "=",
+                            vachette_data$covariates,
+                            collapse = ", "
+                          )),
          x = 'Original distance',
          x = 'Distance after transformation',
          col="Segm.")+
@@ -423,7 +474,13 @@ p.prop.distances <- function(vachette_data) {
     geom_point()+
     labs(title=paste0(vachette_data$model.name,"; Proportional distances: original and after transformation"),
          subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error Transformation",if(vachette_data$PROP_TR) "Proportional Error Transformation"),
-         #caption=script,
+         caption = paste0("Reference Covariate: ",
+                          paste0(
+                            names(vachette_data$covariates),
+                            "=",
+                            vachette_data$covariates,
+                            collapse = ", "
+                          )),
          x = 'Original distance on log scale',
          x = 'Distance on log scale after transformation',
          col="Segm.")+
@@ -454,9 +511,14 @@ p.obs.ref.query <- function(vachette_data) {
                        values=c('Query'='blue',
                                 'Reference'='red'))+
     coord_cartesian(xlim=c(0,max(obs.all$x))) +
-    labs(title=paste0(vachette_data$model.name,"; Observations + typical curves")
-         #caption=script
-    )+
+    labs(title=paste0(vachette_data$model.name,"; Observations + typical curves"),
+         caption = paste0("Reference Covariate: ",
+                          paste0(
+                            names(vachette_data$covariates),
+                            "=",
+                            vachette_data$covariates,
+                            collapse = ", "
+                          ))) +
     render
 }
 
@@ -487,9 +549,14 @@ p.obs.cov <- function(vachette_data) {
                                 'Reference'='red'))+
     facet_wrap(~paste("ucov",ucov)) +
     coord_cartesian(xlim=c(0,max(obs.all$x))) +
-    labs(title=paste0(vachette_data$model.name,"; Observations + typical curves")
-         #caption=script
-    )+
+    labs(title=paste0(vachette_data$model.name,"; Observations + typical curves"),
+         caption = paste0("Reference Covariate: ",
+                          paste0(
+                            names(vachette_data$covariates),
+                            "=",
+                            vachette_data$covariates,
+                            collapse = ", "
+                          ))) +
     render
 }
 
@@ -544,9 +611,14 @@ p.vachette.arrow <- function(vachette_data) {
     labs(title=paste0(vachette_data$model.name,"; Observations + transformations"),
          subtitle = paste0(if (vachette_data$ADD_TR)
            "Additive Error", if (vachette_data$PROP_TR)
-             "Proportional Error","; Dashed: extrapolation reference curve")
-         #caption=script
-    )+
+             "Proportional Error","; Dashed: extrapolation reference curve"),
+         caption = paste0("Reference Covariate: ",
+                          paste0(
+                            names(vachette_data$covariates),
+                            "=",
+                            vachette_data$covariates,
+                            collapse = ", "
+                          ))) +
     render
 
   return(gg)
@@ -560,11 +632,14 @@ p.vachette.arrow <- function(vachette_data) {
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
-p.vachette <- function(vachette_data) {
+p.vachette <- function(vachette_data, log_x = FALSE) {
   #stopifnot(length(vachette_data$covariates) == 1)
   obs.all            <- vachette_data$obs.all
   curves.all         <- vachette_data$curves.all
 
+  # extract errors
+  # errors <- vachette_data$errors
+  # warning(errors)
   # JL 230607
   ref.extensions.all <- vachette_data$ref.extensions.all
   # Plot longest ref.extension.all only. Pick first is multiple occurences
@@ -609,15 +684,33 @@ p.vachette <- function(vachette_data) {
         'Reference' = 'red',
         'Query\nTransformed' = 'purple'
       )
-    ) +
+    )
 
-    coord_cartesian(xlim = c(0, max(obs.all$x, obs.all$x.scaled))) +
+  if (log_x) {
+    gg <- gg +
+      coord_cartesian(xlim = c(
+        min(obs.all$x, obs.all$x.scaled),
+        max(obs.all$x, obs.all$x.scaled)
+      )) +
+      ggplot2::scale_x_log10()
+  } else {
+    gg <- gg +
+      coord_cartesian(xlim = c(0, max(obs.all$x, obs.all$x.scaled)))
+  }
+
+  gg <- gg +
     labs(
       title = paste0(vachette_data$model.name, "; Observations + transformations"),
       subtitle = paste0(if (vachette_data$ADD_TR)
         "Additive Error", if (vachette_data$PROP_TR)
-          "Proportional Error","; Dashed: extrapolation reference curve")
-      #caption=script
+          "Proportional Error","; Dashed: extrapolation reference curve"),
+      caption = paste0("Reference Covariate: ",
+                       paste0(
+                         names(vachette_data$covariates),
+                         "=",
+                         vachette_data$covariates,
+                         collapse = ", "
+                       ))
     ) +
     render
   return(gg)
