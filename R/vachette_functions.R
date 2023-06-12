@@ -459,7 +459,7 @@ print.vachette_data <- function(x, ...) {
 
   obs_req_cols <- c("ID", "OBS", "x")
   typ_req_cols <- c("ID", "PRED", "x")
-  sim_req_cols <- c("isim", obs_req_cols)
+  sim_req_cols <- c("REP", obs_req_cols)
 
   if (isTRUE(iiv.correction)) {
     obs_req_cols <- c(obs_req_cols, "PRED", "IPRED")
@@ -497,9 +497,9 @@ print.vachette_data <- function(x, ...) {
     diff_req_mappings_obs <- setdiff(obs_req_cols, names(mappings))
     cols_not_mapped_obs <- setdiff(diff_req_mappings_obs, obs_cols)
 
-    obs_mappings <- mappings[names(mappings) %notin% c("isim")]
+    obs_mappings <- mappings[names(mappings) %notin% c("REP")]
     sim_mappings <- mappings
-    typ_mappings <- mappings[names(mappings) %notin% c("IPRED", "OBS", "isim")]
+    typ_mappings <- mappings[names(mappings) %notin% c("IPRED", "OBS", "REP")]
 
 
     if (length(cols_not_mapped_obs) > 0) {
@@ -537,7 +537,7 @@ print.vachette_data <- function(x, ...) {
       }
     }
 
-    typ_mappings <- mappings[names(mappings) %notin% c("IPRED", "OBS", "isim")]
+    typ_mappings <- mappings[names(mappings) %notin% c("IPRED", "OBS", "REP")]
 
     if (any(typ_mappings %notin% typ_cols)) {
       missing_cols <- setdiff(typ_mappings, typ_cols)
@@ -605,7 +605,7 @@ print.vachette_data <- function(x, ...) {
 }
 
 
-.calculate_dose_number <- function(data, ref.dosenr, data_type = c("obs.data", "typ.data", "sim.data")) {
+.calculate_dose_number <- function(data, data_type = c("obs.data", "typ.data", "sim.data")) {
 
   data_type <- match.arg(data_type)
 
@@ -681,10 +681,6 @@ print.vachette_data <- function(x, ...) {
     message("`dosenr` column is required and not found in ", data_type," `dosenr` can be automatically calculated using `EVID`, `AMT`, or `ADDL/II` columns in the data. Use the 'mappings' argument if these columns are named differently in your input data.")
     warning("Setting `dosenr` column to 1 in ", data_type, call. = FALSE)
     data <- mutate(data, dosenr = 1)
-  }
-  # ensure value supplied to ref.dosenr exists inside dosenr column
-  if (ref.dosenr %notin% unique(data[["dosenr"]])) {
-    stop("ref.dosenr value of ", ref.dosenr, " not found in dosenr column in ", data_type, call. = FALSE)
   }
 
   return(data)
