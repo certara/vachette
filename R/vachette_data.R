@@ -5,28 +5,63 @@
 #' @param typ.data data.frame; Typical (population) curves
 #' @param sim.data data.frame; Simulated (VPC) data
 #' @param covariates named character vector; Covariate names with reference values in vachette transformation
-#' @param ref.dosenr integer; Number of doses given up through start of reference region
+#' @param ref.dosenr integer; Dose number to use as the reference dose, corresponding to value in "dosenr" column in input data
 #' @param iiv.correction logical; Apply inter-individual variability correction. Default \code{FALSE}
 #' @param error.model character; Applied error model, \code{"proportional"} or \code{"additive"}. Default \code{"proportional"}
 #' @param model.name character; Optional model name for plot output
-#' @param mappings named character vector;  Optional mappings to be included if column names in input \code{data.frame} differ from required column names
-#' @details Required column names in input \code{data.frame} are:
+#' @param mappings named character vector;  Optional mappings to be included if column names in input \code{data.frame} differ from required column names.
+#' See Required Columns section:
+#' @section Required columns \code{obs.data}:
 #' \itemize{
 #'  \item{"ID"}{ - Subject ID}
 #'  \item{"x"}{ - Typically time}
 #'  \item{"PRED"}{ - Population prediction, required if \code{iiv.correction = TRUE}}
 #'  \item{"IPRED"}{ - Individual prediction, required if \code{iiv.correction = TRUE}}
 #'  \item{"OBS"}{ - DV}
+#'  \item{"dosenr"}{ - Dose number; unique dose number for ID/time point.
+#'  }
 #' }
 #'
+#' @section Required columns \code{typ.data}:
+#' \itemize{
+#'  \item{"ID"}{ - Subject ID}
+#'  \item{"x"}{ - Typically time}
+#'  \item{"PRED"}{ - Population prediction}
+#'  \item{"dosenr"}{ - Dose number; unique dose number for ID/time point}
+#' }
+#'
+#' @section Required columns \code{sim.data}:
+#' \itemize{
+#'  \item{"ID"}{ - Subject ID}
+#'  \item{"x"}{ - Typically time}
+#'  \item{"PRED"}{ - Population prediction, required if \code{iiv.correction = TRUE}}
+#'  \item{"IPRED"}{ - Individual prediction, required if \code{iiv.correction = TRUE}}
+#'  \item{"REP"}{ - Replicate number}
+#' }
+#'
+#' @details If "dosenr" column is missing it will be automatically calculated using the priority of available columns:
+#'    \itemize{
+#'      \item{"EVID": If available in data, "dosenr" will be calculated using \code{cumsum(EVID==1)}}
+#'      \item{"ADDL"/"II": If "ADDL" and "II" are available in data, "dosenr" will be calculated given additional dose number and interval}
+#'      \item{"AMT": If only "AMT" column exists in data, "dosenr" will be calculated using \code{cumsum(AMT!=0)}}
+#'    }
+#'  If \code{sim.data} argument is used, "dosenr" is not required in corresponding \code{sim.data} \code{data.frame}; "dosenr" is extracted from
+#'  \code{obs.data} and merged into \code{sim.data} by "ID" and "x" key.
 #'
 #' @return \code{vachette_data}
 #' @export
 #'
 #' @examples
-#' obs.data <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv"))
-#' typ.data <- read.csv(system.file(package = "vachette", "examples", "iv-typ.csv"))
-#' sim.data <- read.csv(system.file(package = "vachette", "examples", "iv-vpc.csv"))
+#' obs <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv"))
+#' typ <- read.csv(system.file(package = "vachette", "examples", "iv-typ.csv"))
+#'
+#' vd <- vachette_data(
+#'   obs.data = obs,
+#'   typ.data = typ,
+#'   covariates = c(WT=70),
+#'   model.name  = "IV"
+#'  ) |>
+#'  apply_transformations()
 #'
 #'
 vachette_data <-
@@ -48,19 +83,26 @@ vachette_data <-
   # Process/assign covariates
   covariates <- .process_covariates(covariates, obs.data)
 
-  # If ref.dosenr is missing, provide warning then set to 1
+  obs.data <- .calculate_dose_number(obs.data, data_type = "obs.data")
+  typ.data <- .calculate_dose_number(typ.data, data_type = "typ.data")
+
+  number_of_doses <- unique(obs.data[["dosenr"]])
   if (missing(ref.dosenr)) {
-    warning("ref.dosenr argument not given, setting ref.dosenr to 1", call. = FALSE)
+    if (length(number_of_doses) > 1) {
+      warning("ref.dosenr argument is missing and more than one dose number found in data,
+              setting ref.dosenr to 1", call. = FALSE)
+    }
     ref.dosenr <- 1
   }
-
-  obs.data <- .calculate_dose_number(obs.data, ref.dosenr = ref.dosenr, data_type = "obs.data")
-  typ.data <- .calculate_dose_number(typ.data, ref.dosenr = ref.dosenr, data_type = "typ.data")
+  # ensure value supplied to ref.dosenr exists inside dosenr column
+  if (ref.dosenr %notin% number_of_doses) {
+    stop("ref.dosenr value of ", ref.dosenr, " not found in dosenr column in ", data_type, call. = FALSE)
+  }
 
   # Region is the Vachette terminology for the time between two dose administrations
   ref.region <- ref.dosenr
   # "Dummy" observations replicate number
-  obs.data$isim <- 1
+  obs.data$REP <- 1
   error <- match.arg(error.model)
   # assign error flags
   if (error == "proportional") {
@@ -92,9 +134,9 @@ vachette_data <-
 
   # Retain required columns
   if (iiv.correction) {
-    obs_cols_to_select <- c("isim", "ID", "x", "PRED", "IPRED", "OBS", "dosenr")
+    obs_cols_to_select <- c("REP", "ID", "x", "PRED", "IPRED", "OBS", "dosenr")
   } else {
-    obs_cols_to_select <- c("isim", "ID", "x", "OBS", "dosenr")
+    obs_cols_to_select <- c("REP", "ID", "x", "OBS", "dosenr")
   }
   typ_cols_to_select <- c("ID", "x", "PRED", "dosenr")
   obs.data  <-
@@ -423,7 +465,7 @@ apply_transformations.vachette_data <-
     # Currently simple extra x value with same y value ("horizontal" extrapolation - LOCF)
     if(ref.region.type == 'closed')
     {
-      message(paste0("Reference region-",ref.region," gap extrapolation"))
+      #message(paste0("Reference region-",ref.region," gap extrapolation"))
 
       ref.grid.step.size   <- ref$x[dim(ref)[1]] - ref$x[dim(ref)[1]-1]
       ref.curve.next       <- ref[dim(ref)[1],]
@@ -446,7 +488,7 @@ apply_transformations.vachette_data <-
     }
     if(query.region.type == 'closed')
     {
-      message(paste0("Query region-",query.region," gap extrapolation"))
+      #message(paste0("Query region-",query.region," gap extrapolation"))
 
       query.grid.step.size   <- query$x[dim(query)[1]] - query$x[dim(query)[1]-1]
       query.curve.next       <- query[dim(query)[1],]
@@ -510,7 +552,8 @@ apply_transformations.vachette_data <-
     #Validation check
     #If y contiguous y values in series are the same, provide error, increase tol.noise
     #option 1: if multiple inflec in sequence, try decreasing tol.noise
-
+    # optionally refine landmarks if multiple inflection points
+    # automatically could raise tol.noise and/or window size incrementally to try to solve issue
     if(!lm.refine)
     {
       my.ref.lm.refined      <- my.ref.lm.init
@@ -526,7 +569,7 @@ apply_transformations.vachette_data <-
     }
 
     # Check if query and ref have same landmarks in same order
-    if(dim(my.ref.lm.refined)[1] != dim(my.query.lm.refined)[1] |
+    if(nrow(my.ref.lm.refined) != nrow(my.query.lm.refined) ||
        !sum(my.ref.lm.refined$type == my.query.lm.refined$type)>0)
       stop("No matching landmarks between reference and query")
 
@@ -572,11 +615,15 @@ apply_transformations.vachette_data <-
     {
       # 1. Try fit query.last.x
       my.ref.lm1   <- my.ref.lm.refined
-      my.query.lm1 <- get.query.x.open.end(ref,query,my.ref.lm1,my.query.lm.refined,ngrid=ngrid.fit,scaling=scaling)
+      my.query.lm1 <- suppressWarnings(
+        get.query.x.open.end(ref,query,my.ref.lm1,my.query.lm.refined,ngrid=ngrid.fit,scaling=scaling)
+      )
 
       # 2. Try fit ref.last.x
       my.query.lm2   <- my.query.lm.refined
-      my.ref.lm2     <- get.query.x.open.end(query,ref,my.query.lm2,my.ref.lm.refined,ngrid=ngrid.fit,scaling=scaling)
+      my.ref.lm2     <- suppressWarnings(
+        get.query.x.open.end(query,ref,my.query.lm2,my.ref.lm.refined,ngrid=ngrid.fit,scaling=scaling)
+      )
 
       # difference query/ref last.x with original
       diff.query.last.x.1 <- abs(my.query.lm1$x[dim(my.query.lm1)[1]] - my.query.lm.init$x[dim(my.query.lm.init)[1]])
@@ -933,7 +980,7 @@ apply_transformations.vachette_data <-
   }
 
   obs.all <- obs.all %>%
-    arrange(isim, ID, x)
+    arrange(REP, ID, x)
 
     update(vachette_data, obs.all = obs.all, curves.all = curves.all,
            curves.scaled.all = curves.scaled.all,
