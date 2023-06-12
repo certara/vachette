@@ -4,7 +4,7 @@
 \alias{p.vachette}
 \title{p.vachette}
 \usage{
-p.vachette(vachette_data)
+p.vachette(vachette_data, log_x = FALSE)
 }
 \arguments{
 \item{vachette_data}{Object of class \code{vachette_data}}
