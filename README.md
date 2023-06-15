@@ -10,8 +10,9 @@ covariate effects.
 
 ## Installation
 
-**Installation instructions will be available once the Github repository
-has been made public**
+``` r
+remotes::install_github("certara/vachette")
+```
 
 ## Examples
 
@@ -19,10 +20,8 @@ has been made public**
 
 ``` r
 # Import Example Data
-obs.data <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv")) |> 
-  dplyr::rename(WT = "vachette.cov1")
-typ.data <- read.csv(system.file(package = "vachette", "examples", "iv-typ.csv")) |> 
-  dplyr::rename(WT = "vachette.cov1")
+obs.data <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv"))
+typ.data <- read.csv(system.file(package = "vachette", "examples", "iv-typ.csv"))
 
 library(vachette)
 
@@ -30,12 +29,19 @@ vd <-
   vachette_data(
     obs.data,
     typ.data,
-    covariates = c("WT" = 70),
+    covariates = c(WT = 70),
+    mappings = c(OBS = "DV",
+                 x = "time"),
     ref.dosenr = 1,
-    iiv.correction = FALSE,
     model.name = "Intravenous (i.v)"
   )
+```
 
+    ## `EVID` column found in obs.data, creating `dosenr` column in data for corresponding ref.dosenr value
+
+    ## `EVID` column found in typ.data, creating `dosenr` column in data for corresponding ref.dosenr value
+
+``` r
 vd <- vd |>
   apply_transformations()
 
@@ -54,12 +60,19 @@ vd <-
   vachette_data(
     obs.data,
     typ.data,
-    covariates =  c("WT" = 70, "AGE" = 30),
+    covariates =  c(WT = 70, AGE = 30),
+    mappings = c(OBS = "DV",
+                 x = "time"),
     ref.dosenr = 1,
-    iiv.correction = FALSE,
     model.name = "oral-two-cov"
   )
+```
 
+    ## `EVID` column found in obs.data, creating `dosenr` column in data for corresponding ref.dosenr value
+
+    ## `EVID` column found in typ.data, creating `dosenr` column in data for corresponding ref.dosenr value
+
+``` r
 vd <- vd |>
   apply_transformations(window = 23,
                         window.d1.refine = 7,
@@ -69,115 +82,3 @@ p.vachette(vd)
 ```
 
 ![](README_files/figure-gfm/oral_two_cov-1.png)<!-- -->
-
-### Sigmoid
-
-``` r
-obs.data <- read.csv(system.file(package = "vachette", "examples", "sigmoid-obs.csv")) |>
-  dplyr::rename("ID" = id)
-typ.data  <- read.csv(system.file(package = "vachette", "examples", "sigmoid-typ.csv"))
-
-vd <-
-  vachette_data(
-    obs.data,
-    typ.data,
-    covariates =  c("vachette.cov1" = 70),
-    ref.dosenr = 1,
-    iiv.correction = FALSE,
-    model.name = "sigmoid"
-  )
-
-vd <- vd |>
-  apply_transformations(window = 17,
-                        window.d1.refine = 7,
-                        window.d2.refine = 5)
-
-p.vachette(vd)
-```
-
-![](README_files/figure-gfm/sigmoid-1.png)<!-- -->
-
-### Oral-Absorption
-
-``` r
-obs.data <- read.csv(system.file(package = "vachette", "examples", "oral-absorption-obs.csv"))
-typ.data  <- read.csv(system.file(package = "vachette", "examples", "oral-absorption-typ.csv"))
-
-vd <-
-  vachette_data(
-    obs.data,
-    typ.data,
-    covariates =  c("vachette.cov1" = 70),
-    ref.dosenr = 1,
-    iiv.correction = FALSE,
-    model.name = "oral-absorption"
-  )
-
-vd <- vd |>
-  apply_transformations(window = 17,
-                        window.d1.refine = 7,
-                        window.d2.refine = 5)
-
-p.vachette(vd)
-```
-
-![](README_files/figure-gfm/oral_absorption-1.png)<!-- -->
-
-### Pembro
-
-**Note: The Pembro data set contains a categorical covariate e.g.,
-`SCHED`**
-
-``` r
-obs.data <- read.csv(system.file(package = "vachette", "examples", "pembro-obs.csv"))
-typ.data  <- read.csv(system.file(package = "vachette", "examples", "pembro-typ.csv"))
-
-vd <-
-  vachette_data(
-    obs.data,
-    typ.data,
-    covariates =  c(SCHED = 'Q3W', ALB = 53.5),
-    ref.dosenr = 3,
-    iiv.correction = FALSE,
-    model.name = "pembro"
-  )
-
-print(vd)
-```
-
-    ## Model Name:      pembro 
-    ## Covariate Names: SCHED, ALB 
-    ## Reference Values:    SCHED=Q3W , ALB=53.5
-
-If no reference value is specified, the covariate central tendency is
-used e.g., median for continuous and mode for categorical covariate.
-
-``` r
-vd <-
-  vachette_data(
-    obs.data,
-    typ.data,
-    covariates =  c("SCHED", "ALB"),
-    ref.dosenr = 3,
-    iiv.correction = FALSE,
-    model.name = "pembro"
-  )
-
-print(vd)
-```
-
-    ## Model Name:      pembro 
-    ## Covariate Names: SCHED, ALB 
-    ## Reference Values:    SCHED=Q2W , ALB=16
-
-``` r
-vd <- vd |>
-  apply_transformations(window = 17,
-                        window.d1.refine = 7,
-                        window.d2.refine = 5)
-
-
-p.vachette(vd)
-```
-
-![](README_files/figure-gfm/pembro3-1.png)<!-- -->
