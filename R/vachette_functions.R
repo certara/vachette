@@ -597,8 +597,8 @@ print.vachette_data <- function(x, ...) {
       covariates[i] <- cov_ref_val
     } else {
       if (cov_ref_val %notin% as.character(unlist(obs.data[, cov_name]))) {
-        if (is.numeric(cov_ref_val)) {
-          closest_index <- which.min(abs(obs.data[, cov_name] - cov_ref_val))
+        if (suppressWarnings(!is.na(as.numeric(cov_ref_val)))) {
+          closest_index <- which.min(abs(obs.data[, cov_name] - as.numeric(cov_ref_val)))
           closest_value <- obs.data[, cov_name][closest_index]
           warning("Reference value of ", cov_ref_val, " for covariate '", cov_name, "' not found in data, setting reference value to ", closest_value,
                   call. = FALSE)
