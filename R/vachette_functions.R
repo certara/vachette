@@ -624,18 +624,6 @@ print.vachette_data <- function(x, ...) {
       data_type,
       ", using `dosenr` column in data for corresponding ref.dosenr value"
     )
-  }  else if ("EVID" %in% colnames(data)) {
-    message(
-      "`EVID` column found in ",
-      data_type,
-      ", creating `dosenr` column in data for corresponding ref.dosenr value"
-    )
-    data <- data %>%
-      group_by(ID) %>%
-      mutate(dosenr = cumsum(EVID == 1)) %>%
-      ungroup() %>%
-      filter(EVID == 0) %>%
-      select(-EVID)
   } else if (all(c("ADDL", "II") %in% colnames(data))) {
     message(
       "`ADDL`, `II`, columns found in ",
@@ -677,6 +665,18 @@ print.vachette_data <- function(x, ...) {
       filter(is.na(AMT) | AMT == 0) %>%
       select(-AMT)
 
+  }  else if ("EVID" %in% colnames(data)) {
+    message(
+      "`EVID` column found in ",
+      data_type,
+      ", creating `dosenr` column in data for corresponding ref.dosenr value"
+    )
+    data <- data %>%
+      group_by(ID) %>%
+      mutate(dosenr = cumsum(EVID == 1)) %>%
+      ungroup() %>%
+      filter(EVID == 0) %>%
+      select(-EVID)
   } else if ("AMT" %in% colnames(data)) {
     data <- data %>%
       group_by(ID) %>%
