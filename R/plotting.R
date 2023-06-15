@@ -33,7 +33,6 @@ render <- theme_bw() +
 
 # Multiple plots on one page:
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-  library(grid)
 
   # Make a list from the ... arguments and plotlist
   plots <- c(list(...), plotlist)
@@ -54,15 +53,15 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 
   } else {
     # Set up the page
-    grid.newpage()
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    grid::grid.newpage()
+    grid::pushViewport(grid::viewport(layout = grid::grid.layout(nrow(layout), ncol(layout))))
 
     # Make each plot, in the correct location
     for (i in 1:numPlots) {
       # Get the i,j matrix positions of the regions that contain this subplot
       matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
 
-      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+      print(plots[[i]], vp = grid::viewport(layout.pos.row = matchidx$row,
                                       layout.pos.col = matchidx$col))
     }
   }
@@ -72,9 +71,10 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 #' p.scaled.typical.curves.landmarks
 #'
 #' @param vachette_data Object of class\code{vachette_data}
+#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #'
 #' @export
-p.scaled.typical.curves.landmarks <- function(vachette_data) {
+p.scaled.typical.curves.landmarks <- function(vachette_data, log.x = FALSE) {
 
   curves.all <- vachette_data$curves.all
   lm.all <- vachette_data$lm.all
@@ -83,14 +83,27 @@ p.scaled.typical.curves.landmarks <- function(vachette_data) {
 
   stopifnot(!is.null(curves.all))
 
-  curves.all %>%
+  gg <- curves.all %>%
     ggplot(aes(x=x,y=y,group=ucov,
                col = factor(seg)))+
     geom_line(lwd=1)+
     geom_line(data=curves.all %>% filter(ref=="Yes"),col='black',lty=2,lwd=1,alpha=0.5)+
     # Add landmark positions
-    geom_point(data=lm.all,pch=3,size=4,col='black',stroke = 2)+
-    coord_cartesian(xlim=c(0,xstop)) +
+    geom_point(data=lm.all,pch=3,size=4,col='black',stroke = 2)
+
+  if (log.x) {
+    gg <- gg +
+      coord_cartesian(xlim = c(
+        min(curves.all$x),
+        xstop)
+      ) +
+      ggplot2::scale_x_log10()
+  } else {
+    gg <- gg +
+      coord_cartesian(xlim=c(0,xstop))
+  }
+
+  gg <- gg +
     labs(title=paste0(model.name,"; Typical curve segments"),
          subtitle = "Dashed line: Reference typical curve\nGrey: unused part of typical curve",
          caption = paste0("Reference Covariate: ",
@@ -102,19 +115,21 @@ p.scaled.typical.curves.landmarks <- function(vachette_data) {
                           )),
          col="Segment") +
     render
+
+  return(gg)
 }
 
 #' p.scaled.typical.full.curves.landmarks
 #'
 #' @param vachette_data Object of class\code{vachette_data}
-#'
+#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @export
-p.scaled.typical.full.curves.landmarks <- function(vachette_data) {
+p.scaled.typical.full.curves.landmarks <- function(vachette_data, log.x = FALSE) {
   curves.all <- vachette_data$curves.all
   lm.all <- vachette_data$lm.all
   model.name <- vachette_data$model.name
 
-  curves.all %>%
+  gg <- curves.all %>%
     ggplot(aes(x=x,y=y,group=ucov,
                col = factor(seg)))+
     geom_line(lwd=1)+
@@ -130,8 +145,17 @@ p.scaled.typical.full.curves.landmarks <- function(vachette_data) {
                             vachette_data$covariates,
                             collapse = ", "
                           )),
-         col="Segment")+
+         col="Segment")
+
+  if (log.x) {
+    gg <- gg +
+      ggplot2::scale_x_log10()
+  }
+
+  gg <- gg +
     render
+
+  return(gg)
 }
 
 #' p.scaling.factor
@@ -166,24 +190,37 @@ p.scaling.factor <- function(vachette_data) {
 #' p.scaled.typical.curves
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#'
+#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
-p.scaled.typical.curves <- function(vachette_data) {
+p.scaled.typical.curves <- function(vachette_data, log.x = FALSE) {
   curves.scaled.all <- vachette_data$curves.scaled.all
   model.name        <- vachette_data$model.name
 
-  curves.scaled.all %>%
+  gg <- curves.scaled.all %>%
     ggplot(aes(x=x,y=y,group=ucov))+
     # geom_line(lwd=1.5,alpha=0.5)+
     geom_line(data=curves.scaled.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Yes'),lwd=1.5,alpha=0.60)+
     geom_line(data=curves.scaled.all %>% filter(ref=='No'),aes(x=x,y=y,col='No'),lwd=1.5)+
-    geom_line(aes(x=x.scaled, y=y.scaled), col='black',lwd=0.75,lty=2)+
+    geom_line(aes(x=x.scaled, y=y.scaled), col='black',lwd=0.75,lty=2)
     # scale_color_manual(values=c('red','blue')) +
     # scale_linetype_manual(values = c(3, 1),
     #                       labels = c("Covariate", "Reference")) +
-    coord_cartesian(xlim=c(0,vachette_data$xstop)) +
+
+  if (log.x) {
+    gg <- gg +
+      coord_cartesian(xlim = c(
+        min(curves.scaled.all$x),
+        vachette_data$xstop)
+      ) +
+      ggplot2::scale_x_log10()
+  } else {
+    gg <- gg +
+      coord_cartesian(xlim=c(0,vachette_data$xstop))
+  }
+
+  gg <- gg +
     scale_color_manual(name='Reference\ncurve',
                        breaks=c('No', 'Yes'),
                        values=c('No'='blue',
@@ -199,28 +236,31 @@ p.scaled.typical.curves <- function(vachette_data) {
                           )),
          col="Covariate value\n(Reference)") +
     render
+
+  return(gg)
 }
 
 #' p.scaled.observation.curves
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#'
+#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
-p.scaled.observation.curves <- function(vachette_data) {
+p.scaled.observation.curves <- function(vachette_data, log.x = FALSE) {
   # Copy ref curves to each ID
   obs.all <- vachette_data$obs.all
   myids  <- unique(obs.all$ID)
   curves.all <- vachette_data$curves.all
-  curves.all.ids <- NULL
+  #curves.all.ids <- NULL
 
   # JL 230607
   ref.extensions.all <- vachette_data$ref.extensions.all
   # Plot longest ref.extension.all only. Pick first is multiple occurences
   if(!is.null(ref.extensions.all)) max.x.ucov <- ref.extensions.all$ucov[ref.extensions.all$x == max(ref.extensions.all$x)][1]
 
-  for(iid in c(1:length(myids))) {curves.all.ids <- rbind(curves.all.ids,curves.all %>% mutate(ID=myids[iid]))}
+  #for(iid in c(1:length(myids))) {curves.all.ids <- rbind(curves.all.ids,curves.all %>% mutate(ID=myids[iid]))}
+  curves.all.ids <- purrr::map_dfr(myids, ~curves.all %>% mutate(ID = .x))
 
   # Overlay observation curves per ID
   gg <- obs.all %>%
@@ -257,8 +297,20 @@ p.scaled.observation.curves <- function(vachette_data) {
                        values=c('Query transformed'='purple',
                                 'Query observations'='blue',
                                 'Reference observations'='red',
-                                'Typical reference'='black'))+
-    coord_cartesian(xlim=c(0,vachette_data$xstop)) +
+                                'Typical reference'='black'))
+
+  if (log.x) {
+    gg <- gg +
+      coord_cartesian(xlim = c(
+        min(obs.all$x),
+        vachette_data$xstop)
+      ) +
+      ggplot2::scale_x_log10()
+  } else {
+    gg <- gg +
+      coord_cartesian(xlim=c(0,vachette_data$xstop))
+  }
+    gg <- gg +
     labs(title=paste0(vachette_data$model.name,"; Individual observation curves"),
          subtitle = "Dashed: Extrapolation of typical curve",
          caption = paste0("Reference Covariate: ",
@@ -277,11 +329,11 @@ p.scaled.observation.curves <- function(vachette_data) {
 #' p.scaled.observation.curves.by.id
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#'
+#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
-p.scaled.observation.curves.by.id <- function(vachette_data) {
+p.scaled.observation.curves.by.id <- function(vachette_data, log.x = FALSE) {
   # Observation curve for each ID
   obs.all <- vachette_data$obs.all
   myids  <- unique(obs.all$ID)
@@ -327,8 +379,21 @@ p.scaled.observation.curves.by.id <- function(vachette_data) {
                                 'Query observations'='blue',
                                 'Reference observations'='red',
                                 'Typical reference'='black'))+
-    facet_wrap(~ID)+
-    coord_cartesian(xlim=c(0,vachette_data$xstop)) +
+    facet_wrap(~ID)
+
+  if (log.x) {
+    gg <- gg +
+      coord_cartesian(xlim = c(
+        min(obs.all$x),
+        vachette_data$xstop)
+      ) +
+      ggplot2::scale_x_log10()
+  } else {
+    gg <- gg +
+      coord_cartesian(xlim=c(0,vachette_data$xstop))
+  }
+
+  gg <- gg +
     labs(title=paste0(vachette_data$model.name,"; Individual observation curves by ID"),
          subtitle = "Dashed: Extrapolation of typical curve",
          caption = paste0("Reference Covariate: ",
@@ -490,27 +555,39 @@ p.prop.distances <- function(vachette_data) {
 #' p.obs.ref.query
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#'
+#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
-p.obs.ref.query <- function(vachette_data) {
+p.obs.ref.query <- function(vachette_data, log.x = FALSE) {
   #stopifnot(length(vachette_data$covariates) == 1)
   obs.all <- vachette_data$obs.all
   curves.all <- vachette_data$curves.all
-  obs.all %>%
+  gg <- obs.all %>%
     ggplot(aes(x=x,y=y)) +
     geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query', group=ucov),lwd=1) +
     geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference', group=ucov),lwd=1) +
     geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query', group=ucov),pch=19) +
     geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference', group=ucov),pch=19) +
-
     scale_color_manual(name='Data type',
                        breaks=c('Query',
                                 'Reference'),
                        values=c('Query'='blue',
-                                'Reference'='red'))+
-    coord_cartesian(xlim=c(0,max(obs.all$x))) +
+                                'Reference'='red'))
+
+  if (log.x) {
+    gg <- gg +
+      coord_cartesian(xlim = c(
+        min(obs.all$x),
+        max(obs.all$x))
+      ) +
+      ggplot2::scale_x_log10()
+  } else {
+    gg <- gg +
+      coord_cartesian(xlim=c(0,max(obs.all$x)))
+  }
+
+    gg <- gg +
     labs(title=paste0(vachette_data$model.name,"; Observations + typical curves"),
          caption = paste0("Reference Covariate: ",
                           paste0(
@@ -520,22 +597,23 @@ p.obs.ref.query <- function(vachette_data) {
                             collapse = ", "
                           ))) +
     render
+    return(gg)
 }
 
 
 #' p.obs.cov
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#'
+#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
-p.obs.cov <- function(vachette_data) {
+p.obs.cov <- function(vachette_data, log.x = FALSE) {
   #stopifnot(length(vachette_data$covariates) == 1)
   obs.all <- vachette_data$obs.all
   curves.all <- vachette_data$curves.all
 
-  obs.all %>%
+  gg <- obs.all %>%
     ggplot(aes(x=x,y=y)) +
     geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
     geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),lwd=1) +
@@ -547,8 +625,21 @@ p.obs.cov <- function(vachette_data) {
                                 'Reference'),
                        values=c('Query'='blue',
                                 'Reference'='red'))+
-    facet_wrap(~paste("ucov",ucov)) +
-    coord_cartesian(xlim=c(0,max(obs.all$x))) +
+    facet_wrap(~paste("ucov",ucov))
+
+  if (log.x) {
+    gg <- gg +
+      coord_cartesian(xlim = c(
+        min(obs.all$x),
+        max(obs.all$x))
+      ) +
+      ggplot2::scale_x_log10()
+  } else {
+    gg <- gg +
+      coord_cartesian(xlim=c(0,max(obs.all$x)))
+  }
+
+  gg <- gg +
     labs(title=paste0(vachette_data$model.name,"; Observations + typical curves"),
          caption = paste0("Reference Covariate: ",
                           paste0(
@@ -558,17 +649,19 @@ p.obs.cov <- function(vachette_data) {
                             collapse = ", "
                           ))) +
     render
+
+  return(gg)
 }
 
 #' p.vachette.arrow
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#'
+#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
 #'
-p.vachette.arrow <- function(vachette_data) {
+p.vachette.arrow <- function(vachette_data, log.x = FALSE) {
 
   # JL 230607
   ref.extensions.all <- vachette_data$ref.extensions.all
@@ -605,9 +698,24 @@ p.vachette.arrow <- function(vachette_data) {
                                 'Transformed'),
                        values=c('Query'='blue',
                                 'Reference'='red',
-                                'Transformed' = 'purple'))+
+                                'Transformed' = 'purple'))
 
-    coord_cartesian(xlim=c(0,max(vachette_data$obs.all$x,vachette_data$obs.all$x.scaled))) +
+  if (log.x) {
+    gg <- gg +
+      coord_cartesian(xlim = c(
+        min(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled),
+        max(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
+      )) +
+      ggplot2::scale_x_log10()
+  } else {
+    gg <- gg +
+      coord_cartesian(xlim = c(
+        0,
+        max(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
+      ))
+  }
+
+  gg <- gg +
     labs(title=paste0(vachette_data$model.name,"; Observations + transformations"),
          subtitle = paste0(if (vachette_data$ADD_TR)
            "Additive Error", if (vachette_data$PROP_TR)
@@ -628,11 +736,11 @@ p.vachette.arrow <- function(vachette_data) {
 #' p.vachette
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#'
+#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
-p.vachette <- function(vachette_data, log_x = FALSE) {
+p.vachette <- function(vachette_data, log.x = FALSE) {
   #stopifnot(length(vachette_data$covariates) == 1)
   obs.all            <- vachette_data$obs.all
   curves.all         <- vachette_data$curves.all
@@ -686,7 +794,7 @@ p.vachette <- function(vachette_data, log_x = FALSE) {
       )
     )
 
-  if (log_x) {
+  if (log.x) {
     gg <- gg +
       coord_cartesian(xlim = c(
         min(obs.all$x, obs.all$x.scaled),
