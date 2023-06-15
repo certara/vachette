@@ -118,10 +118,6 @@ vachette_data <-
   if (!is.null(sim.data)) {
     VVPC <- TRUE
     stopifnot(names(covariates) %in% names(sim.data))
-    if (iiv.correction) {
-      warning("sim.data argument used with iiv.correction = TRUE, setting iiv.correction = FALSE")
-      iiv.correction <- FALSE
-    }
     #Join dosenr from obs.data by ID and x key if dosenr missing
     if ("dosenr" %notin% colnames(sim.data)) {
       sim.data <- left_join(sim.data, obs.data %>% select(ID, x, dosenr), by = c("ID", "x"))
@@ -163,12 +159,13 @@ vachette_data <-
   typ.orig <- typ.orig %>%
     mutate(y=PRED)
   # to apply
-  if(iiv.correction) obs.orig$y <- obs.orig$OBS  - obs.orig$IPRED + obs.orig$PRED
-  if(iiv.correction) sim.orig$y <- sim.orig$OBS  - sim.orig$IPRED + sim.orig$PRED
-
-  # to omit
-  if(!iiv.correction) obs.orig$y <- obs.orig$OBS
-  if(!iiv.correction) sim.orig$y <- sim.orig$OBS
+  if(iiv.correction) {
+    obs.orig$y <- obs.orig$OBS  - obs.orig$IPRED + obs.orig$PRED
+    sim.orig$y <- sim.orig$OBS  - sim.orig$IPRED + sim.orig$PRED
+  } else {
+    obs.orig$y <- obs.orig$OBS
+    sim.orig$y <- sim.orig$OBS
+  }
 
   list(
     model.name = model.name,
