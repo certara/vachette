@@ -659,6 +659,9 @@ print.vachette_data <- function(x, ...) {
       arrange(ID, x)
 
     data <- data_new %>%
+      # JL 20-JUN-2023 fix dosenr problem: let AMT rec be first
+      arrange(ID,x,-AMT) %>%
+      # -------------------------------------------------------------------
       group_by(ID) %>%
       mutate(dosenr = cumsum(AMT != 0)) %>%
       ungroup() %>%
@@ -672,6 +675,9 @@ print.vachette_data <- function(x, ...) {
       ", creating `dosenr` column in data for corresponding ref.dosenr value"
     )
     data <- data %>%
+      # JL 20-JUN-2023 prevent dosenr problem: let EVID=1 rec be before EVID=0
+      arrange(ID,x,-EVID) %>%
+      # -------------------------------------------------------------------
       group_by(ID) %>%
       mutate(dosenr = cumsum(EVID == 1)) %>%
       ungroup() %>%
@@ -679,6 +685,9 @@ print.vachette_data <- function(x, ...) {
       select(-EVID)
   } else if ("AMT" %in% colnames(data)) {
     data <- data %>%
+      # JL 20-JUN-2023 prevent dosenr problem: let AMT rec be first
+      arrange(ID,x,-AMT) %>%
+      # -------------------------------------------------------------------
       group_by(ID) %>%
       mutate(dosenr = cumsum(AMT != 0)) %>% #if values NA: cumsum(!is.na(amt))
       ungroup() %>%
@@ -941,6 +950,7 @@ print.vachette_data <- function(x, ...) {
       # Needs 3rd tolerance? Dependent on grid step size?
       ref.grid.step.size   <- ref$x[dim(ref)[1]] - ref$x[dim(ref)[1]-1]
       tol.fit.last.x       <- ref.grid.step.size*0.1
+      # tol.fit.last.x       <- ref.grid.step.size*1.1
       # query last x fitted:
       if(diff.query.last.x.1>tol.fit.last.x & diff.ref.last.x.2 <= tol.fit.last.x)
       {
@@ -962,6 +972,10 @@ print.vachette_data <- function(x, ...) {
       # Error
       if(diff.ref.last.x.2>tol.fit.last.x & diff.query.last.x.1 > tol.fit.last.x)
       {
+        print(paste('diff.query.last.x.1',diff.query.last.x.1))
+        print(paste('diff.ref.last.x.2',diff.ref.last.x.2))
+        print(paste('tol.fit.last.x',tol.fit.last.x))
+
         stop("Error finding last.x for two closed segments")
       }
     }
