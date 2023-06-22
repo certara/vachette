@@ -1043,7 +1043,7 @@ print.vachette_data <- function(x, ...) {
         mutate(y.scaling     = 1, y.scaled =1) %>%                # dummies, To remove
         mutate(x.shift.ref   = 0 - my.ref.lm$x[iseg]) %>%
         mutate(x.shift.query = 0 - my.query.lm$x[iseg]) %>%
-        mutate(x.trans       = x + x.shift.query) %>%             # May be redefine to my.ref.lm$x[iseg]
+        mutate(x.trans       = x + x.shift.query) %>%             # May be re-defined to my.ref.lm$x[iseg]
         mutate(x.scaling     = ifelse(query.seg.length>0,
                                       ref.seg.length/query.seg.length,
                                       NA)) %>%                    # NA causes troubles?
@@ -1081,7 +1081,11 @@ print.vachette_data <- function(x, ...) {
 
         # scaled max x observation: (x+x.shift)*scaling
         lastpoint        <- dim(query.scaled)[1]
-        max.obs.x.scaled <- (max.obs.x + query.scaled$x.shift.query[lastpoint])*query.scaled$x.scaling[lastpoint]
+        # JL 230621. Changes to scaled + translation to ref position
+        # max.obs.x.scaled <- (max.obs.x + query.scaled$x.shift.query[lastpoint])*query.scaled$x.scaling[lastpoint]
+        # (x.scaled           = x.scaling*x.trans - x.shift.ref)
+        # with (x.trans       = x + x.shift.query)
+        max.obs.x.scaled <- query.scaled$x.scaling[lastpoint]*(max.obs.x + query.scaled$x.shift.query[lastpoint]) - query.scaled$x.shift.ref[lastpoint]
 
         # QUERY
         cur.query.seg <- query$seg[dim(query[!is.na(query$seg),])[1]]
@@ -1115,11 +1119,18 @@ print.vachette_data <- function(x, ...) {
         # Increase x by ref grid steps up to last point
         # number of steps: ceiling((max.obs.x - max(ref$x))/ref.grid.step.size)
         # JL 230607. Correction, n.steps now defined as total number of steps, isteps as step counts
-        i.steps.x          <- c(1:ceiling((max.obs.x - max(ref$x))/ref.grid.step.size))
+        # Incorrect: (we have to look at extension of query obs needed after x.scaling!)
+        # i.steps.x          <- c(1:ceiling((max.obs.x - max(ref$x))/ref.grid.step.size))
+        # JL 230621. Correction. Also shift query to ref position
+        i.steps.x          <- c(1:ceiling((max.obs.x.scaled - max(ref$x))/ref.grid.step.size))
+
         n.steps.x          <- length(i.steps.x)
         steps.x            <- max(ref$x) + i.steps.x*ref.grid.step.size
 
-        ref.curve.next     <- ref %>% slice(rep(n(),max(i.steps.x)))
+        # ref.curve.next     <- ref %>% slice(rep(n(),max(i.steps.x)))
+        # JL 230621
+        ref.curve.next     <- ref %>% slice(rep(n(),n.steps.x))
+
         ref.curve.next$x   <- steps.x
         # Last x exactly matching max query obs x
         ref.curve.next$x[n.steps.x] <- max.obs.x.scaled
