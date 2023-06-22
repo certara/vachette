@@ -30,7 +30,6 @@ Imports:
     rootSolve,
     pracma,
     gtools,
-    Rfast,
     prospectr,
     Hmisc,
     grid,
