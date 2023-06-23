@@ -20,16 +20,13 @@ Suggests:
     knitr,
     rmarkdown,
     mrgsolve,
+    tidyvpc,
     testthat (>= 3.0.0)
 Imports:
     ggplot2,
     tidyr,
     dplyr,
     magrittr,
-    dtw,
-    rootSolve,
-    pracma,
-    gtools,
     prospectr,
     Hmisc,
     grid,

@@ -4,6 +4,7 @@
 #' @import tidyr
 #' @import prospectr
 #' @importFrom Hmisc approxExtrap
+#' @importFrom purrr map_dfr
 #' @rawNamespace import(stats, except = c(filter, lag))
 #'
 NULL
