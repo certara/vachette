@@ -663,7 +663,7 @@ print.vachette_data <- function(x, ...) {
       # JL 20-JUN-2023 fix dosenr problem: let AMT rec be first
       arrange(ID,x,-AMT) %>%
       # -------------------------------------------------------------------
-      group_by(ID) %>%
+    group_by(ID) %>%
       mutate(dosenr = cumsum(AMT != 0)) %>%
       ungroup() %>%
       filter(is.na(AMT) | AMT == 0) %>%
@@ -679,7 +679,7 @@ print.vachette_data <- function(x, ...) {
       # JL 20-JUN-2023 prevent dosenr problem: let EVID=1 rec be before EVID=0
       arrange(ID,x,-EVID) %>%
       # -------------------------------------------------------------------
-      group_by(ID) %>%
+    group_by(ID) %>%
       mutate(dosenr = cumsum(EVID == 1)) %>%
       ungroup() %>%
       filter(EVID == 0) %>%
@@ -689,7 +689,7 @@ print.vachette_data <- function(x, ...) {
       # JL 20-JUN-2023 prevent dosenr problem: let AMT rec be first
       arrange(ID,x,-AMT) %>%
       # -------------------------------------------------------------------
-      group_by(ID) %>%
+    group_by(ID) %>%
       mutate(dosenr = cumsum(AMT != 0)) %>% #if values NA: cumsum(!is.na(amt))
       ungroup() %>%
       filter(is.na(AMT) | AMT == 0) %>%
@@ -1071,7 +1071,7 @@ print.vachette_data <- function(x, ...) {
 
         EXTENSION <- TRUE
 
-        message('*** Extension reference curve by simple exponential extrapolation ***')
+        message('*** Extension reference curve by exponential extrapolation ***')
 
         # max x observation on query
         max.obs.x <- max(obs.query$x)
@@ -1139,13 +1139,69 @@ print.vachette_data <- function(x, ...) {
         # Last 6 datapoints
         last6 <- ref %>% slice((n()-5):n()) %>% select(x,y)
 
-        # Exponential fit
-        y  = last6$y
-        x  = last6$x
-        exp.model <-lm(log(y) ~ x)
+        y  = as.numeric(last6$y)
+        x  = as.numeric(last6$x)
 
-        # Extrapolate y
-        ref.curve.next$y     <- exp(predict(exp.model,list(x=ref.curve.next$x)))
+        # JL 230717 Extrapolation suitable for non-zero asymptote
+
+        # 1. Simple Exponential fit
+        if(vachette_data$model.name!="New-non-zero-asymptote-ref-extrapolation")
+        {
+          exp.model <-lm(log(y) ~ x)
+          ref.curve.next$y <- exp(predict(exp.model,list(x=ref.curve.next$x)))
+        }
+
+        # 1. Exponential fit for non-zero asymptote:
+        if(vachette_data$model.name=="New-non-zero-asymptote-ref-extrapolation")
+        {
+
+          # Fixed x0 exp model
+          exp.model2 <- function(parS,x,x0)
+          {
+            y = parS$A + parS$B*exp(-parS$k*(x-x0))
+            return(y)
+          }
+          exp.model2.residuals <- function(p, observed, x, x0)
+          {
+            res <- observed - exp.model2(p, x, x0=x0)
+            return(res)
+          }
+
+          # 2. New exponent fit based on R = A + B*exp(-k*(t-t0)) with fixed t0
+          xa <- (x[1] + x[2])/2
+          xb <- (x[5] + x[6])/2
+          Sa <- (y[1] + y[2])/2
+          Sb <- (y[5] + y[6])/2
+
+          # if Sa > Sb, then A<Sb
+          # if Sa < Sb, then A>Sb
+          # x0    = xa
+          # if(Sa>Sb) Ainit = Sb*0.9         # Last 2 pnt
+          # if(Sa<Sb) Ainit = Sb*1.1         # Last 2 pnt
+          # Binit = Sa - Ainit               # Diff
+          # kinit = -log(1 + (Sb - Sa)/Binit)/(xb-xa)
+
+          x0    = xa
+          Ainit = 0
+          Binit = Sa-Sb
+          if(Sa>=Sb) kinit = -log(Sb/Sa)/(xb-xa)
+          if(Sa<Sb)  kinit = -log(Sa/Sb)/(xb-xa)
+          Ainit = Sb   # Better estimate for asymptote value
+
+          # (Add option for user to set asymptote to zero)
+
+          p.init <- list(A=Ainit, B=Binit, k=kinit)
+
+          ## Carry out exp model fit
+          nls.out <- nls.lm(par=p.init, fn = exp.model2.residuals, observed = y,
+                            x = x, x0 = x0, control = nls.lm.control(maxiter=500))
+
+          print("Fitted parameter values:")
+          print(coef(nls.out))
+
+          # Extrapolate y
+          ref.curve.next$y <- exp.model2(as.list(coef(nls.out)), ref.curve.next$x, x0=x0)
+        }
 
         # JL 230607 Assign extrapolation reference part to seg=-99 for plotting purposes
         ref.curve.next$seg <- -99
