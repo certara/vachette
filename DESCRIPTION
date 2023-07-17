@@ -1,6 +1,6 @@
 Package: vachette
 Title: A Method for Visualization of PMx Models
-Version: 0.39.0.9001
+Version: 0.39.0.9002
 Authors@R: c(
       person("Jos", "Lommerse", email = "jos.lommerse@certara.com", role = c("aut", "cre")),
       person("Anna", "Largajolli", email = "anna.largajolli@certara.com", role = c("aut")),
@@ -30,5 +30,6 @@ Imports:
     prospectr,
     Hmisc,
     grid,
-    purrr
+    purrr,
+    minpack.lm
 Config/testthat/edition: 3

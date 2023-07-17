@@ -31,4 +31,6 @@ import(stats, except = c(filter, lag))
 
 import(tidyr)
 importFrom(Hmisc,approxExtrap)
+importFrom(minpack.lm,nls.lm)
+importFrom(minpack.lm,nls.lm.control)
 importFrom(purrr,map_dfr)

@@ -5,6 +5,7 @@
 #' @import prospectr
 #' @importFrom Hmisc approxExtrap
 #' @importFrom purrr map_dfr
+#' @importFrom minpack.lm nls.lm nls.lm.control
 #' @rawNamespace import(stats, except = c(filter, lag))
 #'
 NULL
@@ -1193,8 +1194,15 @@ print.vachette_data <- function(x, ...) {
           p.init <- list(A=Ainit, B=Binit, k=kinit)
 
           ## Carry out exp model fit
-          nls.out <- nls.lm(par=p.init, fn = exp.model2.residuals, observed = y,
-                            x = x, x0 = x0, control = nls.lm.control(maxiter=500))
+          nls.out <-
+            minpack.lm::nls.lm(
+              par = p.init,
+              fn = exp.model2.residuals,
+              observed = y,
+              x = x,
+              x0 = x0,
+              control = minpack.lm::nls.lm.control(maxiter = 500)
+            )
 
           print("Fitted parameter values:")
           print(coef(nls.out))
