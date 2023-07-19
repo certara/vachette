@@ -1,0 +1,476 @@
+---
+title: "Vachette Examples"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vachette Examples}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Setup
+
+## Installation
+
+```{r install_vachette, eval=FALSE}
+remotes::install_github("certara/vachette")
+```
+
+## Load Libraries
+
+```{r, warning=FALSE, message=FALSE}
+library(vachette)
+library(tidyvpc)
+library(ggplot2)
+library(egg)
+```
+
+```{r, echo=FALSE}
+#Create theme so vpc displays properly
+rmd_theme <- theme(
+          legend.title = element_text(size = 8),
+          legend.text = element_text(size = 6),
+          legend.spacing=unit(.09, "cm"),
+          legend.direction = "horizontal",
+          legend.key.size = unit(.45, "cm")
+)
+```
+
+# Examples
+
+## IV
+
+### Import Data
+
+Data files:
+
+* iv-obs.csv
+* iv-typ.csv
+* iv-vpc.csv
+
+```{r}
+obs <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv"))
+typ <- read.csv(system.file(package = "vachette", "examples", "iv-typ.csv"))
+sim <- read.csv(system.file(package = "vachette", "examples", "iv-vpc.csv"))
+
+```
+
+### Vachette Transformations
+
+```{r}
+vd <-
+  vachette_data(
+    obs.data = obs,
+    typ.data = typ,
+    sim.data = sim,
+    covariates = c(WT=70),
+    mappings = c(x = "time",
+                 OBS = "DV"),
+    model.name  = "Intravenous (i.v)"
+  ) |>
+  apply_transformations()
+
+```
+
+### Vachette Plot
+```{r}
+p.vachette(vd)
+```
+
+### VPC
+
+Extract obs.all and sim.all data from `vachette_data` object with vachette transformations
+
+```{r}
+obs_trans <- vd$obs.all
+sim_trans <- vd$sim.all
+```
+
+Generate traditional and vachette transformed VPC's
+
+```{r, fig.height=10}
+vpc <- observed(obs_trans, x=x, y=y) |>
+                  simulated(sim_trans, x=x, y=y) |>
+                  binning(bin = "pam", nbins = 11) |>
+                  vpcstats()
+
+vpc_vachette <- observed(obs_trans, x=x.scaled, y=y.scaled) |>
+  simulated(sim_trans, x=x.scaled, y=y.scaled) |>
+  binning(bin = "pam", nbins = 11) |>
+  vpcstats()
+
+
+egg::ggarrange(
+  plot(vpc) + labs(title = "Traditional VPC") + rmd_theme,
+  plot(vpc_vachette) + labs(title = "Vachette Transformed VPC") + rmd_theme
+)
+```
+
+## Oral-Absorption
+
+### Import Data
+
+Data files:
+
+* oral-absorption-obs.csv
+* oral-absorption-typ.csv
+* oral-absorption-vpc.csv
+
+```{r}
+obs <- read.csv(system.file(package = "vachette", "examples", "oral-absorption-obs.csv"))
+typ <- read.csv(system.file(package = "vachette", "examples", "oral-absorption-typ.csv"))
+sim <- read.csv(system.file(package = "vachette", "examples", "oral-absorption-vpc.csv"))
+```
+
+### Vachette Transformations
+
+Generate transformations for obs.data and sim.data
+
+```{r}
+vd <-
+  vachette_data(
+    obs.data = obs,
+    typ.data = typ,
+    sim.data = sim,
+    covariates = c(WT=70),
+    mappings = c(x = "time",
+                 OBS = "DV"),
+    model.name  = "oral-absorption"
+  ) |>
+  apply_transformations()
+
+```
+
+### Vachette Plot
+```{r}
+p.vachette(vd)
+```
+
+### VPC
+
+Extract obs.all and sim.all data from `vachette_data` object with vachette transformations
+
+```{r}
+obs_trans <- vd$obs.all
+sim_trans <- vd$sim.all
+
+```
+
+Generate traditional and vachette transformed VPC's
+
+```{r, fig.height=10}
+vpc <- observed(obs_trans, x=x, y=y) |>
+                  simulated(sim_trans, x=x, y=y) |>
+                  binning(bin = "pam", nbins = 11) |>
+                  vpcstats()
+
+vpc_vachette <- observed(obs_trans, x=x.scaled, y=y.scaled) |>
+  simulated(sim_trans, x=x.scaled, y=y.scaled) |>
+  binning(bin = "pam", nbins = 11) |>
+  vpcstats()
+
+
+egg::ggarrange(
+  plot(vpc) + labs(title = "Traditional VPC") + rmd_theme,
+  plot(vpc_vachette) + labs(title = "Vachette Transformed VPC") + rmd_theme
+)
+```
+
+## Oral-Two-Cov
+
+### Import Data
+
+Data files:
+
+* oral-two-cov-obs.csv
+* oral-two-cov-typ.csv
+* oral-two-cov-vpc.csv
+
+```{r}
+obs <- read.csv(system.file(package = "vachette", "examples", "oral-two-cov-obs.csv"))
+typ <- read.csv(system.file(package = "vachette", "examples", "oral-two-cov-typ.csv"))
+sim <- read.csv(system.file(package = "vachette", "examples", "oral-two-cov-vpc.csv"))
+
+```
+
+
+Next, filter out dose records from sim.data. Note, dosing records should not be in sim.data, vachette extracts dosenr from obs.data and merges into sim.data by ID and x, if sim.data is specified in `vachette_data()`.
+
+```{r}
+sim <- sim |>
+  dplyr::filter(EVID != 1)
+
+```
+
+### Vachette Transformations
+
+```{r}
+vd <-
+  vachette_data(
+    obs.data = obs,
+    typ.data = typ,
+    sim.data = sim,
+    covariates = c(WT=70,
+                   AGE=30),
+    mappings = c(x = "time",
+                 OBS = "DV"),
+    model.name  = "oral-two-cov"
+  ) |>
+  apply_transformations(window = 23,
+                        window.d1.refine = 7,
+                        window.d2.refine = 5)
+
+```
+
+### Vachette Plot
+```{r}
+p.vachette(vd)
+```
+
+### VPC
+
+Extract obs.all and sim.all data from `vachette_data` object with vachette transformations.
+
+```{r}
+obs_trans <- vd$obs.all
+obs_trans <- vd$obs.all
+```
+
+Generate traditional and vachette transformed VPC's
+
+```{r, fig.height=10}
+vpc <- observed(obs_trans, x=x, y=y) |>
+                  simulated(sim_trans, x=x, y=y) |>
+                  binning(bin = "pam", nbins = 11) |>
+                  vpcstats()
+
+vpc_vachette <- observed(obs_trans, x=x.scaled, y=y.scaled) |>
+  simulated(sim_trans, x=x.scaled, y=y.scaled) |>
+  binning(bin = "pam", nbins = 11) |>
+  vpcstats()
+
+
+egg::ggarrange(
+  plot(vpc) + labs(title = "Traditional VPC") + rmd_theme,
+  plot(vpc_vachette) + labs(title = "Vachette Transformed VPC") + rmd_theme
+)
+```
+
+## Sigmoid
+
+### Import Data
+
+Data files:
+
+* sigmoid-obs.csv
+* sigmoid-typ.csv
+* sigmoid-vpc.csv
+
+```{r}
+obs <- read.csv(system.file(package = "vachette", "examples", "sigmoid-obs.csv"))
+typ <- read.csv(system.file(package = "vachette", "examples", "sigmoid-typ.csv"))
+sim <- read.csv(system.file(package = "vachette", "examples", "sigmoid-vpc.csv"))
+
+```
+
+### Vachette Transformations
+
+Generate transformations for obs.data
+
+```{r}
+vd <-
+  vachette_data(
+    obs.data = obs,
+    typ.data = typ,
+    sim.data = sim,
+    covariates = c(WT=70),
+    mappings = c(x = "bmx",
+                 OBS = "DV"),
+    model.name  = "sigmoid"
+  ) |>
+  apply_transformations()
+
+```
+
+### Vachette Plot
+```{r}
+p.vachette(vd, log.x = TRUE)
+```
+
+### VPC
+
+Extract obs.all and sim.all with vachette transformations
+
+```{r}
+obs_trans <- vd$obs.all
+sim_trans <- vd$sim.all
+```
+
+Generate traditional and vachette transformed VPC's
+
+```{r, fig.height=10}
+vpc <- observed(obs_trans, x=x, y=y) |>
+                  simulated(sim_trans, x=x, y=y) |>
+                  binning(bin = "centers", 
+                          centers =c(0.003,0.01,0.03,0.1,0.3,1,3,10,30,100,300)) |>
+                  vpcstats()
+
+vpc_vachette <- observed(obs_trans, x=x.scaled, y=y.scaled) |>
+  simulated(sim_trans, x=x.scaled, y=y.scaled) |>
+  binning(bin = "centers", 
+                          centers =c(0.003,0.01,0.03,0.1,0.3,1,3,10,30,100,300))  |>
+  vpcstats()
+
+
+egg::ggarrange(
+  plot(vpc) + labs(title = "Traditional VPC") + rmd_theme +
+    scale_x_log10(),
+  plot(vpc_vachette) + labs(title = "Vachette Transformed VPC") + rmd_theme +
+    scale_x_log10()
+)
+```
+
+## Indirect Response
+
+### Import Data
+
+Data files:
+
+* indirect-response-obs.csv
+* indirect-response-typ.csv
+* indirect-response-vpc.csv
+
+```{r}
+obs <- read.csv(system.file(package = "vachette", "examples", "indirect-response-obs.csv"))
+typ <- read.csv(system.file(package = "vachette", "examples", "indirect-response-typ.csv"))
+sim <- read.csv(system.file(package = "vachette", "examples", "indirect-response-vpc.csv"))
+
+```
+
+
+### Vachette Transformations
+
+Generate transformations for obs.data
+
+```{r}
+vd <-
+  vachette_data(
+    obs.data = obs,
+    typ.data = typ,
+    sim.data = sim,
+    covariates = c(WT=70),
+    mappings = c(x = "time",
+                 OBS = "DV"),
+    model.name  = "indirect-response"
+  ) |>
+  apply_transformations(tol.noise = 1e-05)
+
+```
+
+### Vachette Plot
+```{r}
+p.vachette(vd)
+```
+
+### VPC
+
+Extract obs.all data from `vachette_data` object with vachette transformations from observed data.
+
+```{r}
+obs_trans <- vd$obs.all
+sim_trans <- vd$sim.all
+```
+
+Generate traditional and vachette transformed VPC's
+
+```{r, fig.height=10}
+vpc <- observed(obs_trans, x=x, y=y) |>
+                  simulated(sim_trans, x=x, y=y) |>
+                  binning(bin = "pam", nbins = 11) |>
+                  vpcstats()
+
+vpc_vachette <- observed(obs_trans, x=x.scaled, y=y.scaled) |>
+  simulated(sim_trans, x=x.scaled, y=y.scaled) |>
+  binning(bin = "pam", nbins = 11) |>
+  vpcstats()
+
+
+egg::ggarrange(
+  plot(vpc) + labs(title = "Traditional VPC") + rmd_theme,
+  plot(vpc_vachette) + labs(title = "Vachette Transformed VPC") + rmd_theme
+)
+```
+
+
+## Indirect Response High Dose
+
+### Import Data
+
+Data files:
+
+* indirect-response-high-dose-obs.csv
+* indirect-response-high-dose-typ.csv
+* indirect-response-high-dose-vpc.csv
+
+```{r}
+obs <- read.csv(system.file(package = "vachette", "examples", "indirect-response-high-dose-obs.csv"))
+typ <- read.csv(system.file(package = "vachette", "examples", "indirect-response-high-dose-typ.csv"))
+sim <- read.csv(system.file(package = "vachette", "examples", "indirect-response-high-dose-vpc.csv"))
+
+```
+
+### Vachette Transformations
+
+Generate transformations for obs.data
+
+```{r}
+vd <-
+  vachette_data(
+    obs.data = obs,
+    typ.data = typ,
+    sim.data = sim, 
+    covariates = c(DOSE=1000000),
+    mappings = c(x = "time",
+                 OBS = "DV"),
+    model.name  = "indirect-response-high-dose"
+  ) |>
+  apply_transformations()
+
+```
+
+### Vachette Plot
+```{r}
+p.vachette(vd)
+```
+
+### VPC
+
+Extract obs.all and sim.all data from `vachette_data` object with vachette transformations.
+
+```{r}
+obs_trans <- vd$obs.all
+sim_trans <- vd$sim.all
+```
+
+Generate traditional and vachette transformed VPC's
+
+```{r, fig.height=10}
+vpc <- observed(obs_trans, x=x, y=y) |>
+                  simulated(sim_trans, x=x, y=y) |>
+                  binning(bin = "pam", nbins = 11) |>
+                  vpcstats()
+
+vpc_vachette <- observed(obs_trans, x=x.scaled, y=y.scaled) |>
+  simulated(sim_trans, x=x.scaled, y=y.scaled) |>
+  binning(bin = "pam", nbins = 11) |>
+  vpcstats()
+
+
+egg::ggarrange(
+  plot(vpc) + labs(title = "Traditional VPC") + rmd_theme,
+  plot(vpc_vachette) + labs(title = "Vachette Transformed VPC") + rmd_theme
+)
+```
