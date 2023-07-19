@@ -48,7 +48,7 @@ vd <- vd |>
 p.vachette(vd)
 ```
 
-![](README_files/figure-gfm/iv-1.png)<!-- -->
+![](vignettes/img/iv-1.png)<!-- -->
 
 ### Oral Two-Cov
 
@@ -81,4 +81,4 @@ vd <- vd |>
 p.vachette(vd)
 ```
 
-![](README_files/figure-gfm/oral_two_cov-1.png)<!-- -->
+![](vignettes/img/oral_two_cov-1.png)<!-- -->

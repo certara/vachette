@@ -1,0 +1,15 @@
+template:
+  params:
+    bootswatch: united
+navbar:
+  structure:
+    left:  [home, reference, articles]
+    right: [github]
+    navbar:
+  components:
+    home: ~
+    articles:
+     text: Vignettes
+     menu:
+     - text: Examples
+       href: articles/vachette_examples.html
