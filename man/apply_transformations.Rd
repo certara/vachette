@@ -16,11 +16,14 @@ apply_transformations(vachette_data, ...)
   ngrid.fit = 100,
   window = 17,
   window.d1.refine = 7,
-  window.d2.refine = 5
+  window.d2.refine = 5,
+  ...
 )
 }
 \arguments{
 \item{vachette_data}{object of class \code{vachette_data}}
+
+\item{...}{Additional arguments}
 
 \item{lm.refine}{logical; Refine landmark x-position. Default \code{FALSE}}
 

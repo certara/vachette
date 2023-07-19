@@ -720,7 +720,8 @@ print.vachette_data <- function(x, ...) {
                                        window = 17,     # Savitzky Golay smoothing - initial landmarks
                                        window.d1.refine = 7,     # Savitzky Golay smoothing - refine landmarks - first derivative
                                        window.d2.refine = 5,
-                                       run_sim = FALSE) {
+                                       run_sim = FALSE,
+                                       zero_asymptote = TRUE) {
 
   # Collect all Vachette query curves and original/transformed observations (incl reference)
   ref.extensions.all   <- NULL
@@ -1146,14 +1147,14 @@ print.vachette_data <- function(x, ...) {
         # JL 230717 Extrapolation suitable for non-zero asymptote
 
         # 1. Simple Exponential fit
-        if(vachette_data$model.name!="New-non-zero-asymptote-ref-extrapolation")
+        if(zero_asymptote)
         {
           exp.model <-lm(log(y) ~ x)
           ref.curve.next$y <- exp(predict(exp.model,list(x=ref.curve.next$x)))
         }
 
         # 1. Exponential fit for non-zero asymptote:
-        if(vachette_data$model.name=="New-non-zero-asymptote-ref-extrapolation")
+        if(!zero_asymptote)
         {
 
           # Fixed x0 exp model
