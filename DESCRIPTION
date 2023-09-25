@@ -21,7 +21,8 @@ Suggests:
     rmarkdown,
     mrgsolve,
     tidyvpc,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    learnr
 Imports:
     ggplot2,
     tidyr,
