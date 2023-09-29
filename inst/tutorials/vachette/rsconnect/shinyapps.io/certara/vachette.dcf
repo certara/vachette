@@ -1,0 +1,10 @@
+name: vachette
+title:
+username: certara
+account: certara
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 9977553
+bundleId: 7731614
+url: https://certara.shinyapps.io/vachette/
+version: 1

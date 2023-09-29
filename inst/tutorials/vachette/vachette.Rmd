@@ -6,19 +6,66 @@ output:
 runtime: shiny_prerendered
 ---
 
+<a href="https://certara.github.io/vachette" target="_blank" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
 ```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
 library(learnr)
 library(vachette)
+library(ggplot2)
 library(egg)
-knitr::opts_chunk$set(echo = FALSE)
+library(dplyr)
+library(tidyvpc)
+tutorial_options(exercise.timelimit = 60)
+
+part_1_ppt <- paste0("./images/part_1/part1_", 1:30, ".png")
+part_2_ppt <- paste0("./images/part_2/part2_", 1:32, ".png")
+part_3_ppt <- paste0("./images/part_3/part3_", 1:43, ".png")
+part_4_ppt <- paste0("./images/part_4/part4_", 1:29, ".png")
+
 obs.data <- vachette::oral_absorption_obs
 typ.data <- vachette::oral_absorption_typ
+sim.data <- vachette::oral_absorption_sim
+
+obs.data.pembro <- vachette::pembro_obs
+typ.data.pembro <- vachette::pembro_typ
+sim.data.pembro <- vachette::pembro_sim
+
 vd <- vachette_data(obs.data = obs.data,
                     typ.data = typ.data, 
                     covariates = "WT",
                     mappings = c(x = "time", OBS = "DV"),
                     model.name = "Oral Absorption")
 vd <- vd |> apply_transformations()
+
+vd_sim <- vachette_data(obs.data = obs.data.pembro,
+                    typ.data = typ.data.pembro, 
+                    sim.data = sim.data.pembro,
+                    ref.dosenr = 2,
+                    covariates = c(SCHED="Q3W", ALB = 53.5),
+                    mappings = c(x = "time", OBS = "DV"),
+                    model.name = "pembrolizumab") |>
+    apply_transformations()
+
+obs_trans <- vd_sim$obs.all
+sim_trans <- vd_sim$sim.all
+
+vpc <- observed(obs_trans, x = x, y = y) |>
+  simulated(sim_trans, x = x, y = y) |>
+  binning(bin = "pam", nbins = 15) |>
+  vpcstats()
+
+pcvpc <- observed(obs_trans, x = x, y = y) |>
+  simulated(sim_trans, x = x, y = y) |>
+  binning(bin = "pam", nbins = 15) |>
+  predcorrect(pred = PRED) |>
+  vpcstats()
+
+vpc_vachette <- observed(obs_trans, x = x.scaled, y = y.scaled ) |>
+  simulated(sim_trans, x = x.scaled , y = y.scaled) |>
+  binning(bin = "pam", nbins = 15) |>
+  vpcstats()
 ```
 
 ## vachette
@@ -34,29 +81,69 @@ You have observations and a model and you want to know:
 
 ------------------------------------------------------------------------
 
-The `vachette` package evolved from the v2ACHER methodology, which yields an intuitive, clear overlay of data for models with covariates:
+A new methodology for variability-aligned covariate harmonized-effects and time-transformation equivalent (VACHETTE) is made accessible within the `vachette` R package.
+
+VACHETTE is a visualization tool that:
 
 -   Enables seeing relationship of model predictions to data with covariate effects 'removed'
--   Allows combination of all data in a single plot, without dilution effects due to stratification
+-   Allows combination of all observed data in a single plot, without dilution effects due to stratification
 -   Visualize how covariate effects 'scale' the dependent and/or independent variables
 -   Shows how well the model coherently fits all observations
 
+VACHETTE improves the previously developed [V2ACHER methodology](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8452296/), which yields an intuitive, clear overlay of data for models with covariates by making the method applicable to all types of models. 
+
 <img src="images/vachette_plot_1.png" alt="vachette plot" width="800"/>
 
-Additionally, the `vachette` transformed data can easily be applied for visual predictive checks (VPC). Improve confidence intervals by integrating data into a single plot, subgroup, and/or region, including other improved properties compared to traditional VPC or pcVPC to reveal model misspecification.
+Additionally, visual predictive checks (VPC) can easily be applied on the `vachette` transformed data (VACHETTE VPC). A VACHETTE VPC, compared to a traditional VPC or pcVPC, may improve confidence intervals by integrating data into a single plot, subgroup, and/or reveal model misspecification.
+
+### Additional Slides
+
+<div id="part1Slides" class="carousel slide" data-ride="carousel" data-interval="false">
+  <!-- Indicators -->
+  <ol class="carousel-indicators">
+```{r echo=FALSE, results='asis'}
+for (i in 1:length(part_1_ppt)) {
+  cat(ifelse(i == 1, '<li data-target="#part1Slides" data-slide-to="0" class="active"></li>\n', 
+              paste0('<li data-target="#part1Slides" data-slide-to="', i-1, '"></li>\n')))
+}
+```
+  </ol>
+  <!-- Wrapper for slides -->
+  <div class="carousel-inner">
+```{r echo=FALSE, results='asis'}
+for (i in 1:length(part_1_ppt)) {
+  cat(ifelse(i == 1, 
+             paste0('<div class="item active"><img src="', part_1_ppt[i], '" alt="Image ', i, '"></div>\n'),
+             paste0('<div class="item"><img src="', part_1_ppt[i], '" alt="Image ', i, '"></div>\n')))
+}
+```
+  </div>
+  <!-- Left and right controls -->
+<a class="left carousel-control" href="#part1Slides" role="button" data-slide="prev">
+  <span class="glyphicon glyphicon-chevron-left"></span>
+  <span class="sr-only">Previous</span>
+</a>
+<a class="right carousel-control" href="#part1Slides" role="button" data-slide="next">
+  <span class="glyphicon glyphicon-chevron-right"></span>
+  <span class="sr-only">Next</span>
+</a>
+</div>
+
 
 ## How it Works
 
 <img src="images/how_it_works.png" alt="How It Works" width="800"/>
 
 ::: {style="background-color:#F1F1F1; padding: 2rem;"}
-### *Prerequisites*
+### *Prerequisites* {#prerequisites}
 
 1.  **Model**: User-provided PMx model accounting for covariate effects in observations which were used to fit the model.
 
 2.  **Simulate**: User simulates typical curves for all potential covariate combinations available in the observation data. Step-size of observation time points should be relatively small. Simulated time points should also extend well beyond observation time points, to where model predictions plateau or decay to a steady value.
 
-*Given the observed data and simulated predictions of typical curves, the user should have two `data.frame` in R to begin working with vachette, see `obs.data` and `typ.data` in `?vachette_data`.*
+*The minimal required inputs for `vachette` are two `data.frame` objects: the observed (`obs.data`) and simulated predictions of typical curves (`typ.data`).*
+
+*The user also has the option to include simulated data (`sim.data`), in order to derive transformations needed for a VACHETTE VPC. The `sim.data` `data.frame` has the same required columns as `obs.data`, in addition to a required `REP` column to indidcate the replicate number. *
 
 **Required columns obs.data**
 
@@ -73,42 +160,93 @@ Additionally, the `vachette` transformed data can easily be applied for visual p
 -   "x" - Typically time
 -   "PRED" - Population prediction
 -   "dosenr" - Dose number; unique dose number for ID/time point
+
+**Required columns sim.data (Optional)** 
+
+-   "REP" - Replicate number
+-   "ID" - Subject ID
+-   "x" - Typically time
+-   "PRED" - Population prediction, required if iiv.correction = TRUE
+-   "IPRED" - Individual prediction, required if iiv.correction = TRUE
+-   "OBS" - DV
+-   "dosenr" - Dose number; unique dose number for ID/time point.
+
+Additionally, you should have at least one covariate column accounted for in the above input data, which should be specified in the `covariates` argument of `vachette_data()`.
+
+If missing `dosenr`, `vachette` will attempt to calculate the corresponding dose number for a given row using `ADDL`, `II`, and/or `EVID`, as applicable.
+
+*Note: If column names in your input data are different than those defined above, you may use the `mappings` argument in `vachette_data()` to map column names to expected values.*
 :::
 
 ### *vachette*
 
--   Run `vachette_data() %>% apply_transformations()`
-    -   vachette will automatically identify the **characteristic landmarks** which are used to split each curve into *segments*
-    -   vachette transforms the data e.g., DV, TIME, to align multiple **query curves** to a single (user-defined) **reference curve**
-        -   The reference curve is derived from the user specified reference covariate values and dose number.
-    -   The transformations between *segments* are then applied to observations (and optionally simulated data for VPC usage).
+-   Run `vd <- vachette_data() ` to create the VACHETTE object
+-   Run `vd <- vd %>% apply_transformations()`
+    -   `vachette` will automatically identify the **characteristic landmarks** which are used to split each curve into *segments*
+    -   `vachette` transforms the data e.g., DV, TIME, to align multiple **query curves** to a single (user-defined) **reference curve**
+        -   The reference curve is derived from the user specified reference covariate values, dose, and dosing event
+    -   The transformations between every *segment* are then applied to observations (and optionally simulated data for VPC usage) according to the segment each observation belongs to.
 
 #### Determine Landmarks for Segments
 
-Landmark finding uses derivatives of user simulated model curves to identify maxima, minima, and inflection points; asymptote determines last segment of simulated curves.
+Landmarks are characteristic points to split a curve into segments. Landmarks are identified for the simulated model and include maxima, minima, inflection points and asymptotes to determine the end of the last segment of a curve.
 
 #### Mapping Segments
 
 Vachette transformation of typical curves segments given endpoints (x\^start, x\^end), creating scaled values for x and y in the data:
 
 -   x-scaling: Contract or expand query segment in x-domain to match x-length of the corresponding reference segment using a constant scaling factor.
--   y-scaling: Apply linear interpolations\* using the x-scaled query information, knowing the reference segments landmark points.
+-   y-scaling: Apply linear interpolations using the x-scaled query information, knowing the reference segments landmark points.
 
 *Note: y-values are scaled such that the proportional or additive distance to the query curve is preserved. See `error.model` argument in `?vachette_data`.*
 
-#### Additional Terminology
+#### Terminology
 
 -   **region**: Observations between dose events are given a numeric identifier, named region.
--   **region.type**: Open or closed. All final dose regions are considered open, including single dose data.
--   **segment**: The segment number determined by maxima, minima, and inflection points of simulated curves.
+-   **region.type**: Open or closed. All last dose regions are considered open, including single dose data.
+-   **segment**: The segment number determined by maxima, minima, inflection points, and last point associated with an asymptote of simulated curves.
+
+### Additional Slides
+
+<div id="part2Slides" class="carousel slide" data-ride="carousel" data-interval="false">
+  <!-- Indicators -->
+  <ol class="carousel-indicators">
+```{r echo=FALSE, results='asis'}
+for (i in 1:length(part_2_ppt)) {
+  cat(ifelse(i == 1, '<li data-target="#part2Slides" data-slide-to="0" class="active"></li>\n', 
+              paste0('<li data-target="#part2Slides" data-slide-to="', i-1, '"></li>\n')))
+}
+```
+  </ol>
+  <!-- Wrapper for slides -->
+  <div class="carousel-inner">
+```{r echo=FALSE, results='asis'}
+for (i in 1:length(part_2_ppt)) {
+  cat(ifelse(i == 1, 
+             paste0('<div class="item active"><img src="', part_2_ppt[i], '" alt="Image ', i, '"></div>\n'),
+             paste0('<div class="item"><img src="', part_2_ppt[i], '" alt="Image ', i, '"></div>\n')))
+}
+```
+  </div>
+  <!-- Left and right controls -->
+<a class="left carousel-control" href="#part2Slides" role="button" data-slide="prev">
+  <span class="glyphicon glyphicon-chevron-left"></span>
+  <span class="sr-only">Previous</span>
+</a>
+<a class="right carousel-control" href="#part2Slides" role="button" data-slide="next">
+  <span class="glyphicon glyphicon-chevron-right"></span>
+  <span class="sr-only">Next</span>
+</a>
+</div>
+
 
 ## Exercise: Examine required input data
 
-Vachette provides example usage data inside the package. The two required input `data.frame` are already assigned to a variable named `obs.data` and `typ.data` below.
+Vachette provides example usage data inside the package. We will be exploring a single dose oral absorption model. The two required input `data.frame` are already assigned to a variable named `obs.data` and `typ.data` below.
 
 Use the `head()` function with our `obs.data` and `typ.data` `data.frame` to preview the data. Adjust the number of rows to display with the `n` argument.
 
-```{r glimpse-obs-typ-data, exercise=TRUE, exercise.eval=TRUE}
+```{r glimpse-obs-typ-data, exercise=TRUE, exercise.eval=FALSE}
 obs.data <- vachette::oral_absorption_obs
 typ.data <- vachette::oral_absorption_typ
 ```
@@ -118,10 +256,22 @@ head(obs.data, n = 100)
 head(typ.data, n = 100)
 ```
 
+
 In this simplified data example, we have a single covariate `WT` in the data with two unique values:
 
-```{r}
+```{r, echo=TRUE}
 unique(obs.data$WT)
+```
+
+We can plot the concentration vs time profile of the observed data using `ggplot2`:
+
+```{r, plot-obs-data, exercise=TRUE, exercise.eval=TRUE}
+obs.data %>%
+  mutate(ID = as.factor(ID)) %>%
+  ggplot(aes(x = time, y = DV, group = ID)) +
+  facet_wrap(~ WT, labeller = as_labeller(function(value) paste("Weight:", value))) +
+  geom_line() +
+  geom_point()
 ```
 
 ## Exercise: Create `vachette_data()`
@@ -156,17 +306,18 @@ vachette_data(
 -   `model.name`: character; Optional model name for plot output
 -   `mappings`: named character vector; Optional mappings to be included if column names in input data.frame differ from required column names. See Required Columns section:
 
-### Excersise
+### Exercise
 
-Use the `vachette_data()` function and assign the return value `vd`. You will need to add the edit the `obs.data`, `typ.data`, `covariates`, and `mappings` argument in the below code.
+Use the `vachette_data()` function and assign the return value `vd`. You will need to edit the `obs.data`, `typ.data`, `covariates`, and `mappings` argument in the below code.
 
-**Note that `vachette` data inputs expects the following naming conventions defined in [Prerequisites]. If columns are named differently in the data, you must use the `mappings` argument.**
+**Note that `vachette` data input expects the following naming conventions defined in [Prerequisites](#prerequisites). If columns are named differently in the data, you must use the `mappings` argument.**
 
 ```{r vachette-data, exercise=TRUE, exercise.eval=FALSE}
 vd <- vachette_data(obs.data = ,
                     typ.data = , 
                     covariates = "",
                     mappings = c(x = "", OBS = ""))
+print(vd)
 ```
 
 ```{r vachette-data-solution}
@@ -174,8 +325,34 @@ vd <- vachette_data(obs.data = obs.data,
                     typ.data = typ.data, 
                     covariates = "WT",
                     mappings = c(x = "time", OBS = "DV"))
+
+print(vd)
 ```
 
+Covariates are initialized in `vachette` using the `covariates` argument, which should specify one or more covariate column names in your input data as a character vector e.g., `covariates = c("WT", "SEX")`
+
+You may also specify both the covariate and reference value to use as a named vector e.g., `covariates = c(WT = 70, SEX = "male")`
+
+If a covariate reference value is not given e.g., `covariates = c("WT", "SEX")`, `vachette` will use the median (for continuous covariates) and mode (for categorical covariates) as the reference value, by default.
+
+In the below exercise, try explicitly setting the reference value of the `WT` covariate column to `70` in the `covariates` argument.
+
+```{r vachette-data2, exercise=TRUE, exercise.eval=FALSE}
+vd <- vachette_data(obs.data = obs.data,
+                    typ.data = typ.data, 
+                    covariates = c(WT = ),
+                    mappings = c(x = "time", OBS = "DV"))
+print(vd)
+```
+
+```{r vachette-data2-solution}
+vd <- vachette_data(obs.data = obs.data,
+                    typ.data = typ.data, 
+                    covariates = c(WT = 70),
+                    mappings = c(x = "time", OBS = "DV"))
+
+print(vd)
+```
 
 ## Exercise: Use `apply_transformation()`
 
@@ -219,9 +396,218 @@ Create the `vachette`-transformed plot with the `vd` object using the function `
 p.vachette(vd)
 ```
 
-## Exercise: Run `vachette` using simulated data
+### Additional Slides
 
-## Exercise: Create `vachette`-transformed VPC
+<div id="part3Slides" class="carousel slide" data-ride="carousel" data-interval="false">
+  <!-- Indicators -->
+  <ol class="carousel-indicators">
+```{r echo=FALSE, results='asis'}
+for (i in 1:length(part_3_ppt)) {
+  cat(ifelse(i == 1, '<li data-target="#part3Slides" data-slide-to="0" class="active"></li>\n', 
+              paste0('<li data-target="#part3Slides" data-slide-to="', i-1, '"></li>\n')))
+}
+```
+  </ol>
+  <!-- Wrapper for slides -->
+  <div class="carousel-inner">
+```{r echo=FALSE, results='asis'}
+for (i in 1:length(part_3_ppt)) {
+  cat(ifelse(i == 1, 
+             paste0('<div class="item active"><img src="', part_3_ppt[i], '" alt="Image ', i, '"></div>\n'),
+             paste0('<div class="item"><img src="', part_3_ppt[i], '" alt="Image ', i, '"></div>\n')))
+}
+```
+  </div>
+  <!-- Left and right controls -->
+<a class="left carousel-control" href="#part3Slides" role="button" data-slide="prev">
+  <span class="glyphicon glyphicon-chevron-left"></span>
+  <span class="sr-only">Previous</span>
+</a>
+<a class="right carousel-control" href="#part3Slides" role="button" data-slide="next">
+  <span class="glyphicon glyphicon-chevron-right"></span>
+  <span class="sr-only">Next</span>
+</a>
+</div>
+
+## Exercise: Run `vachette` using simulated data and create VPC
+
+In the previous examples, we ran `vachette_data()` using only the observed data e.g., `obs.data`. We can also supply a simulated dataset to the `vachette_data()` function, in order to derive a `vachette` transformed VPC.
+
+For this exercise, we will be using the Pembrolizumab model. Example data for the Pembrolizumab model has been made available inside the `vachette` package and has been assigned to the following input data.frames:
+
+
+```{r, echo = TRUE, eval = FALSE}
+obs.data.pembro <- vachette::pembro_obs
+typ.data.pembro <- vachette::pembro_typ
+sim.data.pembro <- vachette::pembro_sim
+```
+
+### Exercise
+
+Use the `sim.data` argument to specify the `sim.data.pembro` input `data.frame` in the `vachette_data()` function and assign it to a new object named `vd_sim`.  We will also 'pipe' in the next `apply_transformations()` function using the `%>%` or `|>` operator.
+
+Also note, the Pembrolizumab data has multiple doses (see `ref.dosenr` argument) and multiple covariates (see `covariates` argument).
+
+```{r vachette-data-sim, exercise=TRUE, exercise.eval=FALSE}
+vd_sim <- vachette_data(obs.data = obs.data.pembro,
+                    typ.data = typ.data.pembro,
+                    sim.data = ,
+                    ref.dosenr = 2,
+                    covariates = c(SCHED="Q3W", ALB = 53.5),
+                    mappings = c(x = 'time', OBS = 'DV'),   
+                    model.name = 'pembrolizumab')     %>%
+  apply_transformations()
+
+p.vachette(vd_sim)
+```
+
+```{r vachette-data-sim-solution}
+vd_sim <- vachette_data(obs.data = obs.data.pembro,
+                    typ.data = typ.data.pembro,
+                    sim.data =  sim.data.pembro,
+                    ref.dosenr = 2,
+                    covariates = c(SCHED="Q3W", ALB = 53.5),
+                    mappings = c(x = 'time', OBS = 'DV'),   
+                    model.name = 'pembrolizumab')     %>%
+  apply_transformations()
+
+p.vachette(vd_sim)
+```
+
+Next, we will extract the observed and simulated `vachette`-transformed `data.frame` from the `vd_sim` object, and use them to create our VPC via the `tidyvpc` package.  
+
+```{r extract-obs-sim, exercise=TRUE, exercise.eval=FALSE}
+obs_trans <- vd_sim$obs.all
+sim_trans <- vd_sim$sim.all
+```
+
+
+#### Generate traditional VPC, pcVPC and `vachette` transformed VPC
+
+In this exercise, we will use the `obs_trans` and `sim_trans` `data.frame` to generate various VPC's with the [`tidyvpc`](https://certara.github.io/tidyvpc/) package.
+
+First we will generate a VPC and pcVPC with the original data, then compare with our VPC we generate using our `vachette`-transformed data.
+
+Add `obs_trans` to the first argument in the `observed()` function and `sim_trans` to the first argument in the `simulated()` function. 
+
+
+```{r vachette-vpc1, exercise=TRUE, exercise.eval=FALSE}
+vpc <- observed( , x = x, y = y) |>
+  simulated( , x = x, y = y) |>
+  binning(bin = "pam", nbins = 15) |>
+  vpcstats()
+
+pcvpc <- observed(obs_trans, x = x, y = y) |>
+  simulated(sim_trans, x = x, y = y) |>
+  binning(bin = "pam", nbins = 15) |>
+  predcorrect(pred = PRED) |>
+  vpcstats()
+
+print(vpc)
+print(pcvpc)
+```
+
+```{r vachette-vpc1-solution}
+vpc <- observed(obs_trans, x = x, y = y) |>
+  simulated(sim_trans, x = x, y = y) |>
+  binning(bin = "pam", nbins = 15) |>
+  vpcstats()
+
+pcvpc <- observed(obs_trans, x = x, y = y) |>
+  simulated(sim_trans, x = x, y = y) |>
+  binning(bin = "pam", nbins = 15) |>
+  predcorrect(pred = PRED) |>
+  vpcstats()
+
+print(vpc)
+print(pcvpc)
+```
+
+Next, let's take a look at our VPC's. Use the `plot()` function with either the `vpc` or `pcvpc` object that we created above e.g., `plot(vpc)`.
+
+```{r vachette-vpc2, exercise=TRUE, exercise.eval=FALSE}
+plot(vpc, point.size = 0.25)
+```
+
+```{r vachette-vpc2-solution}
+plot(vpc, point.size = 0.25)
+```
+
+Now it's time to generate a `vachette`-transformed VPC!  
+
+For the previous `vpc` and `pcvpc`, we used the original `x` and `y` columns in our data e.g., time and DV. Instead, we will now use the `x.scaled` and `y.scaled` columns.
+
+In the `observed()` and `simulated()` functions, supply `x.scaled` and `y.scaled` to the `x` and `y` arguments. Lastly, `plot()` the `vpc_vachette` object.
+
+```{r vachette-vpc3, exercise=TRUE, exercise.eval=FALSE}
+vpc_vachette <- observed(obs_trans, x = , y = ) |>
+  simulated(sim_trans, x = , y = ) |>
+  binning(bin = "pam", nbins = 15) |>
+  vpcstats()
+
+plot()
+```
+
+```{r vachette-vpc3-solution}
+vpc_vachette <- observed(obs_trans, x = x.scaled, y = y.scaled ) |>
+  simulated(sim_trans, x = x.scaled , y = y.scaled) |>
+  binning(bin = "pam", nbins = 15) |>
+  vpcstats()
+
+plot()
+```
+
+Comparing the VPC's side by side we can see that the `vachette`-transformed VPC proves to be more informative.
+
+```{r, fig.width=9}
+coords <-
+  coord_cartesian(ylim = c(NA, max(obs_trans$y, obs_trans$y.scaled)))
+
+egg::ggarrange(
+  ncol = 3,
+  plot(vpc, legend.position = "none", point.size = 0.25) + labs(title = "VPC", ylab = "") + coords,
+  plot(pcvpc, legend.position = "none", point.size = 0.25) + labs(title = "pcVPC", ylab = "") + coords,
+  plot(vpc_vachette, legend.position = "none", point.size = 0.25) + labs(title = paste0(
+    "Vachette-VPC, ", vd_sim$covariates[1], ", ", vd_sim$covariates[2]
+  ), ylab = "") + 
+    coords
+)
+```
+
+
+### Additional Slides
+
+<div id="part4Slides" class="carousel slide" data-ride="carousel" data-interval="false">
+  <!-- Indicators -->
+  <ol class="carousel-indicators">
+```{r echo=FALSE, results='asis'}
+for (i in 1:length(part_4_ppt)) {
+  cat(ifelse(i == 1, '<li data-target="#part4Slides" data-slide-to="0" class="active"></li>\n', 
+              paste0('<li data-target="#part4Slides" data-slide-to="', i-1, '"></li>\n')))
+}
+```
+  </ol>
+  <!-- Wrapper for slides -->
+  <div class="carousel-inner">
+```{r echo=FALSE, results='asis'}
+for (i in 1:length(part_4_ppt)) {
+  cat(ifelse(i == 1, 
+             paste0('<div class="item active"><img src="', part_4_ppt[i], '" alt="Image ', i, '"></div>\n'),
+             paste0('<div class="item"><img src="', part_4_ppt[i], '" alt="Image ', i, '"></div>\n')))
+}
+```
+  </div>
+  <!-- Left and right controls -->
+<a class="left carousel-control" href="#part4Slides" role="button" data-slide="prev">
+  <span class="glyphicon glyphicon-chevron-left"></span>
+  <span class="sr-only">Previous</span>
+</a>
+<a class="right carousel-control" href="#part4Slides" role="button" data-slide="next">
+  <span class="glyphicon glyphicon-chevron-right"></span>
+  <span class="sr-only">Next</span>
+</a>
+</div>
+
 
 ### Quiz
 
@@ -245,3 +631,55 @@ quiz(
   )
 )
 ```
+
+<script>
+$(document).ready(function() {
+  $("#section-part1Slides .carousel-control").on('click', function(e) {
+    e.preventDefault();
+    if ($(this).data('slide') === 'prev') {
+      $('#section-part1Slides').carousel('prev');
+    } else {
+      $('#section-part1Slides').carousel('next');
+    }
+  });
+});
+</script>
+
+<script>
+$(document).ready(function() {
+  $("#section-part2Slides .carousel-control").on('click', function(e) {
+    e.preventDefault();
+    if ($(this).data('slide') === 'prev') {
+      $('#section-part2Slides').carousel('prev');
+    } else {
+      $('#section-part2Slides').carousel('next');
+    }
+  });
+});
+</script>
+
+<script>
+$(document).ready(function() {
+  $("#section-part3Slides .carousel-control").on('click', function(e) {
+    e.preventDefault();
+    if ($(this).data('slide') === 'prev') {
+      $('#section-part3Slides').carousel('prev');
+    } else {
+      $('#section-part3Slides').carousel('next');
+    }
+  });
+});
+</script>
+
+<script>
+$(document).ready(function() {
+  $("#section-part4Slides .carousel-control").on('click', function(e) {
+    e.preventDefault();
+    if ($(this).data('slide') === 'prev') {
+      $('#section-part4Slides').carousel('prev');
+    } else {
+      $('#section-part4Slides').carousel('next');
+    }
+  });
+});
+</script>
