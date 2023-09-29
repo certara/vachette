@@ -726,9 +726,7 @@ p.vachette <- function(vachette_data, log.x = FALSE) {
   gg <- gg +
     labs(
       title = paste0(vachette_data$model.name, "; Observations + transformations"),
-      subtitle = paste0(if (vachette_data$ADD_TR)
-        "Additive Error", if (vachette_data$PROP_TR)
-          "Proportional Error","; Dashed: extrapolation reference curve"),
+      subtitle = ifelse(vachette_data$ADD_TR, "Additive Error", "Proportional Error"),
       caption = paste0("Reference Covariate: ",
                        paste0(
                          names(vachette_data$covariates),
