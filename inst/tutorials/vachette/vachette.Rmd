@@ -17,55 +17,28 @@ library(ggplot2)
 library(egg)
 library(dplyr)
 library(tidyvpc)
-tutorial_options(exercise.timelimit = 60)
+tutorial_options(exercise.timelimit = 180)
 
-part_1_ppt <- paste0("./images/part_1/part1_", 1:30, ".png")
-part_2_ppt <- paste0("./images/part_2/part2_", 1:32, ".png")
-part_3_ppt <- paste0("./images/part_3/part3_", 1:43, ".png")
-part_4_ppt <- paste0("./images/part_4/part4_", 1:29, ".png")
+part_1_ppt <- paste0("./images/vachette/vachette_", 1:9, ".png")
+part_2_ppt <- paste0("./images/how_it_works/how_it_works_", 1:18, ".png")
+part_3_ppt <- paste0("./images/exercises_6/exercise_", 1:40, ".png")
+part_4_ppt <- paste0("./images/vpc/vpc_", 1:17, ".png")
 
 obs.data <- vachette::oral_absorption_obs
 typ.data <- vachette::oral_absorption_typ
 sim.data <- vachette::oral_absorption_sim
 
-obs.data.pembro <- vachette::pembro_obs
-typ.data.pembro <- vachette::pembro_typ
-sim.data.pembro <- vachette::pembro_sim
-
 vd <- vachette_data(obs.data = obs.data,
-                    typ.data = typ.data, 
-                    covariates = "WT",
+                    typ.data = typ.data,
+                    sim.data = sim.data,
+                    covariates = c(WT = 70),
                     mappings = c(x = "time", OBS = "DV"),
                     model.name = "Oral Absorption")
 vd <- vd |> apply_transformations()
 
-vd_sim <- vachette_data(obs.data = obs.data.pembro,
-                    typ.data = typ.data.pembro, 
-                    sim.data = sim.data.pembro,
-                    ref.dosenr = 2,
-                    covariates = c(SCHED="Q3W", ALB = 53.5),
-                    mappings = c(x = "time", OBS = "DV"),
-                    model.name = "pembrolizumab") |>
-    apply_transformations()
+obs_trans <- readRDS("./data/obs_trans.Rds")
+sim_trans <- readRDS("./data/sim_trans.Rds")
 
-obs_trans <- vd_sim$obs.all
-sim_trans <- vd_sim$sim.all
-
-vpc <- observed(obs_trans, x = x, y = y) |>
-  simulated(sim_trans, x = x, y = y) |>
-  binning(bin = "pam", nbins = 15) |>
-  vpcstats()
-
-pcvpc <- observed(obs_trans, x = x, y = y) |>
-  simulated(sim_trans, x = x, y = y) |>
-  binning(bin = "pam", nbins = 15) |>
-  predcorrect(pred = PRED) |>
-  vpcstats()
-
-vpc_vachette <- observed(obs_trans, x = x.scaled, y = y.scaled ) |>
-  simulated(sim_trans, x = x.scaled , y = y.scaled) |>
-  binning(bin = "pam", nbins = 15) |>
-  vpcstats()
 ```
 
 ## vachette
@@ -83,18 +56,26 @@ You have observations and a model and you want to know:
 
 A new methodology for variability-aligned covariate harmonized-effects and time-transformation equivalent (VACHETTE) is made accessible within the `vachette` R package.
 
-VACHETTE is a visualization tool that:
+The `vachette` R package is a visualization tool that yields an intuitive, clear overlay of data for models with covariates.
 
 -   Enables seeing relationship of model predictions to data with covariate effects 'removed'
 -   Allows combination of all observed data in a single plot, without dilution effects due to stratification
 -   Visualize how covariate effects 'scale' the dependent and/or independent variables
 -   Shows how well the model coherently fits all observations
 
-VACHETTE improves the previously developed [V2ACHER methodology](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8452296/), which yields an intuitive, clear overlay of data for models with covariates by making the method applicable to all types of models. 
+VACHETTE improves the previously developed [V<sup>2</sup>ACHER method](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8452296/) by enabling application to all types of pharmacometric models. 
 
-<img src="images/vachette_plot_1.png" alt="vachette plot" width="800"/>
+<img src="images/vachette_plot_1.png" alt="vachette plot" width="800" title= "Published example of application of the transformation method for an Exposure-Response model with multiple covariate effects"/>
+
+<br>
 
 Additionally, visual predictive checks (VPC) can easily be applied on the `vachette` transformed data (VACHETTE VPC). A VACHETTE VPC, compared to a traditional VPC or pcVPC, may improve confidence intervals by integrating data into a single plot, subgroup, and/or reveal model misspecification.
+
+------------------------------------------------------------------------
+
+##### Published example of application of the transformation method for an Exposure-Response model with multiple covariate effects
+
+<img src="images/embedded/vachette_1.png" alt="vachette slide" width="800"/>
 
 ### Additional Slides
 
@@ -130,9 +111,11 @@ for (i in 1:length(part_1_ppt)) {
 </div>
 
 
-## How it Works
+## How it Works {#how_it_works}
 
-<img src="images/how_it_works.png" alt="How It Works" width="800"/>
+<img src="images/embedded/how_it_works_1.png" alt="vachette slide" width="800"/>
+
+<img src="images/embedded/how_it_works_2.png" alt="vachette slide" width="800"/>
 
 ::: {style="background-color:#F1F1F1; padding: 2rem;"}
 ### *Prerequisites* {#prerequisites}
@@ -152,7 +135,7 @@ for (i in 1:length(part_1_ppt)) {
 -   "PRED" - Population prediction, required if iiv.correction = TRUE
 -   "IPRED" - Individual prediction, required if iiv.correction = TRUE
 -   "OBS" - DV
--   "dosenr" - Dose number; unique dose number for ID/time point.
+-   "dosenr" - Dose number; unique number of associated dosing event for ID/time point.
 
 **Required columns typ.data**
 
@@ -169,7 +152,7 @@ for (i in 1:length(part_1_ppt)) {
 -   "PRED" - Population prediction, required if iiv.correction = TRUE
 -   "IPRED" - Individual prediction, required if iiv.correction = TRUE
 -   "OBS" - DV
--   "dosenr" - Dose number; unique dose number for ID/time point.
+-   "dosenr" - Dose number; unique number of associated dosing event for ID/time point.
 
 Additionally, you should have at least one covariate column accounted for in the above input data, which should be specified in the `covariates` argument of `vachette_data()`.
 
@@ -180,12 +163,12 @@ If missing `dosenr`, `vachette` will attempt to calculate the corresponding dose
 
 ### *vachette*
 
--   Run `vd <- vachette_data() ` to create the VACHETTE object
+-   Run `vd <- vachette_data() ` to create the `vachette_data` object
 -   Run `vd <- vd %>% apply_transformations()`
     -   `vachette` will automatically identify the **characteristic landmarks** which are used to split each curve into *segments*
     -   `vachette` transforms the data e.g., DV, TIME, to align multiple **query curves** to a single (user-defined) **reference curve**
-        -   The reference curve is derived from the user specified reference covariate values, dose, and dosing event
-    -   The transformations between every *segment* are then applied to observations (and optionally simulated data for VPC usage) according to the segment each observation belongs to.
+        -   The reference curve is derived from the user specified reference covariate values, dose, and dosing event (`dosenr`)
+    -   The transformations between every *segment* are then applied to observations (and optionally simulated data for VPC usage) according to the segment each observation belongs to
 
 #### Determine Landmarks for Segments
 
@@ -205,6 +188,10 @@ Vachette transformation of typical curves segments given endpoints (x\^start, x\
 -   **region**: Observations between dose events are given a numeric identifier, named region.
 -   **region.type**: Open or closed. All last dose regions are considered open, including single dose data.
 -   **segment**: The segment number determined by maxima, minima, inflection points, and last point associated with an asymptote of simulated curves.
+-   **reference**: Typical curve and observations of a (reference) population selected by the user.
+    -   "Population" means a particular set of covariate values, such as sex of female and weight of 30 kg.
+-   **query**: All other curves and observations.
+    -   `vachette` will transform these to what the user's model suggests they would have been if they came from the reference population, enabling us to "see the data the way the model does."
 
 ### Additional Slides
 
@@ -242,7 +229,13 @@ for (i in 1:length(part_2_ppt)) {
 
 ## Exercise: Examine required input data
 
-Vachette provides example usage data inside the package. We will be exploring a single dose oral absorption model. The two required input `data.frame` are already assigned to a variable named `obs.data` and `typ.data` below.
+Vachette provides example usage data inside the package. We will be exploring a single dose oral absorption model. The two required input `data.frame` objects are already assigned to a variable named `obs.data` and `typ.data` below.
+
+<img src="images/embedded/exercise_examine_1.png" alt="vachette slide" width="800"/>
+
+<img src="images/embedded/exercise_examine_2.png" alt="vachette slide" width="800"/>
+
+### Exercise 
 
 Use the `head()` function with our `obs.data` and `typ.data` `data.frame` to preview the data. Adjust the number of rows to display with the `n` argument.
 
@@ -252,8 +245,8 @@ typ.data <- vachette::oral_absorption_typ
 ```
 
 ```{r glimpse-obs-typ-data-solution}
-head(obs.data, n = 100)
-head(typ.data, n = 100)
+head(obs.data, n = 10)
+head(typ.data, n = 10)
 ```
 
 
@@ -265,7 +258,20 @@ unique(obs.data$WT)
 
 We can plot the concentration vs time profile of the observed data using `ggplot2`:
 
-```{r, plot-obs-data, exercise=TRUE, exercise.eval=TRUE}
+### Exercise
+
+In the code below, replace the text `COV` inside the `facet_wrap()` function with the name of the covariate column in the data e.g., `WT`.
+
+```{r, plot-obs-data, exercise=TRUE, exercise.eval=FALSE}
+obs.data %>%
+  mutate(ID = as.factor(ID)) %>%
+  ggplot(aes(x = time, y = DV, group = ID)) +
+  facet_wrap(~ COV, labeller = as_labeller(function(value) paste("Weight:", value))) +
+  geom_line() +
+  geom_point()
+```
+
+```{r, plot-obs-data-solution}
 obs.data %>%
   mutate(ID = as.factor(ID)) %>%
   ggplot(aes(x = time, y = DV, group = ID)) +
@@ -304,7 +310,7 @@ vachette_data(
 -   `iiv.correction`: logical; Apply inter-individual variability correction. Default FALSE
 -   `error.model`: character; Applied error model, "proportional" or "additive". Default "proportional".
 -   `model.name`: character; Optional model name for plot output
--   `mappings`: named character vector; Optional mappings to be included if column names in input data.frame differ from required column names. See Required Columns section:
+-   `mappings`: named character vector; Optional mappings to be included if column names in input data.frame differ from required column names. See 'Required Columns' in section [How it Works](#how_it_works).
 
 ### Exercise
 
@@ -337,11 +343,14 @@ If a covariate reference value is not given e.g., `covariates = c("WT", "SEX")`,
 
 In the below exercise, try explicitly setting the reference value of the `WT` covariate column to `70` in the `covariates` argument.
 
+Lastly, use the `model.name` argument to supply a descriptive model name e.g., `"Oral Absorption"`.
+
 ```{r vachette-data2, exercise=TRUE, exercise.eval=FALSE}
 vd <- vachette_data(obs.data = obs.data,
                     typ.data = typ.data, 
                     covariates = c(WT = ),
-                    mappings = c(x = "time", OBS = "DV"))
+                    mappings = c(x = "time", OBS = "DV"),
+                    model.name = )
 print(vd)
 ```
 
@@ -349,7 +358,8 @@ print(vd)
 vd <- vachette_data(obs.data = obs.data,
                     typ.data = typ.data, 
                     covariates = c(WT = 70),
-                    mappings = c(x = "time", OBS = "DV"))
+                    mappings = c(x = "time", OBS = "DV"),
+                    model.name = "Oral Absorption")
 
 print(vd)
 ```
@@ -360,17 +370,24 @@ print(vd)
 
 Use the `apply_transformations()` function with the `vd` variable you created in the previous exercise.
 
-After running `apply_transformations()`, inspect the newly created `data.frame` `vd$obs.all` with the `head()` function.
+After running `apply_transformations()`, inspect a subset of columns within the newly created `data.frame` `vd$obs.all` using the `select()` and `head()` / `tail()` functions.
 
-```{r apply-transformations, exercise=TRUE, exercise.eval=TRUE}
 
+```{r apply-transformations, exercise=TRUE, exercise.eval=FALSE}
+vd <- vd %>% 
+
+head(vd$obs.all %>% select(ID,WT,ref,seg,x,x.scaled,OBS,y.scaled), n=10)
+tail(vd$obs.all %>% select(ID,WT,ref,seg,x,x.scaled,OBS,y.scaled), n=10)
 ```
 
 ```{r apply-transformations-solution}
-vd <- vd |> apply_transformations()
+vd <- vd %>% apply_transformations()
 
-head(vd$obs.all, n = 100)
+head(vd$obs.all %>% select(ID,WT,ref,seg,x,x.scaled,OBS,y.scaled), n=10)
+tail(vd$obs.all %>% select(ID,WT,ref,seg,x,x.scaled,OBS,y.scaled), n=10)
 ```
+
+Note the most relevant columns are x.scaled and y.scaled, as these determine the positions of the `vachette`-transformed data points.
 
 ## Exercise: Generate `vachette` plots
 
@@ -395,6 +412,25 @@ Create the `vachette`-transformed plot with the `vd` object using the function `
 ```{r p-vachette-solution}
 p.vachette(vd)
 ```
+
+### Exercise
+
+Use the `p.vachette.arrow()` function to visualize the directionality of transformations.
+
+```{r p-arrow, exercise=TRUE, exercise.eval=FALSE}
+```
+
+```{r p-arrow-solution}
+p.vachette.arrow(vd)
+```
+
+Below you can find an overview of available `vachette` plotting functions. Feel free to explore!
+
+```{r p-additional-functions, exercise=TRUE, exercise.eval=FALSE}
+p.scaled.typical.curves.landmarks(vd) 
+```
+
+<img src="images/embedded/exercise_6_1.png" alt="vachette slide" width="800"/>
 
 ### Additional Slides
 
@@ -433,52 +469,47 @@ for (i in 1:length(part_3_ppt)) {
 
 In the previous examples, we ran `vachette_data()` using only the observed data e.g., `obs.data`. We can also supply a simulated dataset to the `vachette_data()` function, in order to derive a `vachette` transformed VPC.
 
-For this exercise, we will be using the Pembrolizumab model. Example data for the Pembrolizumab model has been made available inside the `vachette` package and has been assigned to the following input data.frames:
-
+For this exercise, we will again be using the oral absorption model. The `obs.data` and `typ.data` `data.frame` objects have been assigned as in the previous exercises and the new `sim.data` `data.frame` object has been additionally assigned.
 
 ```{r, echo = TRUE, eval = FALSE}
-obs.data.pembro <- vachette::pembro_obs
-typ.data.pembro <- vachette::pembro_typ
-sim.data.pembro <- vachette::pembro_sim
+obs.data <- vachette::oral_absorption_obs
+typ.data <- vachette::oral_absorption_typ
+sim.data <- vachette::oral_absorption_sim
 ```
 
 ### Exercise
 
-Use the `sim.data` argument to specify the `sim.data.pembro` input `data.frame` in the `vachette_data()` function and assign it to a new object named `vd_sim`.  We will also 'pipe' in the next `apply_transformations()` function using the `%>%` or `|>` operator.
-
-Also note, the Pembrolizumab data has multiple doses (see `ref.dosenr` argument) and multiple covariates (see `covariates` argument).
+Use the `sim.data` argument to specify the `sim.data` input `data.frame` in the `vachette_data()` function.  We will also 'pipe' in the next `apply_transformations()` function using the `%>%` or `|>` operator.
 
 ```{r vachette-data-sim, exercise=TRUE, exercise.eval=FALSE}
-vd_sim <- vachette_data(obs.data = obs.data.pembro,
-                    typ.data = typ.data.pembro,
+vd <- vachette_data(obs.data = obs.data,
+                    typ.data = typ.data,
                     sim.data = ,
-                    ref.dosenr = 2,
-                    covariates = c(SCHED="Q3W", ALB = 53.5),
+                    covariates = c(WT = 70),
                     mappings = c(x = 'time', OBS = 'DV'),   
-                    model.name = 'pembrolizumab')     %>%
+                    model.name = 'Oral Absorption')     %>%
   apply_transformations()
 
-p.vachette(vd_sim)
+p.vachette(vd)
 ```
 
 ```{r vachette-data-sim-solution}
-vd_sim <- vachette_data(obs.data = obs.data.pembro,
-                    typ.data = typ.data.pembro,
-                    sim.data =  sim.data.pembro,
-                    ref.dosenr = 2,
-                    covariates = c(SCHED="Q3W", ALB = 53.5),
+vd <- vachette_data(obs.data = obs.data,
+                    typ.data = typ.data,
+                    sim.data = sim.data ,
+                    covariates = c(WT = 70),
                     mappings = c(x = 'time', OBS = 'DV'),   
-                    model.name = 'pembrolizumab')     %>%
+                    model.name = 'Oral Absorption')     %>%
   apply_transformations()
 
-p.vachette(vd_sim)
+p.vachette(vd)
 ```
 
-Next, we will extract the observed and simulated `vachette`-transformed `data.frame` from the `vd_sim` object, and use them to create our VPC via the `tidyvpc` package.  
+Next, we will extract the observed and simulated `vachette`-transformed `data.frame` from the `vd` object, and use them to create our VPC via the `tidyvpc` package.  
 
-```{r extract-obs-sim, exercise=TRUE, exercise.eval=FALSE}
-obs_trans <- vd_sim$obs.all
-sim_trans <- vd_sim$sim.all
+```{r extract-trans, exercise=TRUE, exercise.eval=TRUE}
+obs_trans <- vd$obs.all
+sim_trans <- vd$sim.all
 ```
 
 
@@ -490,48 +521,39 @@ First we will generate a VPC and pcVPC with the original data, then compare with
 
 Add `obs_trans` to the first argument in the `observed()` function and `sim_trans` to the first argument in the `simulated()` function. 
 
-
 ```{r vachette-vpc1, exercise=TRUE, exercise.eval=FALSE}
 vpc <- observed( , x = x, y = y) |>
   simulated( , x = x, y = y) |>
-  binning(bin = "pam", nbins = 15) |>
+  binning(bin = "pam", nbins = 11) |>
   vpcstats()
 
 pcvpc <- observed(obs_trans, x = x, y = y) |>
   simulated(sim_trans, x = x, y = y) |>
-  binning(bin = "pam", nbins = 15) |>
+  binning(bin = "pam", nbins = 11) |>
   predcorrect(pred = PRED) |>
   vpcstats()
 
-print(vpc)
-print(pcvpc)
+plot(vpc) + labs(title = "Traditional VPC")
+plot(pcvpc) + labs(title = "Prediction-corrected VPC")
 ```
 
 ```{r vachette-vpc1-solution}
 vpc <- observed(obs_trans, x = x, y = y) |>
   simulated(sim_trans, x = x, y = y) |>
-  binning(bin = "pam", nbins = 15) |>
+  binning(bin = "pam", nbins = 11) |>
   vpcstats()
 
 pcvpc <- observed(obs_trans, x = x, y = y) |>
   simulated(sim_trans, x = x, y = y) |>
-  binning(bin = "pam", nbins = 15) |>
+  binning(bin = "pam", nbins = 11) |>
   predcorrect(pred = PRED) |>
   vpcstats()
 
-print(vpc)
-print(pcvpc)
+plot(vpc) + labs(title = "Traditional VPC")
+plot(pcvpc) + labs(title = "Prediction-corrected VPC")
 ```
 
-Next, let's take a look at our VPC's. Use the `plot()` function with either the `vpc` or `pcvpc` object that we created above e.g., `plot(vpc)`.
-
-```{r vachette-vpc2, exercise=TRUE, exercise.eval=FALSE}
-plot(vpc, point.size = 0.25)
-```
-
-```{r vachette-vpc2-solution}
-plot(vpc, point.size = 0.25)
-```
+--- 
 
 Now it's time to generate a `vachette`-transformed VPC!  
 
@@ -542,37 +564,28 @@ In the `observed()` and `simulated()` functions, supply `x.scaled` and `y.scaled
 ```{r vachette-vpc3, exercise=TRUE, exercise.eval=FALSE}
 vpc_vachette <- observed(obs_trans, x = , y = ) |>
   simulated(sim_trans, x = , y = ) |>
-  binning(bin = "pam", nbins = 15) |>
+  binning(bin = "pam", nbins = 18) |>
   vpcstats()
 
-plot()
+plot() + labs(title = "vachette VPC , scaled to reference body weight of 70 kg")
 ```
 
 ```{r vachette-vpc3-solution}
 vpc_vachette <- observed(obs_trans, x = x.scaled, y = y.scaled ) |>
   simulated(sim_trans, x = x.scaled , y = y.scaled) |>
-  binning(bin = "pam", nbins = 15) |>
+  binning(bin = "pam", nbins = 18) |>
   vpcstats()
 
-plot()
+plot(vpc_vachette) + labs(title = "vachette VPC , scaled to reference body weight of 70 kg")
 ```
 
-Comparing the VPC's side by side we can see that the `vachette`-transformed VPC proves to be more informative.
+VPC and pcVPC mix observations across the different covariate values. Comparing VPC’s, we can see that the `vachette`-transformed VPC is more easily interpretable – all data points and curves now correspond to the selected reference of 70 kg body weight group.
 
-```{r, fig.width=9}
-coords <-
-  coord_cartesian(ylim = c(NA, max(obs_trans$y, obs_trans$y.scaled)))
+In addition to the VPC exercise result, here is an example illustrating how `vachette` collapses different dosing regimens and single and multiple dose data into an integrated VPC view after the second dose.
 
-egg::ggarrange(
-  ncol = 3,
-  plot(vpc, legend.position = "none", point.size = 0.25) + labs(title = "VPC", ylab = "") + coords,
-  plot(pcvpc, legend.position = "none", point.size = 0.25) + labs(title = "pcVPC", ylab = "") + coords,
-  plot(vpc_vachette, legend.position = "none", point.size = 0.25) + labs(title = paste0(
-    "Vachette-VPC, ", vd_sim$covariates[1], ", ", vd_sim$covariates[2]
-  ), ylab = "") + 
-    coords
-)
-```
+<img src="images/embedded/vpc_1.png" alt="vachette slide" width="800"/>
+
+More examples of vachette VPC can be found in the additional slides below. More  details on the example shown above are included from slide 12 onwards. 
 
 
 ### Additional Slides
@@ -608,26 +621,63 @@ for (i in 1:length(part_4_ppt)) {
 </a>
 </div>
 
+## Recap, Tips, and Tricks
 
-### Quiz
+<img src="images/embedded/quiz1_1.png" alt="vachette slide" width="800"/>
 
-*You can include any number of single or multiple choice questions as a quiz. Use the `question` function to define a question and the `quiz` function for grouping multiple questions together.*
+### Tips and Tricks for Troubleshooting:
 
-Some questions to verify that you understand the purposes of various base and recommended R packages:
+* Do not forget to **simulate out long enough** that the curve visually does not change anymore and is very close to the asymptote.
+
+* `vachette` works best when the simulation uses constant spacing between values of the independent value (e.g., a **'regular grid'** in time, concentration, or other 'x-value').
+
+* If you want to carry out a transformation for a curve which should be analyzed (and plotted) using a log-x scale, the simulation should be on regularly spaced values for log(x) rather than regularly spaced values of x. For example, when modeling sigmoidal relationships.
+
+... and stay tuned for new `vachette` developments! 
+
+
+* Drop requirement to simulate out for (much) longer than the last observation.
+
+* Improve performance using any (simulated) x-grid.
+
+---
+
+<img src="images/embedded/quiz2_1.png" alt="vachette slide" width="800"/>
+
+
+## Quiz
 
 ```{r quiz}
 quiz(
-  question("Which package contains functions for installing other R packages?",
-    answer("base"),
-    answer("tools"),
-    answer("utils", correct = TRUE),
-    answer("codetools")
+  question("What is the purpose of applying VACHETTE transformation?",
+    answer("Replacing all traditional PMx diagnostic plots"),
+    answer("Summarize covariate model to improve communication of PMx results", correct = TRUE),
+    answer("Bring all observed data into one plot"),
+    answer("Show most important covariate combination of a PMx model")
   ),
-  question("Which of the R packages listed below are used to create plots?",
-    answer("lattice", correct = TRUE),
-    answer("tools"),
-    answer("stats"),
-    answer("grid", correct = TRUE)
+  question("In which direction may observations change their positions during scaling?",
+    answer("Vertically in both directions, and horizontally towards higher values"),
+    answer("Vertically in both directions, and horizontally towards lower values"),
+    answer("Vertically and horizontally in both directions", correct = TRUE),
+    answer("Vertically and horizontally lower values")
+  ),
+    question("Which function is used to do the actual VACHETTE transformation?",
+    answer("vachette_data()"),
+    answer("apply_transformations()", correct = TRUE),
+    answer("get.x.multi.landmarks()"),
+    answer("p.vachette()")
+  ),
+    question("Which argument inside vachette_data() is used to create the vachette_data object using non-standard column names?",
+    answer("mappings", correct = TRUE),
+    answer("ref.dosenr"),
+    answer("covariates"),
+    answer("iiv.correction")
+  ),
+    question("What are the landmarks and why they are useful?",
+    answer("Landmarks tell you where vachette is in the transformation process"),
+    answer("Landmarks indicate the type of data the user reads from file"),
+    answer("Landmarks provide warnings if certain transformation steps fail"),
+    answer("Landmarks are characteristic points on a curve used for transformation purposes", correct = TRUE)
   )
 )
 ```

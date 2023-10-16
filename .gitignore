@@ -13,7 +13,5 @@ data-raw
 Meta
 doc
 plots
-inst/tutorials/vachette/images/part_1/*
-inst/tutorials/vachette/images/part_2/*
-inst/tutorials/vachette/images/part_3/*
-inst/tutorials/vachette/images/part_4/*
+inst/tutorials/vachette/images/*
+inst/tutorials/vachette/data/*
