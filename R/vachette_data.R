@@ -7,6 +7,7 @@
 #' @param covariates named character vector; Covariate names with reference values in vachette transformation
 #' @param ref.dosenr integer; Dose number to use as the reference dose, corresponding to value in "dosenr" column in input data
 #' @param iiv.correction logical; Apply inter-individual variability correction. Default \code{FALSE}
+#' @param log.x logical; Apply log(x) conversion. Default \code{FALSE}
 #' @param error.model character; Applied error model, \code{"proportional"} or \code{"additive"}. Default \code{"proportional"}
 #' @param model.name character; Optional model name for plot output
 #' @param mappings named character vector;  Optional mappings to be included if column names in input \code{data.frame} differ from required column names.
@@ -70,6 +71,7 @@ vachette_data <-
            sim.data = NULL,
            covariates,
            ref.dosenr,
+           log.x = FALSE,
            iiv.correction = FALSE,
            error.model = c("proportional", "additive"),
            model.name = NULL,
@@ -142,8 +144,9 @@ vachette_data <-
   typ.data  <-
     typ.data %>% dplyr::select(dplyr::all_of(typ_cols_to_select), dplyr::all_of(names(covariates)))
 
-  # Extract last observed x (look for max x/time in obs and sim data)
-  xstop <- max(obs.data$x,sim.data$x)
+  # Extract first/last observed x (look for max x/time in obs and sim data)
+  xstart <- min(obs.data$x,sim.data$x)
+  xstop  <- max(obs.data$x,sim.data$x)
   # Define unique covariate combination as new 'COV' column.
   obs.orig <- obs.data %>%
     mutate(COV = paste(!!!syms(names(covariates))))
@@ -167,6 +170,20 @@ vachette_data <-
     sim.orig$y <- sim.orig$OBS
   }
 
+  if(log.x) {
+    message("Applying log(x) conversion")
+    if(sum(typ.orig$x)<=0) stop("Error, no log(x) conversion possible for x <= 0 (typical)")
+    if(sum(obs.orig$x)<=0) stop("Error, no log(x) conversion possible for x <= 0 (observations)")
+    if(sum(sim.orig$x)<=0) stop("Error, no log(x) conversion possible for x <= 0 (simulation)")
+    typ.orig$x <- log(typ.orig$x)
+    obs.orig$x <- log(obs.orig$x)
+    sim.orig$x <- log(sim.orig$x)
+
+    if(xstart<=0 | xstop<=0) stop("Error, no log(x) conversion possible for observed/simulated x <= 0")
+    xstart <- log(xstart)
+    xstop  <- log(xstop)
+  }
+
   list(
     model.name = model.name,
     covariates = covariates,
@@ -179,6 +196,8 @@ vachette_data <-
     tab.ucov = tab.ucov,
     ref.region = ref.region,
     ref.dosenr = ref.dosenr,
+    log.x = log.x,
+    xstart = xstart,
     xstop = xstop,
     n.ucov = n.ucov
   ) %>%
@@ -373,7 +392,7 @@ apply_transformations.vachette_data <-
            tol.noise = 1e-8,
            step.x.factor = 1.5,
            ngrid.fit = 100,
-           window = 17,     # Savitzky Golay smoothing - initial landmarks
+           window = 17,              # Savitzky Golay smoothing - initial landmarks
            window.d1.refine = 7,     # Savitzky Golay smoothing - refine landmarks - first derivative
            window.d2.refine = 5,
            ...) {
@@ -417,11 +436,13 @@ apply_transformations.vachette_data <-
 
     update(vachette_data,
            obs.all = vachette_transformed_data$obs.all,
+           obs.excluded = vachette_transformed_data$obs.excluded,
            sim.all = sim.all,
            curves.all = vachette_transformed_data$curves.all,
            curves.scaled.all = vachette_transformed_data$curves.scaled.all,
            ref.extensions.all = vachette_transformed_data$ref.extensions.all,
            lm.all = vachette_transformed_data$lm.all,
+           curvature.all = vachette_transformed_data$curvature.all,
            nseg = vachette_transformed_data$nseg)
   }
 
