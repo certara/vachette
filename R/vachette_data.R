@@ -370,14 +370,11 @@ update.vachette_data <- function(vachette_data, ...) {
 #' Apply vachette transformations
 #'
 #' @param vachette_data object of class \code{vachette_data}
-#' @param lm.refine logical; Refine landmark x-position. Default \code{FALSE}
 #' @param tol.end numeric; Relative tolerance to determine last x open end reference
 #' @param tol.noise numeric; Relative tolerance for landmark determination typical curves
 #' @param step.x.factor numeric; x-axis extension factor to search for last x, i.e., to determine where close enough to asymptote
 #' @param ngrid.fit numeric; number of grid points in last query segment for matching last reference segment
 #' @param window integer; size (gridpoints) of Savitzky Golay smoothing window for landmark position determination
-#' @param window.d1.refine integer; size (gridpoints) of Savitzky Golay smoothing window for refinement of first derivative landmark position
-#' @param window.d2.refine integer; size (gridpoints) of Savitzky Golay smoothing window for refinement of second derivative landmark position.
 #' @param ... Additional arguments
 #' @name apply_transformations
 #' @export
@@ -387,14 +384,11 @@ apply_transformations <- function(vachette_data, ...) UseMethod("apply_transform
 #' @export
 apply_transformations.vachette_data <-
   function(vachette_data,
-           lm.refine = FALSE,
            tol.end = 0.001,
            tol.noise = 1e-8,
            step.x.factor = 1.5,
            ngrid.fit = 100,
            window = 17,              # Savitzky Golay smoothing - initial landmarks
-           window.d1.refine = 7,     # Savitzky Golay smoothing - refine landmarks - first derivative
-           window.d2.refine = 5,
            ...) {
 
   stopifnot(inherits(vachette_data, "vachette_data"))
@@ -408,25 +402,19 @@ apply_transformations.vachette_data <-
   }
 
   vachette_transformed_data <- .calculate_transformations(vachette_data,
-                                                         lm.refine,
                                                          tol.end,
                                                          tol.noise,
                                                          step.x.factor,
                                                          ngrid.fit,
                                                          window,
-                                                         window.d1.refine,
-                                                         window.d2.refine,
                                                          zero_asymptote = zero_asymptote)
   if (vachette_data$VVPC) {
     vachette_transformed_data_sim <- .calculate_transformations(vachette_data,
-                                                           lm.refine,
                                                            tol.end,
                                                            tol.noise,
                                                            step.x.factor,
                                                            ngrid.fit,
                                                            window,
-                                                           window.d1.refine,
-                                                           window.d2.refine,
                                                            run_sim = TRUE,
                                                            zero_asymptote = zero_asymptote)
     sim.all <- vachette_transformed_data_sim$obs.all

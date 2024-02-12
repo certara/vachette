@@ -172,13 +172,13 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
   # f1.0     <- multi.approx(x1.sg,f1.sg,yout=0,tol=tol)  # NA if no maximum
 
   # (Local) extremes
-  f1.0 <- get_peaks(x,y,span=w)$x
+  f1.0 <- photobiology::get_peaks(x,y,span=w)$x
   if(sum(!is.na(f1.0))>=1)
   {
     add    <- data.frame(x=f1.0,type='max')
     lm     <- rbind(lm,add)
   }
-  f1.0 <- get_valleys(x,y,span=w)$x
+  f1.0 <- photobiology::get_valleys(x,y,span=w)$x
   if(sum(!is.na(f1.0))>=1)
   {
     add    <- data.frame(x=f1.0,type='max')
@@ -216,12 +216,12 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
     ysub <- ysub[first_point:length(ysub)]
 
     multi_inflec = 0
-    ipbese=bese(xsub,ysub,index=0)
+    ipbese=inflection::bese(xsub,ysub,index=0)
 
     # Debug sigmoid ---------------
     # xsub2 <- xsub[14:50]
     # ysub2 <- ysub[14:50]
-    # ipbese2=bese(xsub2,ysub2,index=0)
+    # ipbese2=inflection::(xsub2,ysub2,index=0)
     #
     # zsub <- data.frame(x=xsub,y=ysub)
     # zsub2 <- data.frame(x=xsub2,y=ysub2)
@@ -237,7 +237,7 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
       add  <- data.frame(x=f2.0,type='inflec')
       lm   <- rbind(lm,add)
     }
-    ipbese=bese(xsub,ysub,index=1)
+    ipbese=inflection::bese(xsub,ysub,index=1)
     f2.0 <- ipbese$iplast
     if(!is.nan(f2.0))
     {
@@ -710,14 +710,11 @@ print.vachette_data <- function(x, ...) {
 ###################################################################
 
 .calculate_transformations <- function(vachette_data,
-                                       lm.refine = FALSE,
                                        tol.end = 0.001,
                                        tol.noise = 1e-8,
                                        step.x.factor = 1.5,
                                        ngrid.fit = 100,
                                        window = 17,     # Savitzky Golay smoothing - initial landmarks
-                                       window.d1.refine = 7,     # Savitzky Golay smoothing - refine landmarks - first derivative
-                                       window.d2.refine = 5,
                                        run_sim = FALSE,
                                        zero_asymptote = TRUE) {
 
