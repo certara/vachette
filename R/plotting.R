@@ -71,10 +71,12 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 #' p.scaled.typical.curves.landmarks
 #'
 #' @param vachette_data Object of class\code{vachette_data}
-#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #'
 #' @export
-p.scaled.typical.curves.landmarks <- function(vachette_data, log.x = FALSE) {
+p.scaled.typical.curves.landmarks <- function(vachette_data) {
+
+  stopifnot(inherits(vachette_data, "vachette_data"))
+  log.x <- vachette_data$log.x
 
   curves.all <- vachette_data$curves.all
   lm.all <- vachette_data$lm.all
@@ -119,9 +121,12 @@ p.scaled.typical.curves.landmarks <- function(vachette_data, log.x = FALSE) {
 #' p.scaled.typical.full.curves.landmarks
 #'
 #' @param vachette_data Object of class\code{vachette_data}
-#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @export
-p.scaled.typical.full.curves.landmarks <- function(vachette_data, log.x = FALSE) {
+p.scaled.typical.full.curves.landmarks <- function(vachette_data) {
+
+  stopifnot(inherits(vachette_data, "vachette_data"))
+  log.x <- vachette_data$log.x
+
   curves.all <- vachette_data$curves.all
   lm.all <- vachette_data$lm.all
   model.name <- vachette_data$model.name
@@ -192,11 +197,14 @@ p.scaling.factor <- function(vachette_data) {
 #' p.scaled.typical.curves
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
-p.scaled.typical.curves <- function(vachette_data, log.x = FALSE) {
+p.scaled.typical.curves <- function(vachette_data) {
+
+  stopifnot(inherits(vachette_data, "vachette_data"))
+  log.x <- vachette_data$log.x
+
   curves.scaled.all <- vachette_data$curves.scaled.all
   model.name        <- vachette_data$model.name
   xstart <- min(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
@@ -244,11 +252,14 @@ p.scaled.typical.curves <- function(vachette_data, log.x = FALSE) {
 #' p.scaled.observation.curves
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
-p.scaled.observation.curves <- function(vachette_data, log.x = FALSE) {
+p.scaled.observation.curves <- function(vachette_data) {
+
+  stopifnot(inherits(vachette_data, "vachette_data"))
+  log.x <- vachette_data$log.x
+
   # Copy ref curves to each ID
   obs.all <- vachette_data$obs.all
   myids  <- unique(obs.all$ID)
@@ -332,11 +343,14 @@ p.scaled.observation.curves <- function(vachette_data, log.x = FALSE) {
 #' p.scaled.observation.curves.by.id
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
-p.scaled.observation.curves.by.id <- function(vachette_data, log.x = FALSE) {
+p.scaled.observation.curves.by.id <- function(vachette_data) {
+
+  stopifnot(inherits(vachette_data, "vachette_data"))
+  log.x <- vachette_data$log.x
+
   # Observation curve for each ID
   obs.all <- vachette_data$obs.all
   myids  <- unique(obs.all$ID)
@@ -482,12 +496,14 @@ p.prop.distances <- function(vachette_data) {
 #' p.obs.ref.query
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
-p.obs.ref.query <- function(vachette_data, log.x = FALSE) {
+p.obs.ref.query <- function(vachette_data) {
   #stopifnot(length(vachette_data$covariates) == 1)
+  stopifnot(inherits(vachette_data, "vachette_data"))
+  log.x <- vachette_data$log.x
+
   obs.all <- vachette_data$obs.all
   curves.all <- vachette_data$curves.all
   xstart <- min(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
@@ -532,12 +548,14 @@ p.obs.ref.query <- function(vachette_data, log.x = FALSE) {
 #' p.obs.cov
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
-p.obs.cov <- function(vachette_data, log.x = FALSE) {
+p.obs.cov <- function(vachette_data) {
   #stopifnot(length(vachette_data$covariates) == 1)
+  stopifnot(inherits(vachette_data, "vachette_data"))
+  log.x <- vachette_data$log.x
+
   obs.all <- vachette_data$obs.all
   curves.all <- vachette_data$curves.all
   xstart <- min(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
@@ -583,13 +601,14 @@ p.obs.cov <- function(vachette_data, log.x = FALSE) {
 #' p.vachette.arrow
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
 #'
-p.vachette.arrow <- function(vachette_data, log.x = FALSE) {
+p.vachette.arrow <- function(vachette_data) {
 
+  stopifnot(inherits(vachette_data, "vachette_data"))
+  log.x <- vachette_data$log.x
   # JL 230607
   ref.extensions.all <- vachette_data$ref.extensions.all
   # Plot longest ref.extension.all only. Pick first is multiple occurences
@@ -662,12 +681,14 @@ p.vachette.arrow <- function(vachette_data, log.x = FALSE) {
 #' p.vachette
 #'
 #' @param vachette_data Object of class \code{vachette_data}
-#' @param log.x Set to \code{TRUE} to plot x axis on log scale
 #' @return Object of class \code{ggplot2}
 #' @export
 #'
-p.vachette <- function(vachette_data, log.x = FALSE) {
+p.vachette <- function(vachette_data) {
   #stopifnot(length(vachette_data$covariates) == 1)
+  stopifnot(inherits(vachette_data, "vachette_data"))
+  log.x <- vachette_data$log.x
+
   obs.all            <- vachette_data$obs.all
   curves.all         <- vachette_data$curves.all
   xstart <- min(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
