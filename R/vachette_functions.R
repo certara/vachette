@@ -110,6 +110,73 @@ multi.approx <- function(x,y,yout,tol=1e-9) {
 }
 
 
+# Get inflec for curve via polynomial fit
+inflec <- function(x,y,polyorder)
+{
+  mydata <- data.frame(x=x,y=y)
+
+  # Polynomial fit
+  fit=lm(y~poly(x,polyorder,raw=T),data=mydata)
+  f0.coeff <- as.numeric(fit$coefficients)
+
+  # Set NA terms to 0
+  f0.coeff[is.na(f0.coeff)] <- 0
+
+  mydata$fit <- predict(fit)
+
+  mydata %>%  ggplot(aes(x=x,y=y))+
+    geom_point()+
+    geom_point(aes(y=fit),col='red',pch=1)
+
+  # y'(x)  (f1)
+  f1.coeff <- NULL
+  for(icoeff in c(2:length(f0.coeff))) # Skip intercept --> 0
+  {
+    add      <- f0.coeff[icoeff] * (icoeff-1)
+    f1.coeff <- c(f1.coeff,add)
+  }
+
+  # inflection points. solve y''(x) = 0 (f2 = 0)
+  f2.coeff <- NULL
+  for(icoeff in c(2:length(f1.coeff))) # Skip intercept --> 0
+  {
+    add      <- f1.coeff[icoeff] * (icoeff-1)
+    f2.coeff <- c(f2.coeff,add)
+  }
+
+  # ---
+
+  solutions = polyroot(f2.coeff)
+  Im(solutions)
+  # Which imaginary are numbers very close to 0,
+  round(Im(solutions), 5)
+  # Real numbers, when imaginary part = 0
+  f2.zero <- Re(solutions)[!(round(Im(solutions), 5))] # these are real numbers only, since imaginary part =0
+
+  # If there is a solution
+  if (!is.na(f2.zero[1]))
+  {
+    out   <- f2.zero <  min(mydata$x) | f2.zero >  max(mydata$x)
+    keep  <- f2.zero >= min(mydata$x) & f2.zero <= max(mydata$x)
+
+    # Check domain
+    if(sum(out)>0)
+    {
+      message('Warning: ignoring inflection point solutions using polynomial fit at:')
+      message(paste('  x = ',paste(f2.zero[out]),collapse=' '))
+    }
+
+    if(sum(keep)==0) f2.0 <- NA  # No solution
+    if(sum(keep)==1) f2.0 <- f2.zero[keep]
+    # if(sum(keep)>1) stop('Cannot handle: multiple inflection points detected using polynomial fit')
+    if(sum(keep)>1)  f2.0 <- c(f2.zero[keep])
+
+    return(f2.0)
+  }
+
+}
+
+
 #' Get x multi landmarks
 #'
 #' Find initial landmark position using f1 and f2 derivatives and Savitzky Golay smoothing
@@ -192,62 +259,55 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
   # Each interval between landmarks, incl. first and last datapoint
   for(ilm in c(2:nrow(lm)))
   {
-    # if from 1-2, and first is max,              then index=1: possibly concave/convex (not for zero-order abs)
-    # if from 1-2, and first is min,              then index=0: convex/concave
-    # if from 1-2, and first is start, second max then index=0: convex/concave (possibly)
-    # if from 1-2, and first is start, second min then index=1: concave/convex (possibly)
-    # if from 1-2, and first is start, second end then if end<start index=1: concave/convex (possibly)
-    # if from 1-2, and first is start, second end then if end>start index=0: convex/concave (possibly)
-    # Both are tested
+    # Inflection point detection via polynomial fit
 
     istart <- which(x==lm$x[ilm-1])
     iend   <- which(x==lm$x[ilm])
-        xsub   <- x[istart:iend]
-        ysub   <- y[istart:iend]
+    xsub   <- x[istart:iend]
+    ysub   <- y[istart:iend]
 
-        # Only data points before last non-noise data point
-        #      and first noise point which may be the last one: y[length(y)]
+    # Only data points before last non-noise data point
+    #      and first noise point which may be the last one: y[length(y)]
     # Also remove first data point (if sharp peak, notably for i.v.)
 
-    first_point <- ifelse((ysub[1] < ysub[2] & ysub[3] < ysub[2]),2,1)  # y[2] is peak
-    if(ysub[1] < ysub[2] & ysub[3] < ysub[2])
-      warning("First grid point ignored as y[1]<y[2] & y[3]<y[2]. (FOR DETECTION MAX/MIN/INFLEC)")
-    xsub <- xsub[first_point:length(xsub)]
-    ysub <- ysub[first_point:length(ysub)]
+    # first_point <- ifelse((ysub[1] < ysub[2] & ysub[3] < ysub[2]),2,1)  # y[2] is peak
+    # if(ysub[1] < ysub[2] & ysub[3] < ysub[2])
+    #   warning("First grid point ignored as y[1]<y[2] & y[3]<y[2]. (FOR DETECTION MAX/MIN/INFLEC)")
+    # xsub <- xsub[first_point:length(xsub)]
+    # ysub <- ysub[first_point:length(ysub)]
 
-    multi_inflec = 0
-    ipbese=inflection::bese(xsub,ysub,index=0)
+    # Keep points between y-range of 1% and 99% only:
+    miny  <- min(ysub)
+    maxy  <- max(ysub)
+    diffy <- maxy - miny
+    mydata <- data.frame(x=xsub,y=ysub) %>%
+      filter(y >= (miny+0.025*diffy), y <= (miny+0.975*diffy))
 
-    # Debug sigmoid ---------------
-    # xsub2 <- xsub[14:50]
-    # ysub2 <- ysub[14:50]
-    # ipbese2=inflection::(xsub2,ysub2,index=0)
-    #
-    # zsub <- data.frame(x=xsub,y=ysub)
-    # zsub2 <- data.frame(x=xsub2,y=ysub2)
-    #
-    # zsub %>% ggplot(aes(x=x,y=y))+geom_point()+geom_vline(xintercept = ipbese$iplast,col='red')+render
-    # zsub2 %>% ggplot(aes(x=x,y=y))+geom_point()+geom_vline(xintercept = ipbese2$iplast,col='red')+render
-    # -----------------------------
+    ndata     <- nrow(mydata)
+    polyorder <- floor(ndata/2)
+    # Odd order only:
+    if(abs(polyorder/2 - floor(polyorder/2)) == 0) polyorder <- polyorder-1
+    # Max order = 21
+    polyorder <- min(21,polyorder)
 
-    f2.0 <- ipbese$iplast
-    if(!is.nan(f2.0))
+    f2.0 <- inflec(mydata$x, mydata$y, polyorder=polyorder)
+
+    if(!is.na(f2.0[1]) & length(f2.0[1] > 1))
     {
-      multi_inflec = multi_inflec + 1
-      add  <- data.frame(x=f2.0,type='inflec')
+      message("Warning: multiple inflection points detected for a segment. First inflection point only used")
+      f2.0 <- f2.0[1]
+    }
+
+    if(!is.na(f2.0[1]))
+    {
+      message(paste0("Inflection point detected at x = ",f2.0[1]))
+      add  <- data.frame(x=f2.0[1],type='inflec')
       lm   <- rbind(lm,add)
     }
-    ipbese=inflection::bese(xsub,ysub,index=1)
-    f2.0 <- ipbese$iplast
-    if(!is.nan(f2.0))
+
+    if(is.na(f2.0[1]))
     {
-      multi_inflec = multi_inflec + 1
-      add  <- data.frame(x=f2.0,type='inflec')
-      lm   <- rbind(lm,add)
-    }
-    if(multi_inflec>1)
-    {
-      message("Multiple inflection points between extremes, carefully check validity")
+      message("No inflection point found")
     }
   }
 
