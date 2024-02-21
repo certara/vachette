@@ -295,7 +295,7 @@ p.scaled.observation.curves <- function(vachette_data) {
     gg <- gg + geom_line(
       data = ref.extensions.all %>% filter(ucov==max.x.ucov),
       aes(x = x, y = y, col = 'Typical reference'), lty=2,
-      lwd = 1
+      lwd = 0.8, col='grey30'
     )
   }
 
@@ -380,7 +380,7 @@ p.scaled.observation.curves.by.id <- function(vachette_data) {
     gg <- gg + geom_line(
       data = ref.extensions.all %>% filter(ucov==max.x.ucov),
       aes(x = x, y = y, col = 'Typical reference'), lty=2,
-      lwd = 1
+      lwd = 0.8, col='grey30'
     )
   }
   gg <- gg +
@@ -633,7 +633,7 @@ p.vachette.arrow <- function(vachette_data) {
     gg <- gg + geom_line(
       data = ref.extensions.all %>% filter(ucov==max.x.ucov),
       aes(x = x, y = y, col = 'Reference'), lty=2,
-      lwd = 1
+      lwd = 0.8, col='grey30'
     )
   }
 
@@ -727,7 +727,7 @@ p.vachette <- function(vachette_data) {
     gg <- gg + geom_line(
       data = ref.extensions.all %>% filter(ucov==max.x.ucov),
       aes(x = x, y = y, col = 'Reference'), lty=2,
-      lwd = 1
+      lwd = 0.8, col='grey30'
     )
   }
   gg <- gg +
