@@ -74,9 +74,7 @@ vd <-
 
 ``` r
 vd <- vd |>
-  apply_transformations(window = 23,
-                        window.d1.refine = 7,
-                        window.d2.refine = 5)
+  apply_transformations(window = 23)
 
 p.vachette(vd)
 ```

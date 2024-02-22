@@ -29,8 +29,10 @@ Imports:
     dplyr,
     magrittr,
     prospectr,
+    photobiology,
     Hmisc,
     grid,
     purrr,
-    minpack.lm
+    minpack.lm,
+    inflection
 Config/testthat/edition: 3

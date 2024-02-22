@@ -15,6 +15,7 @@ NULL
 #' Multi approx
 #'
 #' Find monotonic increasing and decreasing segments
+#' Used for both derivative and asymptote identification
 #'
 #' @param x x values
 #' @param y y values
@@ -108,6 +109,7 @@ multi.approx <- function(x,y,yout,tol=1e-9) {
   return(xcollect)
 }
 
+
 #' Get x multi landmarks
 #'
 #' Find initial landmark position using f1 and f2 derivatives and Savitzky Golay smoothing
@@ -124,194 +126,133 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
   # Using splinefun to determine derivatives
   # tol to be passed on to multi.approx function
 
+  # JL230909. Two step process
+  # 1. split by extremes
+  # 2. between pair of extremes search for inflection points
+
+  # Make numeric
+  x <- as.numeric(x)
+  y <- as.numeric(y)
+
+  # z <- data.frame(x=x,y=y)
+  # write.csv(z,'full-oral.csv')
+
+  # Make sure no NA's
+  z <- data.frame(x=x,y=y) %>% filter(!is.na(x),!is.na(y))
+  x <- z$x
+  y <- z$y
+
   # Checks
   if(length(x) != length(y)) return(NA)
   if(length(x) <= 1)         return(NA)
 
-  # Collect first data point
-  f0.0 <- x[1]
-  lm    <- data.frame(x=f0.0,type='start')
+  # Keep first and last datapoint (before noise removal)
+  xstart <- x[1]
+  xend   <- x[length(x)]
+
+  # ------------------------------------------------
+  # Stop detecting extremes and inflection points if curve does not change anymore within
+  #      tolerance with respect to last datapoint provided
+  y.noise <- data.frame(noise = abs(y - y[length(y)]), flag = (abs(y - y[length(y)])) < tol) %>% mutate(n=row_number())
+  # Last non-noise data point:
+  y.last.data <- max((y.noise %>% filter(flag==F))$n)
+
+  # ------- Start collecting landmarks -----------
+
+  # First data point
+  lm    <- data.frame(x=xstart,type='start')
+
+  # Last data point - may be "asymptotic"
+  add  <- data.frame(x=xend,type='end')
+  lm   <- rbind(lm,add)
 
   # All first derivatives f1=0
-  f1.sg <- savitzkyGolay(X = y,  m = 1,  p = 1,  w = w)
-  x1.sg  <- x[ (1+(w-1)/2) : (length(x)-(w-1)/2) ]
+  # f1.sg <- savitzkyGolay(X = y,  m = 1,  p = 1,  w = w)
+  # x1.sg  <- x[ (1+(w-1)/2) : (length(x)-(w-1)/2) ]
+  # f1.0     <- multi.approx(x1.sg,f1.sg,yout=0,tol=tol)  # NA if no maximum
 
-  f1.0     <- multi.approx(x1.sg,f1.sg,yout=0,tol=tol)  # NA if no maximum
+  # (Local) extremes
+  f1.0 <- photobiology::get_peaks(x,y,span=w)$x
+  if(sum(!is.na(f1.0))>=1)
+  {
+    add    <- data.frame(x=f1.0,type='max')
+    lm     <- rbind(lm,add)
+  }
+  f1.0 <- photobiology::get_valleys(x,y,span=w)$x
   if(sum(!is.na(f1.0))>=1)
   {
     add    <- data.frame(x=f1.0,type='max')
     lm     <- rbind(lm,add)
   }
 
-  # All second derivatives f2=0
-  f2.sg <- savitzkyGolay(X = y,  m = 2,  p = 2,  w = w)
-  x2.sg  <- x[ (1+(w-1)/2) : (length(x)-(w-1)/2) ]
+  # Loop between extremes to detect inflection points
+  # First arrange by increasing x
+  lm <- lm %>% arrange(x)
 
-  f2.0 <- multi.approx(x2.sg,f2.sg,yout=0,tol=tol)   # NA if no inflection point
-  if(sum(!is.na(f2.0))>=1)
+  # Each interval between landmarks, incl. first and last datapoint
+  for(ilm in c(2:nrow(lm)))
   {
-    add  <- data.frame(x=f2.0,type='inflec')
-    lm   <- rbind(lm,add)
-  }
+    # if from 1-2, and first is max,              then index=1: possibly concave/convex (not for zero-order abs)
+    # if from 1-2, and first is min,              then index=0: convex/concave
+    # if from 1-2, and first is start, second max then index=0: convex/concave (possibly)
+    # if from 1-2, and first is start, second min then index=1: concave/convex (possibly)
+    # if from 1-2, and first is start, second end then if end<start index=1: concave/convex (possibly)
+    # if from 1-2, and first is start, second end then if end>start index=0: convex/concave (possibly)
+    # Both are tested
 
-  # Last data point - may be "asymptotic"
-  f9.9 <- x[length(x)]
-  add  <- data.frame(x=f9.9,type='end')
-  lm   <- rbind(lm,add)
+    istart <- which(x==lm$x[ilm-1])
+    iend   <- which(x==lm$x[ilm])
+        xsub   <- x[istart:iend]
+        ysub   <- y[istart:iend]
+
+        # Only data points before last non-noise data point
+        #      and first noise point which may be the last one: y[length(y)]
+    # Also remove first data point (if sharp peak, notably for i.v.)
+
+    first_point <- ifelse((ysub[1] < ysub[2] & ysub[3] < ysub[2]),2,1)  # y[2] is peak
+    if(ysub[1] < ysub[2] & ysub[3] < ysub[2])
+      warning("First grid point ignored as y[1]<y[2] & y[3]<y[2]. (FOR DETECTION MAX/MIN/INFLEC)")
+    xsub <- xsub[first_point:length(xsub)]
+    ysub <- ysub[first_point:length(ysub)]
+
+    multi_inflec = 0
+    ipbese=inflection::bese(xsub,ysub,index=0)
+
+    # Debug sigmoid ---------------
+    # xsub2 <- xsub[14:50]
+    # ysub2 <- ysub[14:50]
+    # ipbese2=inflection::(xsub2,ysub2,index=0)
+    #
+    # zsub <- data.frame(x=xsub,y=ysub)
+    # zsub2 <- data.frame(x=xsub2,y=ysub2)
+    #
+    # zsub %>% ggplot(aes(x=x,y=y))+geom_point()+geom_vline(xintercept = ipbese$iplast,col='red')+render
+    # zsub2 %>% ggplot(aes(x=x,y=y))+geom_point()+geom_vline(xintercept = ipbese2$iplast,col='red')+render
+    # -----------------------------
+
+    f2.0 <- ipbese$iplast
+    if(!is.nan(f2.0))
+    {
+      multi_inflec = multi_inflec + 1
+      add  <- data.frame(x=f2.0,type='inflec')
+      lm   <- rbind(lm,add)
+    }
+    ipbese=inflection::bese(xsub,ysub,index=1)
+    f2.0 <- ipbese$iplast
+    if(!is.nan(f2.0))
+    {
+      multi_inflec = multi_inflec + 1
+      add  <- data.frame(x=f2.0,type='inflec')
+      lm   <- rbind(lm,add)
+    }
+    if(multi_inflec>1)
+    {
+      message("Multiple inflection points between extremes, carefully check validity")
+    }
+  }
 
   # arrange by increasing x
   lm <- lm %>% arrange(x)
-
-  return(lm)
-}
-
-#' Refine x multi landmarks
-#'
-#' @param x x values
-#' @param y y values
-#' @param lm landmarks
-#' @param tol tolerance for max and min identification
-#' @param w1 window size for f1
-#' @param w2 window size for f2
-#'
-#' @export
-#'
-refine.x.multi.landmarks <- function(x,y,lm,tol=1e-9,w1=5,w2=7) {
-  # Using splinefun to determine derivatives
-  # Checks
-  if(length(x) != length(y)) return(NA)
-  if(length(x) <= 1)         return(NA)
-
-  # Refined landmarks: First data point
-  f0sub.0 <- x[1]
-  lmsub   <- data.frame(x=f0sub.0,type='start')
-  lmsub$y <- approx(x,y, xout=lmsub$x)$y
-
-  # Loop to check/improve each landmark, ignore start and end points
-  for(ilm in c(2:(dim(lm)[1]-1)))
-  {
-    # row number nearest points
-    z    <- data.frame(row=c(1:length(x)),diff=abs(x - lm$x[ilm]))
-    hit  <- z$row[z$diff==min(z$diff)]
-
-    # Take take if near start or end of the curve
-    w <- 17
-    wmax <- ifelse((hit+17)>length(x),length(x),hit+w)
-    wmin <- ifelse((hit-17)>0,hit-w,1)
-    xsub <- x[wmin:wmax]
-    ysub <- y[wmin:wmax]
-
-
-    # **Maximum** so polynome now p=1+1=2
-    if(lm$type[ilm] == 'max' | lm$type[ilm] == 'min')
-    {
-      w  <- w1
-      po <- 2
-      f1sub.sg  <- savitzkyGolay(X = ysub,  m = 1,  p = po,  w = w)
-      x1sub.sg  <- xsub[ (1+(w-1)/2) : (length(xsub)-(w-1)/2) ]
-      # How does f1 look like?
-      pf1sub <- data.frame(x=x1sub.sg,y=f1sub.sg) %>% ggplot(aes(x=x,y=y))+geom_line()+geom_point()+
-        geom_vline(xintercept =lm$x[ilm],col='red')+ggtitle('F1 derivative')
-      plot(pf1sub + theme_bw())
-
-      # remove y is present
-      fsub1.0     <- multi.approx(x1sub.sg,f1sub.sg,yout=0,tol=tol)  # NA if no maximum
-      if(sum(!is.na(fsub1.0))>=1)
-      {
-        add    <- data.frame(x=fsub1.0,type='max')
-        add$y  <- approx(x,y, xout=add$x)$y
-        lmsub  <- rbind(lmsub,add)
-      }
-    }
-
-    # **Inflection** so polynome now p=2+1=3
-    if(lm$type[ilm] == 'inflec')
-    {
-      w  <- w2
-      po <- 3
-      f2sub.sg  <- savitzkyGolay(X = ysub,  m = 2,  p = po,  w = w)
-      x2sub.sg  <- xsub[ (1+(w-1)/2) : (length(xsub)-(w-1)/2) ]
-
-      #f2
-      pf2sub <- data.frame(x=x2sub.sg,y=f2sub.sg) %>% ggplot(aes(x=x,y=y))+geom_line()+geom_point()+
-        geom_vline(xintercept =lm$x[ilm],col='red')+ggtitle('F2 derivative')
-      plot(pf2sub + theme_bw())
-
-      # remove y is present
-      fsub2.0     <- multi.approx(x2sub.sg,f2sub.sg,yout=0,tol=tol)  # NA if no maximum
-      if(sum(!is.na(fsub2.0))>=1)
-      {
-        add    <- data.frame(x=fsub2.0,type='inflec')
-        add$y  <- approx(x,y, xout=add$x)$y
-        lmsub  <- rbind(lmsub,add)
-      }
-    }
-  }
-
-  # Last data point - may be "asymptote"
-  fsub9.9 <- x[length(x)]
-  add     <- data.frame(x=fsub9.9,type='end')
-  add$y   <- approx(x,y, xout=add$x)$y
-  lmsub   <- rbind(lmsub,add)
-
-  # arrange by increasing x
-  lmsub <- lmsub %>% arrange(x)
-
-  return(lmsub)
-}
-
-#' Determine last x value for open end reference curve
-#'
-#' @param x x values
-#' @param y y values
-#' @param lm landmarks
-#' @param step.x.factor factor to increase step.x
-#' @param tol tolerance for max and min identification
-#'
-#' @export
-#'
-get.ref.x.open.end <- function(x,y,lm,step.x.factor=1.5,tol=0.01) {
-  # Must contain type="end" as last entry"
-  if(lm$type[length(lm$type)] != "end") return("No \"end\" in landmarks")
-
-  # landmarks min/max (incl. first, excl. last data point)
-  min.lm <- min(lm$y[lm$type!='end'])
-  max.lm <- max(lm$y[lm$type!='end'])
-  # If one landmark only, then range = absolute difference from zero
-  if (dim(lm[lm$type!='end',])[1] == 0) stop('ERROR in reference landmark dataframe, no \"end\" defined')
-  if (dim(lm[lm$type!='end',])[1] == 1) ytol <- tol*(max(y) - min(y))  # Start and end point only available in lm
-  if (dim(lm[lm$type!='end',])[1] >  1) ytol <- tol*(max.lm - min.lm)
-
-  # Last segment, all data points from last landmark point to end
-  xlast      <- x[x > lm$x[length(lm$x)-1]]         # last.x first point from last landmark
-  xlastNext  <- step.x.factor*xlast                 # next.x which is step.x.factor further out to test for ytol difference
-  ylast      <- approx(x,y,xout=xlast)$y            # Calc y for last.x
-  ylastNext  <- approx(x,y,xout=xlastNext,rule=1)$y # Calc y for next.x. NA's if outside domain
-  notna      <- !is.na(ylastNext)
-
-  # Remove NA's
-  xlast      <- xlast[notna]
-  xlastNext  <- xlastNext[notna]
-  ylast      <- ylast[notna]
-  ylastNext  <- ylastNext[notna]
-
-  # Vector of differences
-  ydiff      <- abs(ylast - ylastNext)
-
-  # Find xNext position
-  xsol <- multi.approx(xlast,ydiff,yout=ytol)   # tol.end
-  # Note: For emax we have 2 solutions: one at start when curve is slowly increasing, one at end when curve is slowly flattening out
-  # Always take open end = last solution
-  xhit <- xsol[length(xsol)]
-
-  # TURNED OFF, OK?
-  # if(is.na(xhit)) return(paste0("No solution within tol ",tol," with step.x.factor ",step.x.factor," from get.ref.x.open.end()"))
-
-  yhit <- approx(x,y,xout=xhit)$y
-
-  # Replace "end"
-  lm$x[lm$type=='end']  = xhit
-  lm$y[lm$type=='end']  = yhit
 
   return(lm)
 }
@@ -327,111 +268,162 @@ get.ref.x.open.end <- function(x,y,lm,step.x.factor=1.5,tol=0.01) {
 #'
 #' @export
 #'
-get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,scaling='linear') {
-  # Ref last segment represented by ngrid points
-  refGrid      <- data.frame(x=seq(from=lm.ref$x[length(lm.ref$x)-1],
-                                   to=lm.ref$x[length(lm.ref$x)],length.out=ngrid),
-                             step=c(1:ngrid))
-  refGrid$y    <- approx(ref$x,ref$y,xout=refGrid$x)$y
+get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
+                                 scaling='linear',polyorder=5) {
 
-  # Query last segment
-  query.x.start <- lm.query$x[length(lm.query$x)-1]
-  query.x.last  <- lm.query$x[length(lm.query$x)]
+  n.segment        <- nrow(lm.ref)-1
+  n.segment.query  <- nrow(lm.query)-1
+  if(n.segment != n.segment.query) stop("Error: unequal number of segments reference/query")
 
-  # Optimizer
-  result <- optimize(get.y.diff.ref.query,
-                     interval = c(query.x.start,query.x.last),
-                     query.x.start=query.x.start,
-                     query=query,
-                     refGrid=refGrid,
-                     ngrid=ngrid,
-                     scaling=scaling)
+  # define starting landmark point:
+  if(n.segment==1) ref.x.start     <- 0
+  if(n.segment==1) query.x.start   <- 0
+  if(n.segment>1)  ref.x.start     <- lm.ref$x[n.segment]
+  if(n.segment>1)  query.x.start   <- lm.query$x[n.segment]
 
-  # Check if at boundary
-  if(abs(result$minimum-query.x.start)<1e-3) message("WARNING: Query minimum x last near landmark before end in get.query.x.open.end")
-  if(abs(result$minimum-query.x.last)<1e-3)  message("WARNING: Query minimum x last near last x value provided/explored in get.query.x.open.end")
-  if(abs(result$minimum-query.x.last)<1e-3)  message("         Increase the tolerance or increase length simulated profile or decrease x-step factor")
+  # Translate to x=0
+  t0          <- ref %>% filter(x >= ref.x.start)
+  t1.tmp      <- t0  %>% mutate(x =  x-ref.x.start)
+  q0          <- query %>% filter(x >= query.x.start)
+  q1.tmp      <- q0    %>% mutate(x =  x-query.x.start)
 
-  lm.query$x[lm.query$type=='end'] <- result$minimum
-  lm.query$y[lm.query$type=='end'] <- approx(query$x,query$y,xout=result$minimum)$y
+  # Carry out optimization
+  t1.fit=lm(y~poly(x,polyorder,raw=F),data=t1.tmp)
+  q1.fit=lm(y~poly(x,polyorder,raw=F),data=q1.tmp)
+
+  # If t1.tmp / q1.tmp already contain (simulated) x=0, then copy:
+  if(t1.tmp$x[1]==0) t1 <- t1.tmp
+  if(q1.tmp$x[1]==0) q1 <- q1.tmp
+
+  # Add landmark grid point at x=0
+  if(t1.tmp$x[1]!=0)
+  {
+    add.t1   <- t1.tmp[1,]
+    add.t1$x <- 0
+    add.t1$y <- predict(t1.fit,newdata=add.t1)
+    t1       <- rbind(add.t1,t1.tmp)
+  }
+  if(q1.tmp$x[1]!=0)
+  {
+    add.q1   <- q1.tmp[1,]
+    add.q1$x <- 0
+    add.q1$y <- predict(q1.fit,newdata=add.q1)
+    q1       <- rbind(add.q1,q1.tmp)
+  }
+
+  # Initial x.scaling from segment preceeding last segment
+  # if no landmarks, there is no previous scaling:
+  if (n.segment == 1) x.scaling.init <- 1
+  if (n.segment > 1)  x.scaling.init <- (lm.ref$x[n.segment] - lm.ref$x[n.segment-1])/((lm.query$x[n.segment] - lm.query$x[n.segment-1]))
+  # Best estimate of y.scaling.start based on polynomial fits
+  y.scaling.init.start <- t1$y[1]/q1$y[1]
+  y.scaling.init.end   <- y.scaling.init.start
+
+  result <- optim(par=c(x.scaling.init, y.scaling.init.end), fn=funk,
+                  y.scaling.start = y.scaling.init.start, t1=t1, q1=q1,
+                  t1.fit=t1.fit, q1.fit=q1.fit, ngrid=10)
+
+  ofv = result$value
+
+  x.scaling.optim   <- result$par[1]
+  y.scale.optim.end <- result$par[2]
+
+  print(paste0("Optimized last segment x.scaling ",signif(x.scaling.optim,4)))
+
+  # Check if last.x fitted curve <= last.x template curve
+  # (original translated curves)
+  # If not, reverse the fitting and take inverse x.scaling
+  if (max(q1$x) * x.scaling.optim > max(t1$x))
+  {
+    message("  *** Reverse the last segment curve fitting ***")
+
+    # Both x and y init scaling factors inverted
+    x.scaling.init       <- 1/x.scaling.init
+    y.scaling.init.start <- 1/y.scaling.init.start
+    y.scaling.init.end   <- 1/y.scaling.init.end
+
+    result <- optim(par=c(x.scaling.init, y.scaling.init.end), fn=funk,
+                    y.scaling.start = y.scaling.init.start, t1=q1, q1=t1,
+                    t1.fit=q1.fit, q1.fit=t1.fit, ngrid=10)
+
+    ofv = result$value
+
+    # Invert scaling result:
+    x.scaling.optim      <- 1/result$par[1]
+
+    print(paste0("Updated (reversed) last segment x.scaling ",signif(x.scaling.optim,4)))
+
+  }
+
+  # Just return updated query last.x (e.g. if x.scaling < 1, then "longer" query curve)
+  ref.seg.length          <- lm.ref$x[n.segment+1] - lm.ref$x[n.segment]
+  lm.query$x[n.segment+1] <- lm.query$x[n.segment] + (ref.seg.length/x.scaling.optim)
 
   return(lm.query)
+
 }
 
+
+#' 2-parameter optimization
 #' With constant or linearly changing scaling factor
 #'
 #' @param x last.x of query
 #' @param query.x.start first.x of query
 #' @param query query curve
 #' @param refGrid reference curve
+#' @param queryMid.x middle ("ignored") landmark of query segment pair
+#' @param refMid.x middle ("ignored") landmark of reference segement pair
+#' @param ngrid number of points in last segment
 #' @param ngrid number of points in last segment
 #' @param scaling scaling of x-axis
 #'
-#' @export
+#' @noRd
 #'
-get.y.diff.ref.query <- function(x, query.x.start, query, refGrid, ngrid=100, scaling='linear') {
-  # Query segment represented by ngrid points
-  queryGrid   <- data.frame(x=seq(from=query.x.start,to=x,length.out=ngrid),
-                            step=c(1:ngrid))
-  queryGrid$y <- approx(query$x,query$y,xout=queryGrid$x)$y
+funk <- function(param,y.scaling.start,t1,q1,t1.fit,q1.fit,ngrid=10){
 
-  # Scale query by linear changing scaling factor
-  if(scaling == 'linear')
-  {
-    scale.df          <- data.frame(x=c(1,ngrid),y=c(refGrid$y[1]/queryGrid$y[1],refGrid$y[ngrid]/queryGrid$y[ngrid]))
-    queryGrid$scaling  <- approx(scale.df$x, scale.df$y, xout=c(1:ngrid))$y
-    queryGrid$y.scaled <- queryGrid$scaling*queryGrid$y
-  }
-  # Scale query by constant scaling factor
-  if(scaling == 'constant')
-  {
-    queryGrid$y.scaled <- refGrid$y[1]/queryGrid$y[1]*queryGrid$y
-  }
-  # No scaling
-  if(scaling == '1')
-  {
-    queryGrid$y.scaled <- queryGrid$y
-  }
+  # ---- Inits ------
 
-  # Scale query by linear changing scaling factor
-  if(scaling == 'quadratic')
-  {
-    scale.df           <- data.frame(x=c(1,ngrid),y=c(refGrid$y[1]/queryGrid$y[1],refGrid$y[ngrid]/queryGrid$y[ngrid]))
-    queryGrid$scaling  <- approx(scale.df$x, scale.df$y, xout=c(1:ngrid))$y
-    queryGrid$y.scaled <- queryGrid$scaling*queryGrid$y
-  }
-  # Scale query by constant scaling factor
-  if(scaling == 'constant')
-  {
-    queryGrid$y.scaled <- refGrid$y[1]/queryGrid$y[1]*queryGrid$y
-  }
-  # No scaling
-  if(scaling == '1')
-  {
-    queryGrid$y.scaled <- queryGrid$y
-  }
-  # Ignore gridpoints for y-values equal to zero
-  if(scaling == 'linear.not.0')
-  {
-    # Ignore zeroes for scaling
-    zeroes <- (refGrid$y == 0 | queryGrid$y==0)
-    df  <- data.frame(x=refGrid$x, yref=refGrid$y, yquery=queryGrid$y)
-    df2 <- df[!zeroes,]
+  x.scaling     <- param[1]
+  y.scaling.end <- param[2]
 
-    df2$scale <- df2$yref/df2$yquery
-    df$scale  <- approx(x=df2$x,y=df2$scale,xout=df$x,rule=2)$y  # rule=2: If outside interval, then closest value
-    scale.df  <- data.frame(x=c(1,ngrid),
-                            y=c(df$scale[1],df$scale[ngrid]))
+  # ----
 
-    # Linear scaling between first and last point
-    queryGrid$scaling  <- approx(scale.df$x, scale.df$y, xout=c(1:ngrid), rule=2)$y
-    queryGrid$y.scaled <- queryGrid$scaling*queryGrid$y
-  }
+  # Linear y-scaling equation
+  icept.sc <- y.scaling.start  # Start is by default @ x.scaled=0
+  slp.sc   <- (y.scaling.end - y.scaling.start)/(x.scaling*max(q1$x)-x.scaling*min(q1$x))
 
-  # To minimize y-differences of reference with query-after-scaling
-  diff <- sum((refGrid$y-queryGrid$y.scaled)**2)/ngrid
+  # ----- Scaling the query curve ----
 
-  return(diff)
+  # Copy template
+  t2 <- t1
+
+  # Scale query
+  q2 <- q1
+  q2$x.scaled <- q2$x * x.scaling
+  q2$y.scaled <- q2$y * (icept.sc + slp.sc*q2$x.scaled)
+
+  # ----- Create evenly space grid to calc y differences for OFV ----
+
+  # Creat x-grid - use query domain
+  Grid <- data.frame(x=seq(from=q2$x.scaled[1],to=max(q2$x.scaled),
+                           length.out=ngrid),step=c(1:ngrid))
+
+  # Template/Query - Use polynomal fits to get best y value approximation
+  t3Grid   <- Grid %>% select(x)
+  t3Grid$y <- predict(t1.fit,newdata=t3Grid)
+
+  q3Grid   <- Grid %>% mutate(x.scaled = x, x = x/x.scaling)
+  q3Grid$y <- predict(q1.fit,newdata=q3Grid)
+
+  # Linear y-scaling:
+  # q3Grid$y.scaled <- q3Grid$y * (icept.sc + slp.sc*q3Grid$x) # Wrong
+  q3Grid$y.scaled <- q3Grid$y * (icept.sc + slp.sc*q3Grid$x.scaled)
+
+  # ------ OFV -----
+
+  fit=sum((t3Grid$y - q3Grid$y.scaled)**2)
+
+  return(fit)
 }
 
 
@@ -711,15 +703,18 @@ print.vachette_data <- function(x, ...) {
   uniqv[which.max(tabulate(match(x, uniqv)))]
 }
 
+###################################################################
+#                                                                 #
+#                          MAIN                                   #
+#                                                                 #
+###################################################################
+
 .calculate_transformations <- function(vachette_data,
-                                       lm.refine = FALSE,
                                        tol.end = 0.001,
                                        tol.noise = 1e-8,
                                        step.x.factor = 1.5,
                                        ngrid.fit = 100,
                                        window = 17,     # Savitzky Golay smoothing - initial landmarks
-                                       window.d1.refine = 7,     # Savitzky Golay smoothing - refine landmarks - first derivative
-                                       window.d2.refine = 5,
                                        run_sim = FALSE,
                                        zero_asymptote = TRUE) {
 
@@ -728,10 +723,11 @@ print.vachette_data <- function(x, ...) {
   curves.all           <- NULL
   curves.scaled.all    <- NULL
   obs.all              <- NULL
+  obs.excluded         <- NULL
 
-  my.ref.lm.all   <- NULL
-  my.query.lm.all <- NULL
-  lm.all <- NULL
+  my.ref.lm.all    <- NULL
+  my.query.lm.all  <- NULL
+  lm.all           <- NULL
 
   tab.ucov <- vachette_data$tab.ucov
   stopifnot(!is.null(tab.ucov))
@@ -745,13 +741,25 @@ print.vachette_data <- function(x, ...) {
   covariates <- vachette_data$covariates
   ref.region <- vachette_data$ref.region
   ref.dosenr <- vachette_data$ref.dosenr
-  #lines 399-760
-  # # Loop for all combinations of covariates
+
   for(i.ucov in c(1:dim(tab.ucov)[1])) {
-    # A. ----- Define reference and query typical curves and observations to transform  ----------
+    # for(i.ucov in c(i.ucov.start:i.ucov.end)) {
+    # Initialize
+    REMOVE_OBS         <- FALSE
+    remove.obs.after.x <- NULL
+
+    cat('\n')
+    cat('-------------------------\n')
+    cat(paste('i.ucov',i.ucov,'\n'))
+    print(tab.ucov[i.ucov,])
+    cat('-------------------------\n')
+
+    # ---------------------------------------------------------------
+    # ----  Define reference and query curves and observations    ---
+    # ---------------------------------------------------------------
 
     # Ref: may change (by extensions), so define (again) every new combination
-    filter_query <-
+    filter_ref <-
       paste0(
         "!is.na(region) & ",
         paste0(
@@ -767,34 +775,151 @@ print.vachette_data <- function(x, ...) {
         " & region == ref.region"
       )
 
-    ref <- typ.orig %>% filter(eval(parse(text = filter_query)))
+    ref <- typ.orig %>% filter(eval(parse(text = filter_ref)))
 
     ref.ucov <- unique(ref$ucov)
 
     if(length(ref.ucov) != 1) stop("Error: length ref.ucov != 1")     # A single ref only possible
 
     ref.region.type <- tab.ucov$region.type[tab.ucov$ucov==ref.ucov]
-    # ref = Typical reference curve
+
+    # --------------------------------------------------------------------
+    # JL 14-SEP-2023 - check if ref "closed", if so, keep next grid point of next region too
+
+    if(ref.region.type=='closed')
+    {
+      ref.next <- NULL
+
+      ref.region.next <- ref.region+1
+      filter_ref_next <-
+        paste0(
+          "!is.na(region) & ",
+          paste0(
+            'as.character(',
+            names(covariates),
+            ')',
+            "==",
+            "'",
+            covariates,
+            "'",
+            collapse = " & "
+          ),
+          " & region == ref.region.next"
+        )
+
+      ref.next      <- typ.orig %>% filter(eval(parse(text = filter_ref_next)))
+
+      # Raise error if empty
+      if(is.null(ref.next)) stop("Error: No typical curve for next reference region found")
+
+      ref.next.ucov <- unique(ref.next$ucov)
+
+      if(length(ref.next.ucov) != 1) stop("Error: length ref.next.ucov != 1")     # A single ref only possible
+
+      ref.next.grid.point.x <- ref.next$x[1]
+    }
+
+    # ------ Similar for selected query i.ucov  -----
+
+    # query = Typical query curve
     query.region       <- tab.ucov$region[tab.ucov$ucov==i.ucov]
     query.region.type  <- tab.ucov$region.type[tab.ucov$ucov==i.ucov]
 
     # Typical query curve
     query <- typ.orig %>%
       filter(ucov == i.ucov) %>%
-      mutate(ref = tab.ucov$ref[i.ucov])    # Flag for reference
+      mutate(ref  = tab.ucov$ref[i.ucov])    # Flag if reference
 
-    # -------- INTERREGION GAP EXTRAPOLATION --------------
+    # JL 14-SEP-2023 - check if query "closed", if so, keep next grid point of next region too
+    if(query.region.type=='closed')
+    {
+      query.next <- NULL
 
-    # 230418 - extrapolate region last-x region by one gridstep size if region.type = 'closed'
+      cov.query      <- tab.ucov[tab.ucov$ucov==i.ucov,]
+      query.region.next <- cov.query$region + 1
+      cov.query      <- cov.query %>% select(2:(dim(tab.ucov)[2]-3))
+
+      filter_query_next <-
+        paste0(
+          "!is.na(region) & ",
+          paste0(
+            'as.character(',
+            names(cov.query),
+            ')',
+            "==",
+            "'",
+            cov.query,
+            "'",
+            collapse = " & "
+          ),
+          " & region == query.region.next"
+        )
+
+      # Next typical query region
+      query.next      <- typ.orig %>% filter(eval(parse(text = filter_query_next)))
+
+      # Raise error if empty
+      if(is.null(query.next)) stop("Error: No typical curve for next query region found")
+
+      query.next.ucov <- unique(query.next$ucov)
+
+      if(length(query.next.ucov) != 1) stop("Error: length query.next.ucov != 1")     # A single query only possible
+
+      query.next.grid.point.x <- query.next$x[1]
+
+    }
+
+    # ---------------------------------------------------------------
+    # ---- Remove noisy ends of ref and query curves (if present) ---
+    # ---------------------------------------------------------------
+
+    message("Remove noisy ends of the reference and query curves, if applicable")
+
+    # Set ref tolerance to tol.noise * y_range * grid_step
+    y_range <- max(ref$y)-min(ref$y)
+    x_step  <- (max(ref$x)-min(ref$x))/(length(ref$x)-1)  # Maybe approx if irregular grid
+    tol_cut <- tol.noise * y_range * x_step
+
+    y.noise <- data.frame(noise.flag = (abs(ref$y - ref$y[length(ref$y)])) < tol_cut) %>%
+      mutate(n=row_number())
+    # Last non-noise data point:
+    n.last.data <- max((y.noise %>% filter(noise.flag==F))$n)+1    # +1, since last data point always "noise"
+
+    ref.no.noise <- ref[1:n.last.data,]
+    n.ref.noise  <- nrow(ref) - row(ref.no.noise)
+
+    # Set query tolerance to tol.noise * y_range * grid_step
+    y_range <- max(query$y)-min(query$y)
+    x_step  <- (max(query$x)-min(query$x))/(length(query$x)-1)  # Maybe approx if irregular grid
+    tol_cut <- tol.noise * y_range * x_step
+
+    y.noise <- data.frame(noise.flag = (abs(query$y - query$y[length(query$y)])) < tol_cut) %>%
+      mutate(n=row_number())
+    # Last non-noise data point:
+    n.last.data <- max((y.noise %>% filter(noise.flag==F))$n)+1    # +1, since last data point always "noise"
+
+    query.no.noise <- query[1:n.last.data,]
+    n.query.noise  <- nrow(query) - row(query.no.noise)
+
+    # Replace
+    ref   <- ref.no.noise
+    query <- query.no.noise
+
+    # print(paste0(n.ref.noise,  " noisy reference typical data points at end of curve removed"))
+    # print(paste0(n.query.noise," noisy query typical data points at end of curve removed"))
+
+    # ---------------------------------------------------------------
+    #               ---- Interregion Gap Extrapolation ---
+    # ---------------------------------------------------------------
+
+    # Extrapolate region last-x region by one gridstep size if region.type = 'closed'
     # Currently simple extra x value with same y value ("horizontal" extrapolation - LOCF)
     if(ref.region.type == 'closed')
     {
-      #message(paste0("Reference region-",ref.region," gap extrapolation"))
+      message(paste0("Reference region-",ref.region," gap extrapolation"))
 
-      ref.grid.step.size   <- ref$x[dim(ref)[1]] - ref$x[dim(ref)[1]-1]
       ref.curve.next       <- ref[dim(ref)[1],]
-      # Increase x:
-      ref.curve.next$x     <- ref.curve.next$x + ref.grid.step.size
+      ref.curve.next$x     <- ref.next.grid.point.x
 
       # Last 6 datapoints
       last6 <- ref %>% slice((n()-5):n()) %>% select(x,y)
@@ -812,12 +937,10 @@ print.vachette_data <- function(x, ...) {
     }
     if(query.region.type == 'closed')
     {
-      #message(paste0("Query region-",query.region," gap extrapolation"))
+      message(paste0("Query region-",query.region," gap extrapolation"))
 
-      query.grid.step.size   <- query$x[dim(query)[1]] - query$x[dim(query)[1]-1]
       query.curve.next       <- query[dim(query)[1],]
-      # Increase x:
-      query.curve.next$x     <- query.curve.next$x + query.grid.step.size
+      query.curve.next$x     <- query.next.grid.point.x
 
       # Last 6 datapoints
       last6 <- query %>% slice((n()-5):n()) %>% select(x,y)
@@ -833,7 +956,6 @@ print.vachette_data <- function(x, ...) {
       query <- rbind(query,query.curve.next)
     }
 
-
     # Should we perform transformations on obs or sim data
     if (!run_sim){
       obs.query   <- obs.orig %>%
@@ -845,12 +967,13 @@ print.vachette_data <- function(x, ...) {
         mutate(ref = tab.ucov$ref[i.ucov])  # Flag for reference data
     }
 
-    # JL 230606
     # Create PRED for obs.query data points by linear interpolation
     # May be needed for reference extrapolation, see obs.query$PRED
     obs.query$PRED <- approx(x=query$x,y=query$y,xout=obs.query$x)$y
 
-    #  B. -------- Get landmarks approximate positions ----
+    # ---------------------------------------------------------------
+    # ----               Determine landmark positions             ---
+    # ---------------------------------------------------------------
 
     # Tolerance to apply for finding maximums, minimums and inflection points
     # Small stepsize -> small tolerance
@@ -864,138 +987,215 @@ print.vachette_data <- function(x, ...) {
     my.query.lm.init    <- get.x.multi.landmarks(query$x,query$y,w=window,tol=tolapply)
     my.query.lm.init$y  <- approx(query$x,query$y, xout=my.query.lm.init$x)$y
 
-    # stop at this point, perhaps, allow user to visually inspect this plot, to assess what increase in stepsize
-    # do not error out, return data that is available, and provide to user for plotting, and provide suggestions for updating argument values
+    # Number of landmarks
+    n.lm.ref   <- nrow(my.ref.lm.init)
+    n.lm.query <- nrow(my.query.lm.init)
 
-    #Validation check
-    #If y contiguous y values in series are the same, provide error, increase tol.noise
-    #option 1: if multiple inflec in sequence, try decreasing tol.noise
-    # optionally refine landmarks if multiple inflection points
-    # automatically could raise tol.noise and/or window size incrementally to try to solve issue
-    if(!lm.refine)
-    {
-      my.ref.lm.refined      <- my.ref.lm.init
-      my.query.lm.refined    <- my.query.lm.init
-    }
-    if(lm.refine)
-    {
-      my.ref.lm.refined    <- refine.x.multi.landmarks(x=ref$x,y=ref$y,lm=my.ref.lm.init,tol=0.01*tolapply, w1=window.d1.refine,w2=window.d2.refine)
-      my.ref.lm.refined$y  <- approx(ref$x, ref$y, xout=my.ref.lm.refined$x)$y
+    # Add exclusion from transformation column
+    obs.query$exclude <- 0
 
-      my.query.lm.refined    <- refine.x.multi.landmarks(query$x,query$y,lm=my.query.lm.init,tol=0.01*tolapply, w1=window.d1.refine,w2=window.d2.refine)
-      my.query.lm.refined$y  <- approx(query$x,query$y, xout=my.query.lm.refined$x)$y
+    # New (temporary) landmark dataframe
+    my.ref.lm.transf   <- my.ref.lm.init
+    my.query.lm.transf <- my.query.lm.init
+
+    # Check order of Landmarks up to second last:
+    n.lm.check <- min(n.lm.ref, n.lm.query) - 1
+    # Match
+    if(!identical(my.ref.lm.transf$type[1:n.lm.check],
+                  my.query.lm.transf$type[1:n.lm.check]))
+    {
+      stop("No matching order of landmarks between reference and query")
     }
 
-    # Check if query and ref have same landmarks in same order
-    if(nrow(my.ref.lm.refined) != nrow(my.query.lm.refined) ||
-       !sum(my.ref.lm.refined$type == my.query.lm.refined$type)>0)
-      stop("No matching landmarks between reference and query")
+    # ---------------------------------------------------------------
+    # ----                Check number of landmarks               ---
+    # ----      Remove observations which cannot be transformed   ---
+    # ---------------------------------------------------------------
 
-    # C. ---------- Get last.x for reference and query typical curves ------------------
+    # If missing reference segment, we cannot transform
+    if(n.lm.query > n.lm.ref)
+    {
+      message("Too few reference landmarks (reference curve too short)")
+      message("Not all observations can be transformed [n.lm.query > n.lm.ref]")
+      # List of un-transformable (corresponding to query segments after last ref landmark number)
+      print(obs.query %>% filter(x >= my.query.lm.transf$x[n.lm.ref]))
+      # Exclude from transformation:
+      obs.query$exclude[obs.query$x >= my.query.lm.transf$x[n.lm.ref]] <- 1
+
+      # Keep same number of landmarks reference as for query
+      my.query.lm.transf <- my.query.lm.transf[1:n.lm.ref,]
+    }
+    if(n.lm.query < n.lm.ref)
+    {
+      message("More reference landmarks than query landmarks")
+      # Keep same number of landmarks reference as for query
+      my.ref.lm.transf <- my.ref.lm.transf[1:n.lm.query,]
+    }
+
+    # Update
+    n.lm.ref   <- nrow(my.ref.lm.transf)
+    n.lm.query <- nrow(my.query.lm.transf)
+
+    # Do for last segment of each curve
+    if(n.lm.ref <= 2 | n.lm.query <= 2)
+    {
+      message("First and last landmark available only")
+    }
+
+    my.ref.lm.refined   <- my.ref.lm.transf
+    my.query.lm.refined <- my.query.lm.transf
+
+    # No need to exclude if observations belong to reference
+    if(i.ucov == ref.ucov)
+    {
+      # Update obs.query
+      message(paste0("REFERENCE! No need to remove ",nrow(obs.query %>% filter(exclude==1)),
+                     " query observations for i.ucov=",i.ucov))
+
+      obs.query.excluded <- NULL
+      # obs.query          <- obs.query %>% filter(exclude==0)
+    }
+
+    # Remove observations if no matching reference segment available
+    if(i.ucov != ref.ucov)
+    {
+      # Update obs.query
+      message(paste0("Removing ",nrow(obs.query %>% filter(exclude==1))," query observations for i.ucov=",i.ucov))
+
+      obs.query.excluded <- obs.query %>% filter(exclude==1)
+      obs.query          <- obs.query %>% filter(exclude==0)
+    }
+
+    # Update
+    n.ref.landmarks   <- nrow(my.ref.lm.refined)
+    n.query.landmarks <- nrow(my.query.lm.refined)
+
+    # Count
+    if(n.ref.landmarks != n.query.landmarks)
+    {
+      message("No matching number landmarks between reference and query")
+
+      if(n.ref.landmarks < n.query.landmarks)
+      {
+        # Shorten query curve
+        message("Shortened query curve")
+        my.query.lm.refined <- my.query.lm.refined[1:(n.ref.landmarks+1),]
+        my.query.lm.refined$type[nrow(my.query.lm.refined)] <- 'end'
+        # Remove obs after (new) "end"
+        REMOVE_OBS <- TRUE
+        remove.obs.after.x <- my.query.lm.refined$x[nrow(my.query.lm.refined)]
+
+        obs.removed <- obs.query %>% filter(x >  remove.obs.after.x)
+        obs.query   <- obs.query %>% filter(x <= remove.obs.after.x)
+
+        message("New Query")
+        print(my.query.lm.refined)
+
+        message("Observation ignored (not transformed):")
+        print(obs.removed)
+
+      }
+      if(n.ref.landmarks > n.query.landmarks)
+      {
+        # Shorten ref curve, no further action needed
+        message("Shortened ref curve")
+        my.ref.lm.refined <- my.ref.lm.refined[1:(n.query.landmarks+1),]
+        my.ref.lm.refined$type[nrow(my.ref.lm.refined)] <- 'end'
+
+        message("New Ref")
+        print(my.ref.lm.refined)
+
+      }
+    }
+
+    # ---------------------------------------------------------------
+    # ----          Calculate open end x.scaling factors          ---
+    # ---------------------------------------------------------------
 
     scaling <- 'linear' # other options?
 
-    # ------ Landmark last.x determination depends on segment type ---------
-
-    # 1. ref and query both open ends ("default")
-    # 2. ref is open end, query is closed --> get.query.open.end() for last x **ref** only
-    # 3. ref is closed, query is open end --> get.query.open.end() for last x query only
-    # 4. ref and query both closed        --> decide either fit ref.last.x or query.last.x
-
-    query.region.type <- unique(query$region.type)
-    if(length(query.region.type) != 1) stop("Error: length query.region.type != 1")
-
     # ---- Reference and query last x -----
 
-    # 1. "Default" Find ref last x, Fit query last x
-    if(ref.region.type == 'open' & query.region.type == 'open')
+    # JL 27-Jan-2024
+    # Warn user in case we do not have landmarks. x=0 will be used as "surrogate" landmark.
+    if(nrow(my.ref.lm.refined) == 0) stop("Error in simulated data (1)")
+    if(nrow(my.ref.lm.refined) == 1) stop("Error in simulated data (2)")
+    if(nrow(my.ref.lm.refined) == 2)
     {
-      my.ref.lm   <- get.ref.x.open.end(ref$x,ref$y,my.ref.lm.refined,step.x.factor=step.x.factor,tol=tol.end)
-      my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.fit,scaling=scaling)
+      message("No landmarks detected, x=0 assumed first landmark")
     }
 
-    # 2. Fit ref last x, Fix query last x
-    if(ref.region.type == 'open' & query.region.type == 'closed')
+    # JL 02-Feb-2024
+    polyorder <- 5
+    SIGMOID = FALSE
+    if (nrow(my.ref.lm.refined) == 3 & my.ref.lm.refined$type[2] == 'inflec')
     {
-      my.ref.lm   <- get.query.x.open.end(query,ref,my.query.lm.refined,my.ref.lm.refined,ngrid=ngrid.fit,scaling=scaling)
-      my.query.lm <- my.query.lm.refined
+      message("Sigmoid-shaped curve detected")
+      # Vachette will "mirror" first part of curve to estimate x.scaling
+      SIGMOID = TRUE
+      polyorder <- 9
+
+      # message("Setting inflec points x=0 and x=log(10)")
+      # if(my.query.lm.refined$x[2] < 0.1) my.query.lm.refined$x[2] = 0
+      # if(my.query.lm.refined$x[2] > 2.2) my.query.lm.refined$x[2] = log(10)
+      # if(my.ref.lm.refined$x[2] < 0.1)   my.ref.lm.refined$x[2] = 0
+      # if(my.ref.lm.refined$x[2] > 2.2)   my.ref.lm.refined$x[2] = log(10)
     }
 
-    # 3. Fix ref last x, Fit query last x
-    if(ref.region.type == 'closed' & query.region.type == 'open')
-    {
-      my.ref.lm   <- my.ref.lm.refined
-      my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.fit,scaling=scaling)
-    }
+    message(paste0("Polynomial order for open end curve fitting = ",polyorder))
 
-    # 4. Fix ref last x, Fit query last x *** OR **** reverse!!
-    if(ref.region.type == 'closed' & query.region.type == 'closed')
+    scaling   <- 'linear'
+    ngrid.fit <- 10
+    my.query.lm     <- suppressWarnings(
+      get.query.x.open.end(ref,query,my.ref.lm.refined,my.query.lm.refined,
+                           ngrid=ngrid.fit,scaling=scaling,polyorder=polyorder)
+    )
+
+    # If Sigmoid, also carry out mirrored curve for x.scaling of first segment
+    if(SIGMOID)
     {
-      # 1. Try fit query.last.x
-      my.ref.lm1   <- my.ref.lm.refined
-      my.query.lm1 <- suppressWarnings(
-        get.query.x.open.end(ref,query,my.ref.lm1,my.query.lm.refined,ngrid=ngrid.fit,scaling=scaling)
+      message(" ... Now mirrored sigmoid ...")
+      ref.mirror     <- ref
+      ref.mirror$x   <- 2*my.ref.lm.refined$x[2] - ref$x    # Mirror around x=inflection point
+      query.mirror   <- query
+      query.mirror$x <- 2*my.query.lm.refined$x[2] - query$x    # Mirror around x=inflection point
+      my.ref.lm.refined.mirror     <- my.ref.lm.refined
+      my.ref.lm.refined.mirror$x   <- 2*my.ref.lm.refined$x[2] - my.ref.lm.refined$x
+      my.ref.lm.refined.mirror$type[1] <- 'end'
+      my.ref.lm.refined.mirror$type[3] <- 'start'
+      my.ref.lm.refined.mirror         <- my.ref.lm.refined.mirror %>% arrange(x)
+
+      my.query.lm.refined.mirror   <- my.query.lm.refined
+      my.query.lm.refined.mirror$x <- 2*my.query.lm.refined$x[2] - my.query.lm.refined$x
+      my.query.lm.refined.mirror$type[1] <- 'end'
+      my.query.lm.refined.mirror$type[3] <- 'start'
+      my.query.lm.refined.mirror         <- my.query.lm.refined.mirror %>% arrange(x)
+
+      my.query.lm.mirror     <- suppressWarnings(
+        get.query.x.open.end(ref.mirror,query.mirror,my.ref.lm.refined.mirror,my.query.lm.refined.mirror,
+                             ngrid=ngrid.fit,scaling=scaling,polyorder=polyorder)
       )
+      # Transfer obtained x.scaling to seg=1 of my.query.lm:
 
-      # 2. Try fit ref.last.x
-      my.query.lm2   <- my.query.lm.refined
-      my.ref.lm2     <- suppressWarnings(
-        get.query.x.open.end(query,ref,my.query.lm2,my.ref.lm.refined,ngrid=ngrid.fit,scaling=scaling)
-      )
+      # Obtained x.scaling:
+      ref.mirror.seg.length      <- my.ref.lm.refined.mirror$x[3] - my.ref.lm.refined.mirror$x[2]
+      query.mirror.seg.length    <- my.query.lm.mirror$x[3]       - my.query.lm.mirror$x[2]
+      x.scaling.mirror           <- ref.mirror.seg.length/query.mirror.seg.length
 
-      # difference query/ref last.x with original
-      diff.query.last.x.1 <- abs(my.query.lm1$x[dim(my.query.lm1)[1]] - my.query.lm.init$x[dim(my.query.lm.init)[1]])
-      diff.ref.last.x.2   <- abs(my.ref.lm2$x[dim(my.ref.lm2)[1]]     - my.ref.lm.init$x[dim(my.ref.lm.init)[1]])
+      # Transfer to non-mirrored lm.query (calc with reference to inflection points)
+      ref.seg.length   <- my.ref.lm.refined$x[2] - my.ref.lm.refined$x[1]
+      my.query.lm$x[1] <- my.query.lm$x[2] - (ref.seg.length/x.scaling.mirror)
 
-      # print(paste0("Diff last x query fit: ",diff.query.last.x.1))
-      # print(paste0("Diff last x ref fit:   ",diff.ref.last.x.2))
-
-      # Needs 3rd tolerance? Dependent on grid step size?
-      ref.grid.step.size   <- ref$x[dim(ref)[1]] - ref$x[dim(ref)[1]-1]
-      tol.fit.last.x       <- ref.grid.step.size*0.1
-      # tol.fit.last.x       <- ref.grid.step.size*1.1
-      # query last x fitted:
-      if(diff.query.last.x.1>tol.fit.last.x & diff.ref.last.x.2 <= tol.fit.last.x)
-      {
-        my.ref.lm   <- my.ref.lm1
-        my.query.lm <- my.query.lm1
-      }
-      # ref last x fitted:
-      if(diff.ref.last.x.2>tol.fit.last.x & diff.query.last.x.1 <= tol.fit.last.x)
-      {
-        my.ref.lm   <- my.ref.lm2
-        my.query.lm <- my.query.lm2
-      }
-      # Same curve
-      if(diff.ref.last.x.2<=tol.fit.last.x & diff.query.last.x.1 <= tol.fit.last.x)
-      {
-        my.ref.lm   <- my.ref.lm1
-        my.query.lm <- my.query.lm1
-      }
-      # Error
-      if(diff.ref.last.x.2>tol.fit.last.x & diff.query.last.x.1 > tol.fit.last.x)
-      {
-        print(paste('diff.query.last.x.1',diff.query.last.x.1))
-        print(paste('diff.ref.last.x.2',diff.ref.last.x.2))
-        print(paste('tol.fit.last.x',tol.fit.last.x))
-
-        stop("Error finding last.x for two closed segments")
-      }
     }
 
-    # JL 230608 - REMOVE: DUPLICATED CODE:
-    # @James recent developments
-    # Overrides above (above needs reprogramming)
-    # Always FIX ref and FIT query to find best fitting x ("open"). Then extrapolate if required
-    # if(ref.region.type == 'closed')
-    # {
-    #   my.ref.lm   <- my.ref.lm.refined
-    #   my.query.lm <- get.query.x.open.end(ref,query,my.ref.lm,my.query.lm.refined,ngrid=ngrid.fit,scaling=scaling)
-    # }
+    # x.scaling is based on unchanged ref
+    my.ref.lm     <- my.ref.lm.refined
+
+    message(" *** Carry out checks (to be implemented) ***")
 
     # Recalc landmark y's
-    my.query.lm$y  <- approx(query$x,query$y, xout=my.query.lm$x)$y
     my.ref.lm$y    <- approx(ref$x,ref$y, xout=my.ref.lm$x)$y
+    my.query.lm$y  <- approx(query$x,query$y, xout=my.query.lm$x)$y
 
     # Collect all landmarks
     my.ref.lm.all   <- rbind(my.ref.lm.all,   my.ref.lm   %>% mutate(i.ucov = i.ucov))
@@ -1003,7 +1203,14 @@ print.vachette_data <- function(x, ...) {
 
     lm.all <- rbind(lm.all, my.query.lm %>% mutate(ucov = i.ucov))
 
-    # D. ----- Define and map segments -----------
+    cat("Reference\n")
+    print(my.ref.lm)
+    cat("Query\n")
+    print(my.query.lm)
+
+    # ---------------------------------------------------------------
+    # ----              Map segments                              ---
+    # ---------------------------------------------------------------
 
     nseg     <- dim(my.ref.lm)[1]-1
 
@@ -1028,7 +1235,10 @@ print.vachette_data <- function(x, ...) {
       }
     }
 
-    # E. ---- x-scaled query segments -----------
+    # ---------------------------------------------------------------
+    # ----         Scale segments                                 ---
+    # ---------------------------------------------------------------
+
 
     # 230418 New query.scaled curve data frame by contracting/expanding to x-range ref
     query.scaled <- NULL
@@ -1038,6 +1248,7 @@ print.vachette_data <- function(x, ...) {
       ref.seg.length <- my.ref.lm$x[iseg+1] - my.ref.lm$x[iseg]
       # Query segment length
       query.seg.length <- my.query.lm$x[iseg+1] - my.query.lm$x[iseg]
+
       # Scaling factor
       my.query.add <- query %>%
         filter((nseg==1 & x>=my.query.lm$x[iseg] & x<=my.query.lm$x[iseg+1]) |
@@ -1055,10 +1266,11 @@ print.vachette_data <- function(x, ...) {
       query.scaled <- rbind(query.scaled,my.query.add)
     }
 
-    # F. ---- Check for need of extended **reference** curve by extrapolation -----------
+    # ---------------------------------------------------------------
+    # ----     Add curve extension (if required)                  ---
+    # ---------------------------------------------------------------
 
     # Default no extension for extrapolation
-    # tab.extension <- NULL
     EXTENSION <- FALSE
 
     # Check if there are observation at all
@@ -1067,13 +1279,16 @@ print.vachette_data <- function(x, ...) {
     # If all observations are not before query last x, then extrapolate and add to reference region curve
     if (OBSERV)
     {
-      # Only needed when there are observation outside the segment last landmark
+      # Only needed when there are query observations found outside the typical query fitted last.x
+      # [May also be activated if the typical curve has been cut off a bit to soon]
       if(max(my.query.lm$x) < max(obs.query$x))
       {
 
         EXTENSION <- TRUE
 
         message('*** Extension reference curve by exponential extrapolation ***')
+
+        # ---- QUERY -----
 
         # max x observation on query
         max.obs.x <- max(obs.query$x)
@@ -1097,22 +1312,7 @@ print.vachette_data <- function(x, ...) {
         my.query.lm.extension$x[nseg+1] <- max.obs.x
         my.query.lm.extension$y[nseg+1] <- max.obs.y.typ
 
-        # REFERENCE
-        # Reference curve has to be extrapolated up to max.obs.x.scaled
-        # Last segment reference with last two typical datapoints extrapolated to scaled max x for obs
-
-        # lastpoint        <- dim(ref)[1]
-        # add.x <- max.obs.x.scaled
-        # add.y <- approxExtrap(c(ref$x[lastpoint-1],ref$x[lastpoint]),
-        #                       c(ref$y[lastpoint-1],ref$y[lastpoint]),
-        #                       xout = add.x)$y
-        #
-        # ref.add <- ref %>%
-        #   slice(1) %>%
-        #   mutate(x=add.x,
-        #          y=add.y) %>%
-        #   mutate(seg=cur.ref.seg)
-        # ref <- rbind(ref,ref.add)
+        # ------- REFERENCE --------------
 
         # Same as for interregion gap extrapolation - multiple points
         cur.ref.seg   <- ref$seg[dim(ref[!is.na(ref$seg),])[1]]
@@ -1205,9 +1405,6 @@ print.vachette_data <- function(x, ...) {
               control = minpack.lm::nls.lm.control(maxiter = 500)
             )
 
-          print("Fitted parameter values:")
-          print(coef(nls.out))
-
           # Extrapolate y
           ref.curve.next$y <- exp.model2(as.list(coef(nls.out)), ref.curve.next$x, x0=x0)
         }
@@ -1232,7 +1429,8 @@ print.vachette_data <- function(x, ...) {
 
     # JL 230607 Assign part of curve mapped to extrapolated part of reference curve, if required
     # Only extension part....
-    if(EXTENSION) query.scaled$seg <- approx(ref$x,ref$seg,xout=query.scaled$x.scaled,
+    if(EXTENSION) query.scaled$seg <- approx(ref$x,ref$seg,
+                                             xout=query.scaled$x.scaled,
                                              method = 'constant')$y
 
     curves.all            <- rbind(curves.all,query)              # Included reference curve extrapolation
@@ -1262,9 +1460,9 @@ print.vachette_data <- function(x, ...) {
                                                          (nseg>1 & x>first.query.x & x<=last.query.x),iseg, seg))
       }
 
-      # obs.query still OK
-
-      # ----- Steps 3: Vachette x transformation -----
+      # ---------------------------------------------------------------
+      # ----     Vachettte x-transformation of observations         ---
+      # ---------------------------------------------------------------
 
       # b. Determine obs new x-position
       obs.query.orig <- obs.query
@@ -1295,14 +1493,18 @@ print.vachette_data <- function(x, ...) {
         obs.query <- rbind(obs.query,obs.query.add)
       }
 
-      # ----- Steps 4: Vachette y transformation -----
 
-      # c. Determine obs y-scaling ADDITIVE OR PROPORTIONAL
+      # ---------------------------------------------------------------
+      # ----            Vachettte y-scaling of observations         ---
+      # ---------------------------------------------------------------
+
+      # ADDITIVE OR PROPORTIONAL
 
       # In case of proportional error model
       PROP_TR <- vachette_data$PROP_TR
       if(PROP_TR)
       {
+        dummy <- 0
         # PROPORTIONAL - log scale addition. Take full ref and curve curves ....
         ref            <- ref   %>% mutate(ylog = ifelse(y>0,log(y),NA))
         query          <- query %>% mutate(ylog = ifelse(y>0,log(y),NA))
@@ -1344,15 +1546,20 @@ print.vachette_data <- function(x, ...) {
         # New position
         obs.query$y.scaled      <- obs.query$y.diff + obs.query$y.ref
       }
-
-      obs.all <- rbind(obs.all,obs.query)
+      obs.all      <- rbind(obs.all,obs.query)
 
     } # If there are observations to transform
 
-  }
+    # Collect observations excluded from Vachette transformation
+    obs.excluded <- rbind(obs.excluded,obs.query.excluded)
+
+    message(paste0(nrow(obs.excluded)," observations excluded for all i.ucov"))
+
+  } # All i.ucov's
 
   n.ucov <- vachette_data$n.ucov
   for(i.ucov in c(1:n.ucov))
+    # for(i.ucov in c(i.ucov.start:i.ucov.end))
   {
     typ.curve <- typ.orig %>% filter(ucov==i.ucov)
     ref.curve <- typ.orig %>% filter(ucov==ref.ucov)
@@ -1381,12 +1588,13 @@ print.vachette_data <- function(x, ...) {
 
   return(
     list(
-      obs.all = obs.all,
-      curves.all = curves.all,
-      curves.scaled.all = curves.scaled.all,
+      obs.all      = obs.all,
+      obs.excluded = obs.excluded,
+      curves.all   = curves.all,
+      curves.scaled.all  = curves.scaled.all,
       ref.extensions.all = ref.extensions.all,
       lm.all = lm.all,
-      nseg = nseg
+      nseg   = nseg
     )
   )
 
