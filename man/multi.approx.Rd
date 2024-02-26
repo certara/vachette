@@ -17,5 +17,4 @@ multi.approx(x, y, yout, tol = 1e-09)
 }
 \description{
 Find monotonic increasing and decreasing segments
-Used for both derivative and asymptote identification
 }
