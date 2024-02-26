@@ -10,12 +10,6 @@ covariate effects.
 
 ## Installation
 
-### Released
-
-``` r
-remotes::install_github("certara/vachette@v0.39.0")
-```
-
 ### Development
 
 ``` r
