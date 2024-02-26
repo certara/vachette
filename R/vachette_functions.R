@@ -110,7 +110,7 @@ multi.approx <- function(x,y,yout,tol=1e-9) {
 }
 
 
-# Get inflec for curve via polynomial fit
+# Get min/max or inflec for curve via polynomial fit
 extremes <- function(x,y,type='minmax',polyorder=6)
 {
   mydata <- data.frame(x=x,y=y)
@@ -292,11 +292,11 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
 
       newvalley.refined <- extremes(xsub, ysub, type='minmax', polyorder=6)
 
-      cat(paste0("Max detected at x = ",newvalley," and refined to x = ",newvalley.refined,"\n"))
+      cat(paste0("Min detected at x = ",newvalley," and refined to x = ",newvalley.refined,"\n"))
 
       if(is.na(newvalley.refined))
       {
-        message("    No max found via polynomial fit")
+        message("    No min found via polynomial fit")
         message("    Keeping initial max x-position")
       }
       if(!is.na(newvalley.refined)) newvalley <- newvalley.refined
@@ -1699,8 +1699,8 @@ print.vachette_data <- function(x, ...) {
         # First 6 datapoints
         first6 <- ref %>% slice(1:6) %>% select(x,y)
 
-        last6$x  = as.numeric(last6$x)
-        last6$y  = as.numeric(last6$y)
+        first6$x  = as.numeric(first6$x)
+        first6$y  = as.numeric(first6$y)
 
         # -- Mirror in order to use same extrapolation methodology/equations --
         first6.mirror <- first6 %>%

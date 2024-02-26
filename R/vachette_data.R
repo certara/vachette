@@ -398,7 +398,7 @@ apply_transformations.vachette_data <-
   if (!is.null(args$asymptote_right)) {
     asymptote_right <- args$asymptote_right
   } else {
-    asymptote_right <- FALSE
+    asymptote_right <- TRUE
   }
 
   if (!is.null(args$asymptote_left)) {
@@ -416,7 +416,7 @@ apply_transformations.vachette_data <-
   if (!is.null(args$zero_asymptote_left)) {
     zero_asymptote_left <- args$zero_asymptote_left
   } else {
-    zero_asymptote_left <- TRUE
+    zero_asymptote_left <- FALSE
   }
 
   vachette_transformed_data <- .calculate_transformations(vachette_data,
