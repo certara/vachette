@@ -395,28 +395,10 @@ apply_transformations.vachette_data <-
 
   args <- list(...)
 
-  if (!is.null(args$asymptote_right)) {
-    asymptote_right <- args$asymptote_right
+  if (!is.null(args$zero_asymptote)) {
+    zero_asymptote <- args$zero_asymptote
   } else {
-    asymptote_right <- FALSE
-  }
-
-  if (!is.null(args$asymptote_left)) {
-    asymptote_left <- args$asymptote_left
-  } else {
-    asymptote_left <- FALSE
-  }
-
-  if (!is.null(args$zero_asymptote_right)) {
-    zero_asymptote_right <- args$zero_asymptote_right
-  } else {
-    zero_asymptote_right <- TRUE
-  }
-
-  if (!is.null(args$zero_asymptote_left)) {
-    zero_asymptote_left <- args$zero_asymptote_left
-  } else {
-    zero_asymptote_left <- TRUE
+    zero_asymptote <- TRUE
   }
 
   vachette_transformed_data <- .calculate_transformations(vachette_data,
@@ -425,10 +407,7 @@ apply_transformations.vachette_data <-
                                                          step.x.factor,
                                                          ngrid.fit,
                                                          window,
-                                                         asymptote_right = asymptote_right,
-                                                         asymptote_left  = asymptote_left,
-                                                         zero_asymptote_right = zero_asymptote_right,
-                                                         zero_asymptote_left  = zero_asymptote_left)
+                                                         zero_asymptote = zero_asymptote)
   if (vachette_data$VVPC) {
     vachette_transformed_data_sim <- .calculate_transformations(vachette_data,
                                                            tol.end,
@@ -437,10 +416,7 @@ apply_transformations.vachette_data <-
                                                            ngrid.fit,
                                                            window,
                                                            run_sim = TRUE,
-                                                           asymptote_right = asymptote_right,
-                                                           asymptote_left  = asymptote_left,
-                                                           zero_asymptote_right = zero_asymptote_right,
-                                                           zero_asymptote_left = zero_asymptote_left)
+                                                           zero_asymptote = zero_asymptote)
     sim.all <- vachette_transformed_data_sim$obs.all
   } else {
     sim.all <- NULL

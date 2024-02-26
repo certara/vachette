@@ -110,77 +110,6 @@ multi.approx <- function(x,y,yout,tol=1e-9) {
 }
 
 
-# Get inflec for curve via polynomial fit
-extremes <- function(x,y,type='minmax',polyorder=6)
-{
-  mydata <- data.frame(x=x,y=y)
-
-  # Polynomial fit
-  fit=lm(y~poly(x,polyorder,raw=T),data=mydata)
-  f0.coeff <- as.numeric(fit$coefficients)
-
-  # Set NA terms to 0
-  f0.coeff[is.na(f0.coeff)] <- 0
-
-  mydata$fit <- predict(fit)
-
-  mydata %>%  ggplot(aes(x=x,y=y))+
-    geom_point()+
-    geom_point(aes(y=fit),col='red',pch=1)
-
-  # y'(x)  (f1)
-  f1.coeff <- NULL
-  for(icoeff in c(2:length(f0.coeff))) # Skip intercept --> 0
-  {
-    add      <- f0.coeff[icoeff] * (icoeff-1)
-    f1.coeff <- c(f1.coeff,add)
-  }
-
-  # inflection points. solve y''(x) = 0 (f2 = 0)
-  f2.coeff <- NULL
-  for(icoeff in c(2:length(f1.coeff))) # Skip intercept --> 0
-  {
-    add      <- f1.coeff[icoeff] * (icoeff-1)
-    f2.coeff <- c(f2.coeff,add)
-  }
-
-  # ---
-
-  if (type=='minmax') solutions = polyroot(f1.coeff)
-  if (type=='inflec') solutions = polyroot(f2.coeff)
-
-  Im(solutions)
-  # Which imaginary are numbers very close to 0,
-  round(Im(solutions), 5)
-  # Real numbers, when imaginary part = 0
-  fx.zero <- Re(solutions)[!(round(Im(solutions), 5))] # these are real numbers only, since imaginary part =0
-
-  # If there is a solution
-  if (!is.na(fx.zero[1]))
-  {
-    out   <- fx.zero <  min(mydata$x) | fx.zero >  max(mydata$x)
-    keep  <- fx.zero >= min(mydata$x) & fx.zero <= max(mydata$x)
-
-    # Check domain
-    if(sum(out)>0)
-    {
-      message('Warning: ignoring inflection point solutions using polynomial fit at:')
-      message(paste('  x = ',paste(fx.zero[out]),collapse=' '))
-    }
-
-    if(sum(keep)==0) fx.0 <- NA  # No solution
-    if(sum(keep)==1) fx.0 <- fx.zero[keep]
-    # if(sum(keep)>1) stop('Cannot handle: multiple inflection points detected using polynomial fit')
-    if(sum(keep)>1)  fx.0 <- c(fx.zero[keep])
-
-    return(fx.0)
-  }
-
-  # No solution
-  return(NA)
-
-}
-
 #' Get x multi landmarks
 #'
 #' Find initial landmark position using f1 and f2 derivatives and Savitzky Golay smoothing
@@ -237,80 +166,24 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
   add  <- data.frame(x=xend,type='end')
   lm   <- rbind(lm,add)
 
-  nminmax <- 0
-  # (Local) extremes - not tested in case of multiple min/max's
-  f1.0  <- photobiology::get_peaks(x,y,span=w)$x
-  npeak <- length(f1.0)
-  if(npeak>=1)
+  # All first derivatives f1=0
+  # f1.sg <- savitzkyGolay(X = y,  m = 1,  p = 1,  w = w)
+  # x1.sg  <- x[ (1+(w-1)/2) : (length(x)-(w-1)/2) ]
+  # f1.0     <- multi.approx(x1.sg,f1.sg,yout=0,tol=tol)  # NA if no maximum
+
+  # (Local) extremes
+  f1.0 <- photobiology::get_peaks(x,y,span=w)$x
+  if(sum(!is.na(f1.0))>=1)
   {
-    for(ipeak in c(1:npeak))
-    {
-      newpeak <- f1.0[ipeak]
-      # JL240216 - refine, use (same) window of grid points
-      wsub <- floor(w/2)
-      x.grid  <- which(x == newpeak)
-      x.start <- max(1,(x.grid-wsub))
-      x.end   <- min(length(x),(x.grid+wsub))
-      xsub    <- x[x.start:x.end]
-      ysub    <- y[x.start:x.end]
-
-      newpeak.refined <- extremes(xsub, ysub, type='minmax', polyorder=6)
-
-      cat(paste0("Max detected at x = ",newpeak," and refined to x = ",newpeak.refined,"\n"))
-
-      if(is.na(newpeak.refined))
-      {
-        message("    No max found via polynomial fit")
-        message("    Keeping initial max x-position")
-      }
-      if(!is.na(newpeak.refined)) newpeak <- newpeak.refined
-
-      # tmp
-      # newpeak <- f1.0[ipeak]
-
-      add    <- data.frame(x=newpeak,type='max')
-      lm     <- rbind(lm,add)
-
-      nminmax <- nminmax + 1
-    }
+    add    <- data.frame(x=f1.0,type='max')
+    lm     <- rbind(lm,add)
   }
-
   f1.0 <- photobiology::get_valleys(x,y,span=w)$x
-  nvalley <- length(f1.0)
-  if(nvalley>=1)
+  if(sum(!is.na(f1.0))>=1)
   {
-    for(ivalley in c(1:nvalley))
-    {
-      newvalley <- f1.0[ivalley]
-      # JL240216 - refine, use (same) window of grid points
-      wsub <- floor(w/2)
-      x.grid  <- which(x == newvalley)
-      x.start <- max(1,(x.grid-wsub))
-      x.end   <- min(length(x),(x.grid+wsub))
-      xsub    <- x[x.start:x.end]
-      ysub    <- y[x.start:x.end]
-
-      newvalley.refined <- extremes(xsub, ysub, type='minmax', polyorder=6)
-
-      cat(paste0("Max detected at x = ",newvalley," and refined to x = ",newvalley.refined,"\n"))
-
-      if(is.na(newvalley.refined))
-      {
-        message("    No max found via polynomial fit")
-        message("    Keeping initial max x-position")
-      }
-      if(!is.na(newvalley.refined)) newvalley <- newvalley.refined
-
-      # tmp
-      # newvalley <- f1.0[ivalley]
-
-      add    <- data.frame(x=newvalley,type='max')
-      lm     <- rbind(lm,add)
-
-      nminmax <- nminmax + 1
-    }
+    add    <- data.frame(x=f1.0,type='max')
+    lm     <- rbind(lm,add)
   }
-  if (nminmax == 0) message(paste0('No minimum or maximum detected'))
 
   # Loop between extremes to detect inflection points
   # First arrange by increasing x
@@ -319,85 +192,62 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
   # Each interval between landmarks, incl. first and last datapoint
   for(ilm in c(2:nrow(lm)))
   {
-    # Inflection point detection via polynomial fit
+    # if from 1-2, and first is max,              then index=1: possibly concave/convex (not for zero-order abs)
+    # if from 1-2, and first is min,              then index=0: convex/concave
+    # if from 1-2, and first is start, second max then index=0: convex/concave (possibly)
+    # if from 1-2, and first is start, second min then index=1: concave/convex (possibly)
+    # if from 1-2, and first is start, second end then if end<start index=1: concave/convex (possibly)
+    # if from 1-2, and first is start, second end then if end>start index=0: convex/concave (possibly)
+    # Both are tested
 
-    # First grid point after max/min:
-    xdiff1 <- x-lm$x[ilm-1]
-    xpos1  <- xdiff1 >= 0
-    xdiff2 <- x-lm$x[ilm]
-    xneg2  <- xdiff2 <= 0
+    istart <- which(x==lm$x[ilm-1])
+    iend   <- which(x==lm$x[ilm])
+        xsub   <- x[istart:iend]
+        ysub   <- y[istart:iend]
 
-    istart <- which(x==min(x[xpos1]))
-    iend   <- which(x==max(x[xneg2]))
-    xsub   <- x[istart:iend]
-    ysub   <- y[istart:iend]
-
-    # Only data points before last non-noise data point
-    #      and first noise point which may be the last one: y[length(y)]
+        # Only data points before last non-noise data point
+        #      and first noise point which may be the last one: y[length(y)]
     # Also remove first data point (if sharp peak, notably for i.v.)
 
-    # first_point <- ifelse((ysub[1] < ysub[2] & ysub[3] < ysub[2]),2,1)  # y[2] is peak
-    # if(ysub[1] < ysub[2] & ysub[3] < ysub[2])
-    #   warning("First grid point ignored as y[1]<y[2] & y[3]<y[2]. (FOR DETECTION MAX/MIN/INFLEC)")
-    # xsub <- xsub[first_point:length(xsub)]
-    # ysub <- ysub[first_point:length(ysub)]
+    first_point <- ifelse((ysub[1] < ysub[2] & ysub[3] < ysub[2]),2,1)  # y[2] is peak
+    if(ysub[1] < ysub[2] & ysub[3] < ysub[2])
+      warning("First grid point ignored as y[1]<y[2] & y[3]<y[2]. (FOR DETECTION MAX/MIN/INFLEC)")
+    xsub <- xsub[first_point:length(xsub)]
+    ysub <- ysub[first_point:length(ysub)]
 
-    # Keep points between y-range of 1% and 99% only:
-    miny  <- min(ysub)
-    maxy  <- max(ysub)
-    diffy <- maxy - miny
-    mydata <- data.frame(x=xsub,y=ysub) %>%
-      filter(y >= (miny+0.025*diffy), y <= (miny+0.975*diffy))
+    multi_inflec = 0
+    ipbese=inflection::bese(xsub,ysub,index=0)
 
-    ndata     <- nrow(mydata)
-    polyorder <- floor(ndata/2)
-    # Odd order only:
-    if(abs(polyorder/2 - floor(polyorder/2)) == 0) polyorder <- polyorder-1
-
-    # Max order = 13 (default)
-    polyorder <- min(13,polyorder)
-
-    message(paste0("Polynomial order for open end curve fitting = ",polyorder))
-
-    # f2.0 <- inflec(mydata$x, mydata$y, polyorder=polyorder)
-    f2.0 <- extremes(mydata$x, mydata$y, type='inflec', polyorder=polyorder)
-
-    # Test oral absorption case (a) - section to be removed
-    # --------------------------------------------------------------
-    # f1data <- mydata[2:nrow(mydata),] %>%
-    #   rename(x2 = x, y2= y)
-    # f1data <- cbind(f1data,mydata[1:(nrow(mydata)-1),]) %>%
-    #   mutate(x.mid = (x+x2)/2) %>%
-    #   mutate(slp = (y2-y)/(x2-x))
+    # Debug sigmoid ---------------
+    # xsub2 <- xsub[14:50]
+    # ysub2 <- ysub[14:50]
+    # ipbese2=inflection::(xsub2,ysub2,index=0)
     #
-    # mydata %>% ggplot(aes(x=x,y=y))+geom_point()+
-    #   geom_point(data=f1data,aes(x=x.mid,y=(-60*slp-1.3)),col='red')+
-    #   coord_cartesian(xlim=c(10,14),ylim=c(2.0,2.2))+
-    #   geom_vline(xintercept=12.55,lty=2)+
-    #   geom_vline(xintercept=12.22,lty=2)+
-    #   geom_vline(xintercept=12.14,lty=2)+
-    #   render
-    # mydata %>% ggplot(aes(x=x,y=y))+geom_point()+
-    #   render
-    # --------------------------------------------------------------
+    # zsub <- data.frame(x=xsub,y=ysub)
+    # zsub2 <- data.frame(x=xsub2,y=ysub2)
+    #
+    # zsub %>% ggplot(aes(x=x,y=y))+geom_point()+geom_vline(xintercept = ipbese$iplast,col='red')+render
+    # zsub2 %>% ggplot(aes(x=x,y=y))+geom_point()+geom_vline(xintercept = ipbese2$iplast,col='red')+render
+    # -----------------------------
 
-
-    if(!is.na(f2.0[1]) & length(f2.0) > 1)
+    f2.0 <- ipbese$iplast
+    if(!is.nan(f2.0))
     {
-      message("Warning: multiple inflection points detected for a segment. First inflection point only used")
-      f2.0 <- f2.0[1]
-    }
-
-    if(!is.na(f2.0[1]))
-    {
-      cat(paste0("Inflec detected at x = ",f2.0[1],"\n"))
-      add  <- data.frame(x=f2.0[1],type='inflec')
+      multi_inflec = multi_inflec + 1
+      add  <- data.frame(x=f2.0,type='inflec')
       lm   <- rbind(lm,add)
     }
-
-    if(is.na(f2.0[1]))
+    ipbese=inflection::bese(xsub,ysub,index=1)
+    f2.0 <- ipbese$iplast
+    if(!is.nan(f2.0))
     {
-      message("No inflection point found")
+      multi_inflec = multi_inflec + 1
+      add  <- data.frame(x=f2.0,type='inflec')
+      lm   <- rbind(lm,add)
+    }
+    if(multi_inflec>1)
+    {
+      message("Multiple inflection points between extremes, carefully check validity")
     }
   }
 
@@ -477,8 +327,6 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
 
   x.scaling.optim   <- result$par[1]
   y.scale.optim.end <- result$par[2]
-
-  if(x.scaling.optim<=0) stop("Error: zero or negative open end x.scaling factor")
 
   print(paste0("Optimized last segment x.scaling ",signif(x.scaling.optim,4)))
 
@@ -866,12 +714,9 @@ print.vachette_data <- function(x, ...) {
                                        tol.noise = 1e-8,
                                        step.x.factor = 1.5,
                                        ngrid.fit = 100,
-                                       window = 17,     # peak detection window - initial landmarks
+                                       window = 17,     # Savitzky Golay smoothing - initial landmarks
                                        run_sim = FALSE,
-                                       asymptote_right = TRUE,
-                                       asymptote_left = FALSE,
-                                       zero_asymptote_right = TRUE,
-                                       zero_asymptote_left = TRUE) {
+                                       zero_asymptote = TRUE) {
 
   # Collect all Vachette query curves and original/transformed observations (incl reference)
   ref.extensions.all   <- NULL
@@ -1281,7 +1126,7 @@ print.vachette_data <- function(x, ...) {
     }
 
     # JL 02-Feb-2024
-    polyorder <- 9
+    polyorder <- 5
     SIGMOID = FALSE
     if (nrow(my.ref.lm.refined) == 3 & my.ref.lm.refined$type[2] == 'inflec')
     {
@@ -1296,6 +1141,8 @@ print.vachette_data <- function(x, ...) {
       # if(my.ref.lm.refined$x[2] < 0.1)   my.ref.lm.refined$x[2] = 0
       # if(my.ref.lm.refined$x[2] > 2.2)   my.ref.lm.refined$x[2] = log(10)
     }
+
+    message(paste0("Polynomial order for open end curve fitting = ",polyorder))
 
     scaling   <- 'linear'
     ngrid.fit <- 10
@@ -1432,45 +1279,14 @@ print.vachette_data <- function(x, ...) {
     # If all observations are not before query last x, then extrapolate and add to reference region curve
     if (OBSERV)
     {
-      # investigate
-      # dummy <-  0
-      # tmp.shift.last   <- -my.query.lm$x[2] + my.ref.lm$x[2]
-
-      # print(my.ref.lm)
-      # print(my.query.lm)
-      #
-      # tmp.scaling.last <- (my.query.lm$x[3] - my.query.lm$x[2]) / (my.ref.lm$x[3] - my.ref.lm$x[2])
-      # # LAST query obs will be moved to:
-      # last.scaled.query.x <- tmp.scaling.last*(max(obs.query$x) + tmp.shift.last)
-      # print(last.scaled.query.x)
-      # # Scaling of first seg:
-      # tmp.scaling.first <- (my.query.lm$x[2] - my.query.lm$x[1]) / (my.ref.lm$x[2] - my.ref.lm$x[1])
-      # # FIRST query obs will be moved to:
-      # first.scaled.query.x <- tmp.scaling.last*(min(obs.query$x) + tmp.shift.last)
-      # print(first.scaled.query.x)
-
       # Only needed when there are query observations found outside the typical query fitted last.x
       # [May also be activated if the typical curve has been cut off a bit to soon]
-
-      # James: please move finctions to better place
-      # Fixed x0 exp model
-      exp.model2 <- function(parS,x,x0)
-      {
-        y = parS$A + parS$B*exp(-parS$k*(x-x0))
-        return(y)
-      }
-      exp.model2.residuals <- function(p, observed, x, x0)
-      {
-        res <- observed - exp.model2(p, x, x0=x0)
-        return(res)
-      }
-
       if(max(my.query.lm$x) < max(obs.query$x))
       {
 
         EXTENSION <- TRUE
 
-        message('*** RIGHT Extension reference curve by exponential extrapolation ***')
+        message('*** Extension reference curve by exponential extrapolation ***')
 
         # ---- QUERY -----
 
@@ -1525,83 +1341,47 @@ print.vachette_data <- function(x, ...) {
         # Last 6 datapoints
         last6 <- ref %>% slice((n()-5):n()) %>% select(x,y)
 
-        last6$x  = as.numeric(last6$x)
-        last6$y  = as.numeric(last6$y)
-
-        last6.mirror <- last6 %>%
-          mutate(x = -x) %>%
-          arrange(x)   # Important!
+        y  = as.numeric(last6$y)
+        x  = as.numeric(last6$x)
 
         # JL 230717 Extrapolation suitable for non-zero asymptote
 
-        # Simple Exponential fit
-        if(asymptote_right)
+        # 1. Simple Exponential fit
+        if(zero_asymptote)
         {
-          message("Ref extension - assuming asymptote right")
-
-          x <- last6$x
-          y <- last6$y
-
-          if(zero_asymptote_right)
-          {
-            message("  >> Applying ZERO asymptote reference curve RIGHT-side extrapolation")
-
-            exp.model <-lm(log(y) ~ x)
-            ref.curve.next$y <- exp(predict(exp.model,list(x=ref.curve.next$x)))
-          }
-
-          # Exponential fit for non-zero asymptote:
-          if(!zero_asymptote_right)
-          {
-            message("  >> Applying non-zero asymptote reference curve RIGHT-side extrapolation")
-
-            # 2. New exponent fit based on R = A + B*exp(-k*(t-t0)) with fixed t0
-            xa <- (x[1] + x[2])/2
-            xb <- (x[5] + x[6])/2
-            Sa <- (y[1] + y[2])/2
-            Sb <- (y[5] + y[6])/2
-
-            x0    = xa
-            Ainit = 0
-            Binit = Sa-Sb
-            if(Sa>=Sb) kinit = -log(Sb/Sa)/(xb-xa)
-            if(Sa<Sb)  kinit = -log(Sa/Sb)/(xb-xa)
-            Ainit = Sb   # Better estimate for asymptote value
-
-            # (Add option for user to set asymptote to zero)
-
-            p.init <- list(A=Ainit, B=Binit, k=kinit)
-
-            ## Carry out exp model fit
-            nls.out <-
-              minpack.lm::nls.lm(
-                par = p.init,
-                fn = exp.model2.residuals,
-                observed = y,
-                x = x,
-                x0 = x0,
-                control = minpack.lm::nls.lm.control(maxiter = 500)
-              )
-
-            # Extrapolate y
-            ref.curve.next$y <- exp.model2(as.list(coef(nls.out)), ref.curve.next$x, x0=x0)
-          }
+          exp.model <-lm(log(y) ~ x)
+          ref.curve.next$y <- exp(predict(exp.model,list(x=ref.curve.next$x)))
         }
 
-        # Exponential fit for no-asymptote (can be programmed more efficiently):
-        if(!asymptote_right)
+        # 1. Exponential fit for non-zero asymptote:
+        if(!zero_asymptote)
         {
-          message("  >> Applying NO-asymptote reference curve RIGHT-side extrapolation")
 
-          # Mirrored x
-          x <- last6.mirror$x
-          y <- last6.mirror$y
+          # Fixed x0 exp model
+          exp.model2 <- function(parS,x,x0)
+          {
+            y = parS$A + parS$B*exp(-parS$k*(x-x0))
+            return(y)
+          }
+          exp.model2.residuals <- function(p, observed, x, x0)
+          {
+            res <- observed - exp.model2(p, x, x0=x0)
+            return(res)
+          }
 
           # 2. New exponent fit based on R = A + B*exp(-k*(t-t0)) with fixed t0
           xa <- (x[1] + x[2])/2
           xb <- (x[5] + x[6])/2
           Sa <- (y[1] + y[2])/2
           Sb <- (y[5] + y[6])/2
+
+          # if Sa > Sb, then A<Sb
+          # if Sa < Sb, then A>Sb
+          # x0    = xa
+          # if(Sa>Sb) Ainit = Sb*0.9         # Last 2 pnt
+          # if(Sa<Sb) Ainit = Sb*1.1         # Last 2 pnt
+          # Binit = Sa - Ainit               # Diff
+          # kinit = -log(1 + (Sb - Sa)/Binit)/(xb-xa)
 
           x0    = xa
           Ainit = 0
@@ -1625,10 +1405,9 @@ print.vachette_data <- function(x, ...) {
               control = minpack.lm::nls.lm.control(maxiter = 500)
             )
 
-          # Extrapolate y using mirrored x:
-          ref.curve.next$y <- exp.model2(as.list(coef(nls.out)), -ref.curve.next$x, x0=x0)
+          # Extrapolate y
+          ref.curve.next$y <- exp.model2(as.list(coef(nls.out)), ref.curve.next$x, x0=x0)
         }
-
 
         # JL 230607 Assign extrapolation reference part to seg=-99 for plotting purposes
         ref.curve.next$seg <- -99
@@ -1643,201 +1422,6 @@ print.vachette_data <- function(x, ...) {
         # Check:
         if(cur.ref.seg != cur.query.seg) stop("Error segment number assignment in reference extrapolation block")
       }
-
-
-
-      # Only needed when there are query observations found outside the typical query fitted last.x
-      # [May also be activated if the typical curve has been cut off a bit to soon]
-      # JL 240214
-      if(min(my.query.lm$x) > min(obs.query$x))
-      {
-
-        EXTENSION <- TRUE
-
-        message('*** LEFT Extension reference curve by exponential extrapolation ***')
-
-        # ---- QUERY -----
-
-        # min x observation on query
-        min.obs.x <- min(obs.query$x)
-        # y observation on query at x min
-        min.obs.y <- obs.query$y[obs.query$x==min.obs.x]
-        # y typical on query at x min
-        min.obs.y.typ <- obs.query$PRED[obs.query$x==min.obs.x]
-
-        # scaled min x observation: (x+x.shift)*scaling
-        firstpoint        <- 1
-        # JL 240214
-        min.obs.x.scaled <- query.scaled$x.scaling[firstpoint]*(min.obs.x + query.scaled$x.shift.query[firstpoint]) - query.scaled$x.shift.ref[firstpoint]
-
-        # QUERY (left extension --> seg=1)
-        cur.query.seg <- 1
-        # Adjust my.query.lm
-        my.query.lm.extension      <- my.query.lm
-        my.query.lm.extension$x[1] <- min.obs.x
-        my.query.lm.extension$y[1] <- min.obs.y.typ
-
-        # ------- REFERENCE --------------
-
-        # Same as for interregion gap extrapolation - multiple points
-        cur.ref.seg   <- 1
-
-        ref.grid.step.size   <- ref$x[2] - ref$x[1]
-
-        # Decrease x by ref grid steps up to last point
-        i.steps.x          <- c(1:ceiling((-min.obs.x.scaled + min(ref$x))/ref.grid.step.size))
-
-        n.steps.x          <- length(i.steps.x)
-        steps.x            <- min(ref$x) - (1+n.steps.x - i.steps.x)*ref.grid.step.size
-
-        ref.curve.prev     <- ref %>% slice(rep(1,n.steps.x))
-
-        ref.curve.prev$x   <- steps.x
-        # First x exactly matching min query obs x
-        ref.curve.prev$x[1] <- min.obs.x.scaled
-
-        # First 6 datapoints
-        first6 <- ref %>% slice(1:6) %>% select(x,y)
-
-        last6$x  = as.numeric(last6$x)
-        last6$y  = as.numeric(last6$y)
-
-        # -- Mirror in order to use same extrapolation methodology/equations --
-        first6.mirror <- first6 %>%
-          mutate(x=-x) %>%
-          arrange(x)
-        # Mirror ref.curve.prev too, for extrapolation
-        ref.curve.prev.mirror <- ref.curve.prev %>%
-          mutate(x=-x) %>%
-          arrange(x)
-        # Mirror ref too, for extrapolation check
-        ref.mirror <- ref %>%
-          mutate(x=-x) %>%
-          arrange(x)
-
-
-        # JL 230717 Extrapolation suitable for non-zero asymptote
-
-        # 1. Simple Exponential fit
-        # Simple Exponential fit
-        if(asymptote_left)
-        {
-          message("Ref extension - assuming asymptote left")
-
-          x  = first6.mirror$x
-          y  = first6.mirror$y
-
-          if(zero_asymptote_left)
-          {
-            message("  >> Applying ZERO asymptote reference curve LEFT-side extrapolation")
-
-            exp.model <-lm(log(y) ~ x)
-            ref.curve.prev$y <- exp(predict(exp.model,list(x=ref.curve.prev$x)))
-          }
-
-          # 1. Exponential fit for non-zero asymptote:
-          if(!zero_asymptote_left)
-          {
-            message("  >> Applying non-zero asymptote reference curve LEFT-side extrapolation")
-            # Fixed x0 exp model
-            exp.model2 <- function(parS,x,x0)
-            {
-              y = parS$A + parS$B*exp(-parS$k*(x-x0))
-              return(y)
-            }
-            exp.model2.residuals <- function(p, observed, x, x0)
-            {
-              res <- observed - exp.model2(p, x, x0=x0)
-              return(res)
-            }
-
-            # 2. New exponent fit based on R = A + B*exp(-k*(t-t0)) with fixed t0
-            # left-hand side, non-zero asymptote
-            xa <- (x[1] + x[2])/2
-            xb <- (x[5] + x[6])/2
-            Sa <- (y[1] + y[2])/2
-            Sb <- (y[5] + y[6])/2
-
-            # if Sa > Sb, then A<Sb
-            # if Sa < Sb, then A>Sb
-            # x0    = xa
-            # if(Sa>Sb) Ainit = Sb*0.9         # Last 2 pnt
-            # if(Sa<Sb) Ainit = Sb*1.1         # Last 2 pnt
-            # Binit = Sa - Ainit               # Diff
-            # kinit = -log(1 + (Sb - Sa)/Binit)/(xb-xa)
-
-            x0    = xa
-            Ainit = 0
-            Binit = Sa-Sb
-            if(Sa>=Sb) kinit = -log(Sb/Sa)/(xb-xa)
-            if(Sa<Sb)  kinit = -log(Sa/Sb)/(xb-xa)
-            Ainit = Sb   # Better estimate for asymptote value
-
-            # (Add option for user to set asymptote to zero)
-
-            # parS$A + parS$B*exp(-parS$k*(x-x0))
-            p.init <- list(A=Ainit, B=Binit, k=kinit)
-
-            ## Carry out exp model fit
-            nls.out <-
-              minpack.lm::nls.lm(
-                par = p.init,
-                fn = exp.model2.residuals,
-                observed = y,
-                x = x,
-                x0 = x0,
-                control = minpack.lm::nls.lm.control(maxiter = 500)
-              )
-
-            # B
-            y.mirror <- exp.model2(as.list(coef(nls.out)), x, x0=x0)
-
-            # Extrapolate y
-            ref.curve.prev.mirror$y <- exp.model2(as.list(coef(nls.out)), ref.curve.prev.mirror$x, x0=x0)
-
-            # first6 %>%
-            #   ggplot(aes(x=x,y=y))+
-            #   geom_point()+
-            #   geom_point(data=first6.mirror,col='red')+
-            #   geom_line(data=ref)+
-            #   geom_line(data=ref.mirror,col='red')+
-            #   geom_point(data=ref.curve.prev,pch=1)+
-            #   geom_point(data=ref.curve.prev.mirror,pch=1,col='red')
-            # OK
-          }
-        }
-
-        # Exponential fit for no-asymptote (can be programmed more efficiently):
-        if(!asymptote_right)
-        {
-          message("  >> Applying NO-asymptote reference curve LEFT-side extrapolation NOT YET IMPLEMENTED")
-          stop("  >>  Processing stopped!")
-          # Implementation can be carried out similar to right-side no-asymptote extrapolation
-        }
-
-        # -- Back-mirror --
-        first6 <- first6.mirror %>%
-          mutate(x=-x) %>%
-          arrange(x)
-        # Mirror ref.curve.prev too, for extrapolation
-        ref.curve.prev <- ref.curve.prev.mirror %>%
-          mutate(x=-x) %>%
-          arrange(x)
-
-        # JL 230607 Assign extrapolation reference part to seg=-99 for plotting purposes
-        ref.curve.prev$seg <- -99
-
-        ref <- rbind(ref.curve.prev,ref)
-
-        # JL 230607
-        # Keep extensions with associated query curve ucov
-        ref.curve.prev$ucov <- i.ucov  # Included reference curve extrapolation
-        ref.extensions.all  <- rbind(ref.extensions.all,ref.curve.prev)  # Included reference curve extrapolation
-
-        # Check:
-        if(cur.ref.seg != cur.query.seg) stop("Error segment number assignment in reference extrapolation block")
-      }
-
     }
 
     # Collect all typical curves with scaling factors and scaled x,y values
