@@ -4,10 +4,12 @@
 \alias{p.vachette}
 \title{p.vachette}
 \usage{
-p.vachette(vachette_data)
+p.vachette(vachette_data, log.x = FALSE)
 }
 \arguments{
 \item{vachette_data}{Object of class \code{vachette_data}}
+
+\item{log.x}{Set to \code{TRUE} to plot x axis on log scale}
 }
 \value{
 Object of class \code{ggplot2}

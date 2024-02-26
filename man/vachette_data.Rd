@@ -10,7 +10,6 @@ vachette_data(
   sim.data = NULL,
   covariates,
   ref.dosenr,
-  log.x = FALSE,
   iiv.correction = FALSE,
   error.model = c("proportional", "additive"),
   model.name = NULL,
@@ -27,8 +26,6 @@ vachette_data(
 \item{covariates}{named character vector; Covariate names with reference values in vachette transformation}
 
 \item{ref.dosenr}{integer; Dose number to use as the reference dose, corresponding to value in "dosenr" column in input data}
-
-\item{log.x}{logical; Apply log(x) conversion. Default \code{FALSE}}
 
 \item{iiv.correction}{logical; Apply inter-individual variability correction. Default \code{FALSE}}
 
