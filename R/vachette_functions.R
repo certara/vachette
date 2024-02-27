@@ -342,12 +342,16 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
     # xsub <- xsub[first_point:length(xsub)]
     # ysub <- ysub[first_point:length(ysub)]
 
-    # Keep points between y-range of 1% and 99% only:
+    message("Points kept in y-range of 2.5% to 97.5% only")
+
     miny  <- min(ysub)
     maxy  <- max(ysub)
     diffy <- maxy - miny
     mydata <- data.frame(x=xsub,y=ysub) %>%
       filter(y >= (miny+0.025*diffy), y <= (miny+0.975*diffy))
+
+    print(paste0("Old y-range: ",miny," to ",maxy))
+    print(paste0("New y-range: ",min(mydata$y)," to ",max(mydata$y)))
 
     ndata     <- nrow(mydata)
     polyorder <- floor(ndata/2)
@@ -433,9 +437,55 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
 
   # Translate to x=0
   t0          <- ref %>% filter(x >= ref.x.start)
-  t1.tmp      <- t0  %>% mutate(x =  x-ref.x.start)
   q0          <- query %>% filter(x >= query.x.start)
-  q1.tmp      <- q0    %>% mutate(x =  x-query.x.start)
+
+  #  ------ JL 20240227 -------------
+  # Remove 1% smallest-y or highest-y from open end tail
+  # Assuming monotonic increasing or decreasing curves
+
+#   print(paste0("Start min[t0,y] ",min(t0$y)))
+#   print(paste0("Start max[t0,y] ",max(t0$y)))
+#   print(paste0("Start min[q0,y] ",min(q0$y)))
+#   print(paste0("Start max[q0,y] ",max(q0$y)))
+
+  frac.off <- 0.01  # Shorten curve by 1% in y-range
+
+  if(t0$y[1] > t0$y[nrow(t0)])
+  {
+    diffy     <- t0$y[1] - t0$y[nrow(t0)]
+    tmaxykeep <- t0$y[1]
+    tminykeep <- frac.off*diffy + t0$y[nrow(t0)]
+  }
+  if(t0$y[1] < t0$y[nrow(t0)])
+  {
+    diffy     <- t0$y[nrow(t0)] - t0$y[1]
+    tminykeep <- t0$y[1]
+    tmaxykeep <- t0$y[nrow(t0)] - frac.off*diffy
+  }
+  if(q0$y[1] > q0$y[nrow(q0)])
+  {
+    diffy     <- q0$y[1] - q0$y[nrow(q0)]
+    qmaxykeep <- q0$y[1]
+    qminykeep <- frac.off*diffy + q0$y[nrow(q0)]
+  }
+  if(q0$y[1] < q0$y[nrow(q0)])
+  {
+    diffy     <- q0$y[nrow(q0)] - q0$y[1]
+    qminykeep <- q0$y[1]
+    qmaxykeep <- q0$y[nrow(q0)] - frac.off*diffy
+  }
+  t0 <- t0 %>% filter(y>=tminykeep,y<=tmaxykeep)
+  q0 <- q0 %>% filter(y>=qminykeep,y<=qmaxykeep)
+
+  # print(paste0("End   min[t0,y] ",min(t0$y)))
+  # print(paste0("End   max[t0,y] ",max(t0$y)))
+  # print(paste0("End   min[q0,y] ",min(q0$y)))
+  # print(paste0("End   max[q0,y] ",max(q0$y)))
+
+  #  -----------------------------
+
+  t1.tmp      <- t0  %>% mutate(x =  x-ref.x.start)
+  q1.tmp      <- q0  %>% mutate(x =  x-query.x.start)
 
   # Carry out optimization
   t1.fit=lm(y~poly(x,polyorder,raw=F),data=t1.tmp)
@@ -463,11 +513,17 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
 
   # Initial x.scaling from segment preceeding last segment
   # if no landmarks, there is no previous scaling:
-  if (n.segment == 1) x.scaling.init <- 1
-  if (n.segment > 1)  x.scaling.init <- (lm.ref$x[n.segment] - lm.ref$x[n.segment-1])/((lm.query$x[n.segment] - lm.query$x[n.segment-1]))
+  # if (n.segment == 1) x.scaling.init <- 1
+  # if (n.segment > 1)  x.scaling.init <- (lm.ref$x[n.segment] - lm.ref$x[n.segment-1])/((lm.query$x[n.segment] - lm.query$x[n.segment-1]))
+
   # Best estimate of y.scaling.start based on polynomial fits
   y.scaling.init.start <- t1$y[1]/q1$y[1]
-  y.scaling.init.end   <- y.scaling.init.start
+
+  # y.scaling.init.end   <- y.scaling.init.start
+
+  # JL 240227: Better to start with x.scaling.init=1 and y.scaling.init.end=1 to avoid extremes
+  x.scaling.init     <- 1
+  y.scaling.init.end <- 1
 
   result <- optim(par=c(x.scaling.init, y.scaling.init.end), fn=funk,
                   y.scaling.start = y.scaling.init.start, t1=t1, q1=q1,
@@ -477,6 +533,12 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
 
   x.scaling.optim   <- result$par[1]
   y.scale.optim.end <- result$par[2]
+
+  t1 %>%
+    ggplot(aes(x=x,y=y))+
+    geom_line(col='red')+
+    geom_line(data=q1,col='blue')
+
 
   if(x.scaling.optim<=0) stop("Error: zero or negative open end x.scaling factor")
 
@@ -1299,6 +1361,7 @@ print.vachette_data <- function(x, ...) {
 
     scaling   <- 'linear'
     ngrid.fit <- 10
+    print("get.query.x.open.end(1)")
     my.query.lm     <- suppressWarnings(
       get.query.x.open.end(ref,query,my.ref.lm.refined,my.query.lm.refined,
                            ngrid=ngrid.fit,scaling=scaling,polyorder=polyorder)
@@ -1324,6 +1387,7 @@ print.vachette_data <- function(x, ...) {
       my.query.lm.refined.mirror$type[3] <- 'start'
       my.query.lm.refined.mirror         <- my.query.lm.refined.mirror %>% arrange(x)
 
+      print("get.query.x.open.end(2)")
       my.query.lm.mirror     <- suppressWarnings(
         get.query.x.open.end(ref.mirror,query.mirror,my.ref.lm.refined.mirror,my.query.lm.refined.mirror,
                              ngrid=ngrid.fit,scaling=scaling,polyorder=polyorder)
