@@ -534,11 +534,10 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
   x.scaling.optim   <- result$par[1]
   y.scale.optim.end <- result$par[2]
 
-  t1 %>%
-    ggplot(aes(x=x,y=y))+
-    geom_line(col='red')+
-    geom_line(data=q1,col='blue')
-
+  # t1 %>%
+  #   ggplot(aes(x=x,y=y))+
+  #   geom_line(col='red')+
+  #   geom_line(data=q1,col='blue')
 
   if(x.scaling.optim<=0) stop("Error: zero or negative open end x.scaling factor")
 
