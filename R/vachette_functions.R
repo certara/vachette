@@ -427,13 +427,19 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
 
   n.segment        <- nrow(lm.ref)-1
   n.segment.query  <- nrow(lm.query)-1
+  ref.region       <- ref$region[1]
+  query.region     <- query$region[1]
   if(n.segment != n.segment.query) stop("Error: unequal number of segments reference/query")
 
-  # define starting landmark point:
-  if(n.segment==1) ref.x.start     <- 0
-  if(n.segment==1) query.x.start   <- 0
-  if(n.segment>1)  ref.x.start     <- lm.ref$x[n.segment]
-  if(n.segment>1)  query.x.start   <- lm.query$x[n.segment]
+  # define starting landmark point (updated JL 240228, holds for first region only)
+  if(n.segment==1 & ref.region  ==1) ref.x.start     <- 0
+  if(n.segment==1 & query.region==1) query.x.start   <- 0
+  if(n.segment>1 | ref.region   > 1) ref.x.start     <- lm.ref$x[n.segment]
+  if(n.segment>1 | query.region > 1) query.x.start   <- lm.query$x[n.segment]
+  # if(n.segment==1) ref.x.start     <- 0
+  # if(n.segment==1) query.x.start   <- 0
+  # if(n.segment>1)  ref.x.start     <- lm.ref$x[n.segment]
+  # if(n.segment>1)  query.x.start   <- lm.query$x[n.segment]
 
   # Translate to x=0
   t0          <- ref %>% filter(x >= ref.x.start)
@@ -537,16 +543,20 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
   # t1 %>%
   #   ggplot(aes(x=x,y=y))+
   #   geom_line(col='red')+
-  #   geom_line(data=q1,col='blue')
+  #   # geom_point(col='red')+
+  #   geom_line(data=q1,col='blue')+
+  #   # geom_point(data=q1,col='blue')
 
-  if(x.scaling.optim<=0) stop("Error: zero or negative open end x.scaling factor")
+    # message(paste("x.scaling = ",x.scaling.optim))
+  if(x.scaling.optim<=0) message("WARNING: zero or negative open end x.scaling factor")
 
   print(paste0("Optimized last segment x.scaling ",signif(x.scaling.optim,4)))
 
   # Check if last.x fitted curve <= last.x template curve
   # (original translated curves)
   # If not, reverse the fitting and take inverse x.scaling
-  if (max(q1$x) * x.scaling.optim > max(t1$x))
+  # JL 240227 - try reverse also if x.scaling.optim out of range
+  if (max(q1$x) * x.scaling.optim > max(t1$x) | x.scaling.optim <= 0)
   {
     message("  *** Reverse the last segment curve fitting ***")
 
@@ -563,6 +573,10 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
 
     # Invert scaling result:
     x.scaling.optim      <- 1/result$par[1]
+
+    message(paste("x.scaling = ",x.scaling.optim))
+
+    if(x.scaling.optim<=0) stop("ERROR: (Still) zero or negative open end x.scaling factor")
 
     print(paste0("Updated (reversed) last segment x.scaling ",signif(x.scaling.optim,4)))
 
