@@ -354,12 +354,15 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
     print(paste0("New y-range: ",min(mydata$y)," to ",max(mydata$y)))
 
     ndata     <- nrow(mydata)
-    polyorder <- floor(ndata/2)
+    polyorder <- floor(ndata/4)
     # Odd order only:
-    if(abs(polyorder/2 - floor(polyorder/2)) == 0) polyorder <- polyorder-1
+    if(abs(polyorder/4 - floor(polyorder/4)) == 0) polyorder <- polyorder-1
 
-    # Max order = 13 (default)
-    polyorder <- min(13,polyorder)
+    # Use high order, minimum=13
+    if(polyorder < 13) message("Too few grid points for inflection point detemination")
+
+    # Highest order: 99
+    polyorder <- min(99,polyorder)
 
     message(paste0("Polynomial order for open end curve fitting = ",polyorder))
 
