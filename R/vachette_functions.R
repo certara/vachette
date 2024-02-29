@@ -1249,9 +1249,13 @@ print.vachette_data <- function(x, ...) {
     if(n.lm.query > n.lm.ref)
     {
       message("Too few reference landmarks (reference curve too short)")
-      message("Not all observations can be transformed [n.lm.query > n.lm.ref]")
-      # List of un-transformable (corresponding to query segments after last ref landmark number)
-      print(obs.query %>% filter(x >= my.query.lm.transf$x[n.lm.ref]))
+
+      # List of un-transformable (if any, corresponding to query segments after last ref landmark number)
+      obs.query.out <- obs.query %>% filter(x >= my.query.lm.transf$x[n.lm.ref])
+
+      if(nrow(obs.query.out)>0) message("Not all observations can be transformed [n.lm.query > n.lm.ref]")
+      if(nrow(obs.query.out)>0) print(obs.query.out)
+
       # Exclude from transformation:
       obs.query$exclude[obs.query$x >= my.query.lm.transf$x[n.lm.ref]] <- 1
 
