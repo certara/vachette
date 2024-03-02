@@ -354,57 +354,67 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
     print(paste0("New y-range: ",min(mydata$y)," to ",max(mydata$y)))
 
     ndata     <- nrow(mydata)
-    polyorder <- floor(ndata/4)
-    # Odd order only:
-    if(abs(polyorder/4 - floor(polyorder/4)) == 0) polyorder <- polyorder-1
 
-    # Use high order, minimum=13
-    if(polyorder < 13) message("Too few grid points for inflection point detemination")
-
-    # Highest order: 99
-    polyorder <- min(99,polyorder)
-
-    message(paste0("Polynomial order for open end curve fitting = ",polyorder))
-
-    # f2.0 <- inflec(mydata$x, mydata$y, polyorder=polyorder)
-    f2.0 <- extremes(mydata$x, mydata$y, type='inflec', polyorder=polyorder)
-
-    # Test oral absorption case (a) - section to be removed
-    # --------------------------------------------------------------
-    # f1data <- mydata[2:nrow(mydata),] %>%
-    #   rename(x2 = x, y2= y)
-    # f1data <- cbind(f1data,mydata[1:(nrow(mydata)-1),]) %>%
-    #   mutate(x.mid = (x+x2)/2) %>%
-    #   mutate(slp = (y2-y)/(x2-x))
-    #
-    # mydata %>% ggplot(aes(x=x,y=y))+geom_point()+
-    #   geom_point(data=f1data,aes(x=x.mid,y=(-60*slp-1.3)),col='red')+
-    #   coord_cartesian(xlim=c(10,14),ylim=c(2.0,2.2))+
-    #   geom_vline(xintercept=12.55,lty=2)+
-    #   geom_vline(xintercept=12.22,lty=2)+
-    #   geom_vline(xintercept=12.14,lty=2)+
-    #   render
-    # mydata %>% ggplot(aes(x=x,y=y))+geom_point()+
-    #   render
-    # --------------------------------------------------------------
-
-
-    if(!is.na(f2.0[1]) & length(f2.0) > 1)
+    if (ndata<6)
     {
-      message("Warning: multiple inflection points detected for a segment. First inflection point only used")
-      f2.0 <- f2.0[1]
+      message(paste0("Only ",ndata," simulated grid points for segment-",ilm, " available"))
+      message(paste0("No attempt made to find inflection point for this segment"))
     }
-
-    if(!is.na(f2.0[1]))
+    if (ndata>=6)
     {
-      cat(paste0("Inflec detected at x = ",f2.0[1],"\n"))
-      add  <- data.frame(x=f2.0[1],type='inflec')
-      lm   <- rbind(lm,add)
-    }
+      polyorder <- floor(ndata/4)
 
-    if(is.na(f2.0[1]))
-    {
-      message("No inflection point found")
+      # Odd order only:
+      if(abs(polyorder/4 - floor(polyorder/4)) == 0) polyorder <- polyorder-1
+
+      # Use high order, minimum=13
+      if(polyorder < 13) message("Few grid points for inflection point determination")
+
+      # Highest order: 99
+      polyorder <- min(99,polyorder)
+
+      message(paste0("Polynomial order for open end curve fitting = ",polyorder))
+
+      # f2.0 <- inflec(mydata$x, mydata$y, polyorder=polyorder)
+      f2.0 <- extremes(mydata$x, mydata$y, type='inflec', polyorder=polyorder)
+
+      # Test oral absorption case (a) - section to be removed
+      # --------------------------------------------------------------
+      # f1data <- mydata[2:nrow(mydata),] %>%
+      #   rename(x2 = x, y2= y)
+      # f1data <- cbind(f1data,mydata[1:(nrow(mydata)-1),]) %>%
+      #   mutate(x.mid = (x+x2)/2) %>%
+      #   mutate(slp = (y2-y)/(x2-x))
+      #
+      # mydata %>% ggplot(aes(x=x,y=y))+geom_point()+
+      #   geom_point(data=f1data,aes(x=x.mid,y=(-60*slp-1.3)),col='red')+
+      #   coord_cartesian(xlim=c(10,14),ylim=c(2.0,2.2))+
+      #   geom_vline(xintercept=12.55,lty=2)+
+      #   geom_vline(xintercept=12.22,lty=2)+
+      #   geom_vline(xintercept=12.14,lty=2)+
+      #   render
+      # mydata %>% ggplot(aes(x=x,y=y))+geom_point()+
+      #   render
+      # --------------------------------------------------------------
+
+
+      if(!is.na(f2.0[1]) & length(f2.0) > 1)
+      {
+        message("Warning: multiple inflection points detected for a segment. First inflection point only used")
+        f2.0 <- f2.0[1]
+      }
+
+      if(!is.na(f2.0[1]))
+      {
+        cat(paste0("Inflec detected at x = ",f2.0[1],"\n"))
+        add  <- data.frame(x=f2.0[1],type='inflec')
+        lm   <- rbind(lm,add)
+      }
+
+      if(is.na(f2.0[1]))
+      {
+        message("No inflection point found")
+      }
     }
   }
 
@@ -452,10 +462,10 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
   # Remove 1% smallest-y or highest-y from open end tail
   # Assuming monotonic increasing or decreasing curves
 
-#   print(paste0("Start min[t0,y] ",min(t0$y)))
-#   print(paste0("Start max[t0,y] ",max(t0$y)))
-#   print(paste0("Start min[q0,y] ",min(q0$y)))
-#   print(paste0("Start max[q0,y] ",max(q0$y)))
+  #   print(paste0("Start min[t0,y] ",min(t0$y)))
+  #   print(paste0("Start max[t0,y] ",max(t0$y)))
+  #   print(paste0("Start min[q0,y] ",min(q0$y)))
+  #   print(paste0("Start max[q0,y] ",max(q0$y)))
 
   frac.off <- 0.01  # Shorten curve by 1% in y-range
 
@@ -550,7 +560,7 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
   #   geom_line(data=q1,col='blue')+
   #   # geom_point(data=q1,col='blue')
 
-    # message(paste("x.scaling = ",x.scaling.optim))
+  # message(paste("x.scaling = ",x.scaling.optim))
   if(x.scaling.optim<=0) message("WARNING: zero or negative open end x.scaling factor")
 
   print(paste0("Optimized last segment x.scaling ",signif(x.scaling.optim,4)))
