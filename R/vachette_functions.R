@@ -124,10 +124,6 @@ extremes <- function(x,y,type='minmax',polyorder=6)
 
   mydata$fit <- predict(fit)
 
-  mydata %>%  ggplot(aes(x=x,y=y))+
-    geom_point()+
-    geom_point(aes(y=fit),col='red',pch=1)
-
   # y'(x)  (f1)
   f1.coeff <- NULL
   for(icoeff in c(2:length(f0.coeff))) # Skip intercept --> 0
@@ -221,6 +217,25 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
   xstart <- x[1]
   xend   <- x[length(x)]
 
+  # JL 240313
+  # Quick check if there should be a min or max
+  # If not detected, too few grid points to detect and shortest piece is to be removed
+  # E.g. short infusion
+  SETMAX <- FALSE
+  SETMIN <- FALSE
+  if(max(y) > y[1] & max(y) > y[length(y)])
+  {
+    message("Max expected")
+    SETMAX  <- TRUE
+    gridmax <- c(1:length(y))[grepl(max(y),y)]
+  }
+  if(min(y) < y[1] & min(y) < y[length(y)])
+  {
+    message("Min expected")
+    SETMIN <- TRUE
+    gridmin <- c(1:length(y))[grepl(min(y),y)]
+  }
+
   # ------------------------------------------------
   # Stop detecting extremes and inflection points if curve does not change anymore within
   #      tolerance with respect to last datapoint provided
@@ -241,6 +256,14 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
   # (Local) extremes - not tested in case of multiple min/max's
   f1.0  <- photobiology::get_peaks(x,y,span=w)$x
   npeak <- length(f1.0)
+
+  if(npeak == 0 & SETMAX)
+  {
+    add    <- data.frame(x=x[gridmax],type='max')
+    lm     <- rbind(lm,add)
+    nminmax <- nminmax + 1
+    message("Raw max landmark added")
+  }
   if(npeak>=1)
   {
     for(ipeak in c(1:npeak))
@@ -277,6 +300,14 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
 
   f1.0 <- photobiology::get_valleys(x,y,span=w)$x
   nvalley <- length(f1.0)
+
+  if(nvalley == 0 & SETMIN)
+  {
+    add    <- data.frame(x=x[gridmin],type='min')
+    lm     <- rbind(lm,add)
+    nminmax <- nminmax + 1
+    message("Raw min landmark added")
+  }
   if(nvalley>=1)
   {
     for(ivalley in c(1:nvalley))
@@ -304,7 +335,7 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
       # tmp
       # newvalley <- f1.0[ivalley]
 
-      add    <- data.frame(x=newvalley,type='max')
+      add    <- data.frame(x=newvalley,type='min')
       lm     <- rbind(lm,add)
 
       nminmax <- nminmax + 1
@@ -347,20 +378,40 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
     miny  <- min(ysub)
     maxy  <- max(ysub)
     diffy <- maxy - miny
-    mydata <- data.frame(x=xsub,y=ysub) %>%
-      filter(y >= (miny+0.025*diffy), y <= (miny+0.975*diffy))
+
+    # JL 240313: truncate only when first point is "start" or when last point is "end"
+    # REMOVE_HIGH <- FALSE
+    # REMOVE_LOW  <- FALSE
+    # if(lm$type[ilm-1]=='start' & lm$type[ilm]=='min') REMOVE_HIGH <- TRUE # Trunc. at start
+    # if(lm$type[ilm-1]=='start' & lm$type[ilm]=='max') REMOVE_LOW  <- TRUE # Trunc. at start
+    # if(lm$type[ilm-1]=='max'   & lm$type[ilm]=='end') REMOVE_LOW  <- TRUE # Trunc. at end
+    # if(lm$type[ilm-1]=='min'   & lm$type[ilm]=='end') REMOVE_HIGH <- TRUE # Trunc. at end
+
+    # JL 240314: truncate only when first point is "start" or when last point is "end"
+    #            PROBABLY BETTER TO TRUNC AT BOTH SIDES (THERE'S ALSO GRADUAL DECREASE FROM E.G. A MAX)
+    REMOVE_HIGH <- TRUE
+    REMOVE_LOW  <- TRUE
+    mydata <- data.frame(x=xsub,y=ysub)
+    if(REMOVE_LOW)
+    {
+      mydata <- mydata %>% filter(y >= (miny+0.025*diffy))
+    }
+    if(REMOVE_HIGH)
+    {
+      mydata <- mydata %>% filter(y <= (miny+0.975*diffy))
+    }
 
     print(paste0("Old y-range: ",miny," to ",maxy))
     print(paste0("New y-range: ",min(mydata$y)," to ",max(mydata$y)))
 
     ndata     <- nrow(mydata)
 
-    if (ndata<6)
+    if (ndata<7)
     {
       message(paste0("Only ",ndata," simulated grid points for segment-",ilm, " available"))
       message(paste0("No attempt made to find inflection point for this segment"))
     }
-    if (ndata>=6)
+    if (ndata>=7)
     {
       polyorder <- floor(ndata/4)
 
@@ -377,26 +428,6 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
 
       # f2.0 <- inflec(mydata$x, mydata$y, polyorder=polyorder)
       f2.0 <- extremes(mydata$x, mydata$y, type='inflec', polyorder=polyorder)
-
-      # Test oral absorption case (a) - section to be removed
-      # --------------------------------------------------------------
-      # f1data <- mydata[2:nrow(mydata),] %>%
-      #   rename(x2 = x, y2= y)
-      # f1data <- cbind(f1data,mydata[1:(nrow(mydata)-1),]) %>%
-      #   mutate(x.mid = (x+x2)/2) %>%
-      #   mutate(slp = (y2-y)/(x2-x))
-      #
-      # mydata %>% ggplot(aes(x=x,y=y))+geom_point()+
-      #   geom_point(data=f1data,aes(x=x.mid,y=(-60*slp-1.3)),col='red')+
-      #   coord_cartesian(xlim=c(10,14),ylim=c(2.0,2.2))+
-      #   geom_vline(xintercept=12.55,lty=2)+
-      #   geom_vline(xintercept=12.22,lty=2)+
-      #   geom_vline(xintercept=12.14,lty=2)+
-      #   render
-      # mydata %>% ggplot(aes(x=x,y=y))+geom_point()+
-      #   render
-      # --------------------------------------------------------------
-
 
       if(!is.na(f2.0[1]) & length(f2.0) > 1)
       {
@@ -459,16 +490,12 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
   q0          <- query %>% filter(x >= query.x.start)
 
   #  ------ JL 20240227 -------------
-  # Remove 1% smallest-y or highest-y from open end tail
+  # Remove 2.5% smallest-y or highest-y from open end tail
   # Assuming monotonic increasing or decreasing curves
 
-  #   print(paste0("Start min[t0,y] ",min(t0$y)))
-  #   print(paste0("Start max[t0,y] ",max(t0$y)))
-  #   print(paste0("Start min[q0,y] ",min(q0$y)))
-  #   print(paste0("Start max[q0,y] ",max(q0$y)))
+  frac.off <- 0.025  # Shorten curve by 2.5% in y-range
 
-  frac.off <- 0.01  # Shorten curve by 1% in y-range
-
+  # JL 240313 - no change
   if(t0$y[1] > t0$y[nrow(t0)])
   {
     diffy     <- t0$y[1] - t0$y[nrow(t0)]
@@ -493,20 +520,23 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
     qminykeep <- q0$y[1]
     qmaxykeep <- q0$y[nrow(q0)] - frac.off*diffy
   }
+
   t0 <- t0 %>% filter(y>=tminykeep,y<=tmaxykeep)
   q0 <- q0 %>% filter(y>=qminykeep,y<=qmaxykeep)
-
-  # print(paste0("End   min[t0,y] ",min(t0$y)))
-  # print(paste0("End   max[t0,y] ",max(t0$y)))
-  # print(paste0("End   min[q0,y] ",min(q0$y)))
-  # print(paste0("End   max[q0,y] ",max(q0$y)))
 
   #  -----------------------------
 
   t1.tmp      <- t0  %>% mutate(x =  x-ref.x.start)
   q1.tmp      <- q0  %>% mutate(x =  x-query.x.start)
+  # JL 240318 - to prevent issues??
+  # t1.tmp      <- t0  %>% mutate(x =  x-t0$x[1])
+  # q1.tmp      <- q0  %>% mutate(x =  x-q0$x[1])
 
   # Carry out optimization
+  # print(paste0("Length t1.tmp ",nrow(t1.tmp)))
+  # print(paste0("Length q1.tmp ",nrow(q1.tmp)))
+  # print(paste0("Polyorder applied ",polyorder))
+
   t1.fit=lm(y~poly(x,polyorder,raw=F),data=t1.tmp)
   q1.fit=lm(y~poly(x,polyorder,raw=F),data=q1.tmp)
 
@@ -552,13 +582,6 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
 
   x.scaling.optim   <- result$par[1]
   y.scale.optim.end <- result$par[2]
-
-  # t1 %>%
-  #   ggplot(aes(x=x,y=y))+
-  #   geom_line(col='red')+
-  #   # geom_point(col='red')+
-  #   geom_line(data=q1,col='blue')+
-  #   # geom_point(data=q1,col='blue')
 
   # message(paste("x.scaling = ",x.scaling.optim))
   if(x.scaling.optim<=0) message("WARNING: zero or negative open end x.scaling factor")
@@ -625,6 +648,10 @@ funk <- function(param,y.scaling.start,t1,q1,t1.fit,q1.fit,ngrid=10){
 
   x.scaling     <- param[1]
   y.scaling.end <- param[2]
+
+  # JL240318 Do not allow for negative x.scaling and y.scaling.end ...
+  x.scaling     <- abs(x.scaling)
+  y.scaling.end <- abs(y.scaling.end)
 
   # ----
 
@@ -1373,7 +1400,7 @@ print.vachette_data <- function(x, ...) {
     }
 
     # JL 02-Feb-2024
-    polyorder <- 9
+    polyorder <- 13
     SIGMOID = FALSE
     if (nrow(my.ref.lm.refined) == 3 & my.ref.lm.refined$type[2] == 'inflec')
     {
@@ -1889,15 +1916,6 @@ print.vachette_data <- function(x, ...) {
             # Extrapolate y
             ref.curve.prev.mirror$y <- exp.model2(as.list(coef(nls.out)), ref.curve.prev.mirror$x, x0=x0)
 
-            # first6 %>%
-            #   ggplot(aes(x=x,y=y))+
-            #   geom_point()+
-            #   geom_point(data=first6.mirror,col='red')+
-            #   geom_line(data=ref)+
-            #   geom_line(data=ref.mirror,col='red')+
-            #   geom_point(data=ref.curve.prev,pch=1)+
-            #   geom_point(data=ref.curve.prev.mirror,pch=1,col='red')
-            # OK
           }
         }
 
