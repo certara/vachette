@@ -2121,7 +2121,6 @@ print.vachette_data <- function(x, ...) {
 
   n.ucov <- vachette_data$n.ucov
   for(i.ucov in c(1:n.ucov))
-    # for(i.ucov in c(i.ucov.start:i.ucov.end))
   {
     typ.curve <- typ.orig %>% filter(ucov==i.ucov)
     ref.curve <- typ.orig %>% filter(ucov==ref.ucov)

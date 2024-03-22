@@ -145,8 +145,8 @@ vachette_data <-
     typ.data %>% dplyr::select(dplyr::all_of(typ_cols_to_select), dplyr::all_of(names(covariates)))
 
   # Extract first/last observed x (look for max x/time in obs and sim data)
-  xstart <- min(obs.data$x,sim.data$x)
-  xstop  <- max(obs.data$x,sim.data$x)
+  # xstart <- min(obs.data$x,sim.data$x)
+  # xstop  <- max(obs.data$x,sim.data$x)
   # Define unique covariate combination as new 'COV' column.
   obs.orig <- obs.data %>%
     mutate(COV = paste(!!!syms(names(covariates))))
@@ -179,9 +179,9 @@ vachette_data <-
     obs.orig$x <- log(obs.orig$x)
     sim.orig$x <- log(sim.orig$x)
 
-    if(xstart<=0 | xstop<=0) stop("Error, no log(x) conversion possible for observed/simulated x <= 0")
-    xstart <- log(xstart)
-    xstop  <- log(xstop)
+    # if(xstart<=0 | xstop<=0) stop("Error, no log(x) conversion possible for observed/simulated x <= 0")
+    # xstart <- log(xstart)
+    # xstop  <- log(xstop)
   }
 
   list(
@@ -197,8 +197,8 @@ vachette_data <-
     ref.region = ref.region,
     ref.dosenr = ref.dosenr,
     log.x = log.x,
-    xstart = xstart,
-    xstop = xstop,
+    # xstart = xstart,
+    # xstop = xstop,
     n.ucov = n.ucov
   ) %>%
     structure(class = "vachette_data")

@@ -558,6 +558,7 @@ p.obs.cov <- function(vachette_data) {
 
   obs.all <- vachette_data$obs.all
   curves.all <- vachette_data$curves.all
+
   xstart <- min(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
   xstop  <- max(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
 
@@ -616,8 +617,9 @@ p.vachette.arrow <- function(vachette_data) {
   if(is.null(ref.extensions.all))  extensiontxt <- ""
   if(!is.null(ref.extensions.all)) extensiontxt <- "Dashed: extrapolation reference curve"
 
-    xstart <- min(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
-  xstop  <- max(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
+  # After scaling
+  xstartloc <- min(vachette_data$obs.all$x.scaled)
+  xstoploc  <- max(vachette_data$obs.all$x.scaled)
 
   gg <- vachette_data$obs.all %>%
     ggplot(aes(x=x,y=y)) +
@@ -635,7 +637,7 @@ p.vachette.arrow <- function(vachette_data) {
   {
     gg <- gg + geom_line(
       data = ref.extensions.all %>% filter(ucov==max.x.ucov),
-      aes(x = x, y = y, col = 'Reference', group=seg), lty=2,
+      aes(x = x, y = y, col = 'Reference',group=seg), lty=2,
       lwd = 0.8, col='grey30'
     )
   }
@@ -654,7 +656,7 @@ p.vachette.arrow <- function(vachette_data) {
                                 'Transformed' = 'purple'))
 
 
-  gg <- gg + coord_cartesian(xlim=c(xstart,xstop))
+  gg <- gg + coord_cartesian(xlim=c(xstartloc,xstoploc))
 
   gg <- gg +
     labs(title=paste0(vachette_data$model.name,"; Observations + transformations"),
@@ -694,8 +696,10 @@ p.vachette <- function(vachette_data) {
 
   obs.all            <- vachette_data$obs.all
   curves.all         <- vachette_data$curves.all
-  xstart <- min(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
-  xstop  <- max(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
+
+  # After scaling
+  xstartloc <- min(vachette_data$obs.all$x.scaled)
+  xstoploc  <- max(vachette_data$obs.all$x.scaled)
 
   # extract errors
   # errors <- vachette_data$errors
@@ -748,7 +752,7 @@ p.vachette <- function(vachette_data) {
       )
     )
 
-  gg <- gg + coord_cartesian(xlim=c(xstart,xstop))
+  gg <- gg + coord_cartesian(xlim=c(xstartloc,xstoploc))
 
   gg <- gg +
     labs(
