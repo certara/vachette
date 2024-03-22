@@ -613,7 +613,10 @@ p.vachette.arrow <- function(vachette_data) {
   ref.extensions.all <- vachette_data$ref.extensions.all
   # Plot longest ref.extension.all only. Pick first is multiple occurences
   if(!is.null(ref.extensions.all)) max.x.ucov <- ref.extensions.all$ucov[ref.extensions.all$x == max(ref.extensions.all$x)][1]
-  xstart <- min(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
+  if(is.null(ref.extensions.all))  extensiontxt <- ""
+  if(!is.null(ref.extensions.all)) extensiontxt <- "Dashed: extrapolation reference curve"
+
+    xstart <- min(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
   xstop  <- max(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
 
   gg <- vachette_data$obs.all %>%
@@ -632,7 +635,7 @@ p.vachette.arrow <- function(vachette_data) {
   {
     gg <- gg + geom_line(
       data = ref.extensions.all %>% filter(ucov==max.x.ucov),
-      aes(x = x, y = y, col = 'Reference'), lty=2,
+      aes(x = x, y = y, col = 'Reference', group=seg), lty=2,
       lwd = 0.8, col='grey30'
     )
   }
@@ -656,8 +659,8 @@ p.vachette.arrow <- function(vachette_data) {
   gg <- gg +
     labs(title=paste0(vachette_data$model.name,"; Observations + transformations"),
          subtitle = paste0(if (vachette_data$ADD_TR)
-           "Additive Error", if (vachette_data$PROP_TR)
-             "Proportional Error","; Dashed: extrapolation reference curve"),
+           "Additive Error; ", if (vachette_data$PROP_TR)
+             "Proportional Error; ",extensiontxt),
          caption = paste0("Reference Covariate: ",
                           paste0(
                             names(vachette_data$covariates),
@@ -701,8 +704,10 @@ p.vachette <- function(vachette_data) {
   ref.extensions.all <- vachette_data$ref.extensions.all
   # Plot longest ref.extension.all only. Pick first is multiple occurences
   if(!is.null(ref.extensions.all)) max.x.ucov <- ref.extensions.all$ucov[ref.extensions.all$x == max(ref.extensions.all$x)][1]
+  if(is.null(ref.extensions.all))  extensiontxt <- ""
+  if(!is.null(ref.extensions.all)) extensiontxt <- "Dashed: extrapolation reference curve"
 
-  gg <- obs.all %>%
+    gg <- obs.all %>%
     ggplot(aes(x = x, y = y)) +
 
     geom_point(
@@ -726,7 +731,7 @@ p.vachette <- function(vachette_data) {
   {
     gg <- gg + geom_line(
       data = ref.extensions.all %>% filter(ucov==max.x.ucov),
-      aes(x = x, y = y, col = 'Reference'), lty=2,
+      aes(x = x, y = y, col = 'Reference', group=seg), lty=2,
       lwd = 0.8, col='grey30'
     )
   }
@@ -749,8 +754,8 @@ p.vachette <- function(vachette_data) {
     labs(
       title = paste0(vachette_data$model.name, "; Observations + transformations"),
       subtitle = paste0(if (vachette_data$ADD_TR)
-        "Additive Error", if (vachette_data$PROP_TR)
-          "Proportional Error","; Dashed: extrapolation reference curve"),
+        "Additive Error; ", if (vachette_data$PROP_TR)
+          "Proportional Error; ",extensiontxt),
       caption = paste0("Reference Covariate: ",
                        paste0(
                          names(vachette_data$covariates),

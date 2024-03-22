@@ -401,8 +401,8 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
       mydata <- mydata %>% filter(y <= (miny+0.975*diffy))
     }
 
-    print(paste0("Old y-range: ",miny," to ",maxy))
-    print(paste0("New y-range: ",min(mydata$y)," to ",max(mydata$y)))
+    # print(paste0("Old y-range: ",miny," to ",maxy))
+    # print(paste0("New y-range: ",min(mydata$y)," to ",max(mydata$y)))
 
     ndata     <- nrow(mydata)
 
@@ -1013,8 +1013,7 @@ print.vachette_data <- function(x, ...) {
   ref.dosenr <- vachette_data$ref.dosenr
 
   for(i.ucov in c(1:dim(tab.ucov)[1])) {
-    # for(i.ucov in c(i.ucov.start:i.ucov.end)) {
-    # Initialize
+  # Initialize
     REMOVE_OBS         <- FALSE
     remove.obs.after.x <- NULL
 
@@ -1468,7 +1467,7 @@ print.vachette_data <- function(x, ...) {
     message(" *** Carry out checks (to be implemented) ***")
 
     # Recalc landmark y's
-    my.ref.lm$y    <- approx(ref$x,ref$y, xout=my.ref.lm$x)$y
+    my.ref.lm$y    <- approx(ref$x,ref$y,     xout=my.ref.lm$x)$y
     my.query.lm$y  <- approx(query$x,query$y, xout=my.query.lm$x)$y
 
     # Collect all landmarks
@@ -1751,7 +1750,7 @@ print.vachette_data <- function(x, ...) {
         }
 
 
-        # JL 230607 Assign extrapolation reference part to seg=-99 for plotting purposes
+        # JL 230607 Assign extrapolation reference part to seg=-99 (right) for plotting purposes
         ref.curve.next$seg <- -99
 
         ref <- rbind(ref,ref.curve.next)
@@ -1917,27 +1916,62 @@ print.vachette_data <- function(x, ...) {
             ref.curve.prev.mirror$y <- exp.model2(as.list(coef(nls.out)), ref.curve.prev.mirror$x, x0=x0)
 
           }
+
+          # -- Back-mirror --
+          first6 <- first6.mirror %>%
+            mutate(x=-x) %>%
+            arrange(x)
+          # Mirror ref.curve.prev too, for extrapolation
+          ref.curve.prev <- ref.curve.prev.mirror %>%
+            mutate(x=-x) %>%
+            arrange(x)
         }
 
         # Exponential fit for no-asymptote (can be programmed more efficiently):
-        if(!asymptote_right)
+        if(!asymptote_left)
         {
-          message("  >> Applying NO-asymptote reference curve LEFT-side extrapolation NOT YET IMPLEMENTED")
-          stop("  >>  Processing stopped!")
+          message("  >> Applying NO-asymptote reference curve LEFT-side extrapolation **NEWLY** IMPLEMENTED")
+
+          # Double mirror, so back to normal x-axis:
+          x <- first6$x
+          y <- first6$y
+
+          # 2. New exponent fit based on R = A + B*exp(-k*(t-t0)) with fixed t0
+          xa <- (x[1] + x[2])/2
+          xb <- (x[5] + x[6])/2
+          Sa <- (y[1] + y[2])/2
+          Sb <- (y[5] + y[6])/2
+
+          x0    = xa
+          Ainit = 0
+          Binit = Sa-Sb
+          if(Sa>=Sb) kinit = -log(Sb/Sa)/(xb-xa)
+          if(Sa<Sb)  kinit = -log(Sa/Sb)/(xb-xa)
+          Ainit = Sb   # Better estimate for asymptote value
+
+          # (Add option for user to set asymptote to zero)
+
+          p.init <- list(A=Ainit, B=Binit, k=kinit)
+
+          ## Carry out exp model fit
+          nls.out <-
+            minpack.lm::nls.lm(
+              par = p.init,
+              fn = exp.model2.residuals,
+              observed = y,
+              x = x,
+              x0 = x0,
+              control = minpack.lm::nls.lm.control(maxiter = 500)
+            )
+
+          # Extrapolate y
+          ref.curve.prev$y <- exp.model2(as.list(coef(nls.out)), ref.curve.prev$x, x0=x0)
+
           # Implementation can be carried out similar to right-side no-asymptote extrapolation
         }
 
-        # -- Back-mirror --
-        first6 <- first6.mirror %>%
-          mutate(x=-x) %>%
-          arrange(x)
-        # Mirror ref.curve.prev too, for extrapolation
-        ref.curve.prev <- ref.curve.prev.mirror %>%
-          mutate(x=-x) %>%
-          arrange(x)
-
-        # JL 230607 Assign extrapolation reference part to seg=-99 for plotting purposes
-        ref.curve.prev$seg <- -99
+        # JL 230607 Assign extrapolation reference part to seg=-88 (left) for plotting purposes
+        ref.curve.prev$seg <- -88
 
         ref <- rbind(ref.curve.prev,ref)
 
