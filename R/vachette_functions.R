@@ -1544,7 +1544,11 @@ print.vachette_data <- function(x, ...) {
     # ---------------------------------------------------------------
 
     # Default no extension for extrapolation
-    EXTENSION <- FALSE
+    EXTENSION       <- FALSE
+    EXTENSION_RIGHT <- FALSE
+    EXTENSION_LEFT  <- FALSE
+
+    my.query.lm.extension <- NULL
 
     # Check if there are observation at all
     OBSERV <- ifelse(dim(obs.query)[1]>0,T,F)
@@ -1588,7 +1592,8 @@ print.vachette_data <- function(x, ...) {
       if(max(my.query.lm$x) < max(obs.query$x))
       {
 
-        EXTENSION <- TRUE
+        EXTENSION       <- TRUE
+        EXTENSION_RIGHT <- TRUE
 
         message('*** RIGHT Extension reference curve by exponential extrapolation ***')
 
@@ -1612,7 +1617,7 @@ print.vachette_data <- function(x, ...) {
         # QUERY
         cur.query.seg <- query$seg[dim(query[!is.na(query$seg),])[1]]
         # Adjust my.query.lm (always last point of last segment)
-        my.query.lm.extension <- my.query.lm
+        my.query.lm.extension           <- my.query.lm
         my.query.lm.extension$x[nseg+1] <- max.obs.x
         my.query.lm.extension$y[nseg+1] <- max.obs.y.typ
 
@@ -1772,7 +1777,8 @@ print.vachette_data <- function(x, ...) {
       if(min(my.query.lm$x) > min(obs.query$x))
       {
 
-        EXTENSION <- TRUE
+        EXTENSION      <- TRUE
+        EXTENSION_LEFT <- TRUE
 
         message('*** LEFT Extension reference curve by exponential extrapolation ***')
 
@@ -1793,7 +1799,8 @@ print.vachette_data <- function(x, ...) {
         # QUERY (left extension --> seg=1)
         cur.query.seg <- 1
         # Adjust my.query.lm
-        my.query.lm.extension      <- my.query.lm
+        if(!EXTENSION_RIGHT) my.query.lm.extension <- my.query.lm
+        if(EXTENSION_RIGHT)  my.query.lm.extension <- my.query.lm.extension
         my.query.lm.extension$x[1] <- min.obs.x
         my.query.lm.extension$y[1] <- min.obs.y.typ
 
