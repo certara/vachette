@@ -571,8 +571,9 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
   # y.scaling.init.end   <- y.scaling.init.start
 
   # JL 240227: Better to start with x.scaling.init=1 and y.scaling.init.end=1 to avoid extremes
-  x.scaling.init     <- 1
-  y.scaling.init.end <- 1
+  # JL 240325: assure positive x.scaling only
+  x.scaling.init     <- log(1)
+  y.scaling.init.end <- log(1)
 
   result <- optim(par=c(x.scaling.init, y.scaling.init.end), fn=funk,
                   y.scaling.start = y.scaling.init.start, t1=t1, q1=q1,
@@ -580,8 +581,8 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
 
   ofv = result$value
 
-  x.scaling.optim   <- result$par[1]
-  y.scale.optim.end <- result$par[2]
+  x.scaling.optim   <- exp(result$par[1])
+  y.scale.optim.end <- exp(result$par[2])
 
   # message(paste("x.scaling = ",x.scaling.optim))
   if(x.scaling.optim<=0) message("WARNING: zero or negative open end x.scaling factor")
@@ -597,9 +598,10 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
     message("  *** Reverse the last segment curve fitting ***")
 
     # Both x and y init scaling factors inverted
-    x.scaling.init       <- 1/x.scaling.init
     y.scaling.init.start <- 1/y.scaling.init.start
-    y.scaling.init.end   <- 1/y.scaling.init.end
+    # JL 240325: assure positive x.scaling only
+    x.scaling.init     <- log(1)
+    y.scaling.init.end <- log(1)
 
     result <- optim(par=c(x.scaling.init, y.scaling.init.end), fn=funk,
                     y.scaling.start = y.scaling.init.start, t1=q1, q1=t1,
@@ -608,7 +610,7 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
     ofv = result$value
 
     # Invert scaling result:
-    x.scaling.optim      <- 1/result$par[1]
+    x.scaling.optim      <- 1/exp(result$par[1])
 
     message(paste("x.scaling = ",x.scaling.optim))
 
@@ -646,12 +648,12 @@ funk <- function(param,y.scaling.start,t1,q1,t1.fit,q1.fit,ngrid=10){
 
   # ---- Inits ------
 
-  x.scaling     <- param[1]
-  y.scaling.end <- param[2]
+  x.scaling     <- exp(param[1])
+  y.scaling.end <- exp(param[2])
 
   # JL240318 Do not allow for negative x.scaling and y.scaling.end ...
-  x.scaling     <- abs(x.scaling)
-  y.scaling.end <- abs(y.scaling.end)
+  # x.scaling     <- abs(x.scaling)
+  # y.scaling.end <- abs(y.scaling.end)
 
   # ----
 
@@ -689,6 +691,8 @@ funk <- function(param,y.scaling.start,t1,q1,t1.fit,q1.fit,ngrid=10){
   # ------ OFV -----
 
   fit=sum((t3Grid$y - q3Grid$y.scaled)**2)
+
+  # print(paste(x.scaling,y.scaling.end,fit))
 
   return(fit)
 }
@@ -1013,7 +1017,7 @@ print.vachette_data <- function(x, ...) {
   ref.dosenr <- vachette_data$ref.dosenr
 
   for(i.ucov in c(1:dim(tab.ucov)[1])) {
-  # Initialize
+    # Initialize
     REMOVE_OBS         <- FALSE
     remove.obs.after.x <- NULL
 
