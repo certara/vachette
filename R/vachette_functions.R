@@ -2130,6 +2130,13 @@ print.vachette_data <- function(x, ...) {
 
   } # All i.ucov's
 
+  # Check additive/prop transformations
+  #Init columns
+  obs.all$dist.add.orig <- NA
+  obs.all$dist.add.transformed <- NA
+  obs.all$dist.prop.orig <- NA
+  obs.all$dist.prop.transformed <- NA
+  # All ucov's
   n.ucov <- vachette_data$n.ucov
   for(i.ucov in c(1:n.ucov))
   {
@@ -2137,11 +2144,6 @@ print.vachette_data <- function(x, ...) {
     ref.curve <- typ.orig %>% filter(ucov==ref.ucov)
     obs       <- obs.all  %>% filter(ucov==i.ucov)
 
-    #Init columns
-    obs.all$dist.add.orig <- NA
-    obs.all$dist.add.transformed <- NA
-    obs.all$dist.prop.orig <- NA
-    obs.all$dist.prop.transformed <- NA
     # Additive distances to original curves
     obs.all$dist.add.orig[obs.all$ucov==i.ucov] <- approx(typ.curve$x,typ.curve$y,xout=obs$x)$y - obs$y
     # Vachette transformed - distances to ref curve
