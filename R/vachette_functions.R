@@ -147,9 +147,11 @@ extremes <- function(x,y,type='minmax',polyorder=6)
 
   Im(solutions)
   # Which imaginary are numbers very close to 0,
-  round(Im(solutions), 5)
+  round(Im(solutions), 10)
   # Real numbers, when imaginary part = 0
-  fx.zero <- Re(solutions)[!(round(Im(solutions), 5))] # these are real numbers only, since imaginary part =0
+  # fx.zero <- Re(solutions)[!(round(Im(solutions), 5))] # these are real numbers only, since imaginary part =0
+  # JL 240327 - reduce sensitivity to find solutions
+  fx.zero <- Re(solutions)[!(round(Im(solutions), 10))] # these are real numbers only, since imaginary part =0
 
   # If there is a solution
   if (!is.na(fx.zero[1]))
@@ -252,6 +254,8 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
   add  <- data.frame(x=xend,type='end')
   lm   <- rbind(lm,add)
 
+  # ------------ MIN/MAX -----------
+
   nminmax <- 0
   # (Local) extremes - not tested in case of multiple min/max's
   f1.0  <- photobiology::get_peaks(x,y,span=w)$x
@@ -342,6 +346,8 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
     }
   }
   if (nminmax == 0) message(paste0('No minimum or maximum detected'))
+
+  # ------------ INFLECTION POINTS -----------
 
   # Loop between extremes to detect inflection points
   # First arrange by increasing x
@@ -1159,7 +1165,6 @@ print.vachette_data <- function(x, ...) {
     n.last.data <- max((y.noise %>% filter(noise.flag==F))$n)+1    # +1, since last data point always "noise"
 
     ref.no.noise <- ref[1:n.last.data,]
-    n.ref.noise  <- nrow(ref) - row(ref.no.noise)
 
     # Set query tolerance to tol.noise * y_range * grid_step
     y_range <- max(query$y)-min(query$y)
@@ -1172,14 +1177,10 @@ print.vachette_data <- function(x, ...) {
     n.last.data <- max((y.noise %>% filter(noise.flag==F))$n)+1    # +1, since last data point always "noise"
 
     query.no.noise <- query[1:n.last.data,]
-    n.query.noise  <- nrow(query) - row(query.no.noise)
 
     # Replace
     ref   <- ref.no.noise
     query <- query.no.noise
-
-    # print(paste0(n.ref.noise,  " noisy reference typical data points at end of curve removed"))
-    # print(paste0(n.query.noise," noisy query typical data points at end of curve removed"))
 
     # ---------------------------------------------------------------
     #               ---- Interregion Gap Extrapolation ---
@@ -1264,20 +1265,28 @@ print.vachette_data <- function(x, ...) {
     n.lm.ref   <- nrow(my.ref.lm.init)
     n.lm.query <- nrow(my.query.lm.init)
 
-    # Add exclusion from transformation column
+    # Add exclusion-from-transformation column
     obs.query$exclude <- 0
 
     # New (temporary) landmark dataframe
     my.ref.lm.transf   <- my.ref.lm.init
     my.query.lm.transf <- my.query.lm.init
 
-    # Check order of Landmarks up to second last:
-    n.lm.check <- min(n.lm.ref, n.lm.query) - 1
+    # Check order of Landmarks up to second last (why up to second last?):
+    # n.lm.check <- min(n.lm.ref, n.lm.query) - 1
+    # JL 240327
+    n.lm.check <- min(n.lm.ref, n.lm.query)
     # Match
     if(!identical(my.ref.lm.transf$type[1:n.lm.check],
                   my.query.lm.transf$type[1:n.lm.check]))
     {
-      stop("No matching order of landmarks between reference and query")
+      print("Reference landmarks")
+      print(my.ref.lm.transf)
+      print("Query landmarks")
+      print(my.query.lm.transf)
+      # stop("No matching order of landmarks between reference and query")
+      # JL 240327
+      message("!! No matching order of landmarks between reference and query !!")
     }
 
     # ---------------------------------------------------------------
@@ -1386,6 +1395,45 @@ print.vachette_data <- function(x, ...) {
     }
 
     # ---------------------------------------------------------------
+    # ----          Check number of gridpoints per segment        ---
+    # ---------------------------------------------------------------
+
+    # JL 02-Feb-2024
+    polyorder <- 13
+
+    # -- For James to move: -----
+    stop_quietly <- function() {
+      opt <- options(show.error.messages = FALSE)
+      on.exit(options(opt))
+      stop()
+    }
+    # ----------------------------
+
+    for(iseg in c(1:(nrow(my.ref.lm.refined)-1)))
+    {
+      ref.seg <- ref %>% filter(x>=my.ref.lm.refined$x[iseg] & x<=my.ref.lm.refined$x[(iseg+1)])
+      if(nrow(ref.seg)<(polyorder+3))
+      {
+        message(paste0("Less than ",(polyorder+3)," gridpoints for segment between \"",
+                      my.ref.lm.refined$type[iseg],"\" and \"",my.ref.lm.refined$type[(iseg+1)],
+                      "\" of the reference curve. Currently: ",nrow(ref.seg)," only"))
+        message(paste("---> Please adjust typical curves (finer grid)"))
+        message("*** Vachette processing stopped ***")
+        stop_quietly()
+      }
+      query.seg <- query %>% filter(x>=my.query.lm.refined$x[iseg] & x<=my.query.lm.refined$x[(iseg+1)])
+      if(nrow(query.seg)<(polyorder+3))
+      {
+        message(paste0("Less than ",(polyorder+3)," gridpoints for segment between \"",
+                      my.ref.lm.refined$type[iseg],"\" and \"",my.ref.lm.refined$type[(iseg+1)],
+                      "\" of the query curve at covariate/region combination nr: ",i.ucov, "Currently; ",nrow(query.seg)," only"))
+        message(paste("---> Please adjust typical curves (finer grid)"))
+        message("*** Vachette processing stopped ***")
+        stop_quietly()
+      }
+    }
+
+    # ---------------------------------------------------------------
     # ----          Calculate open end x.scaling factors          ---
     # ---------------------------------------------------------------
 
@@ -1402,15 +1450,14 @@ print.vachette_data <- function(x, ...) {
       message("No landmarks detected, x=0 assumed first landmark")
     }
 
-    # JL 02-Feb-2024
-    polyorder <- 13
+    # ---- Test for sigmoid ---- #
+
     SIGMOID = FALSE
     if (nrow(my.ref.lm.refined) == 3 & my.ref.lm.refined$type[2] == 'inflec')
     {
       message("Sigmoid-shaped curve detected")
       # Vachette will "mirror" first part of curve to estimate x.scaling
       SIGMOID = TRUE
-      polyorder <- 9
 
       # message("Setting inflec points x=0 and x=log(10)")
       # if(my.query.lm.refined$x[2] < 0.1) my.query.lm.refined$x[2] = 0
