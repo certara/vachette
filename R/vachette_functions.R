@@ -150,7 +150,7 @@ extremes <- function(x,y,type='minmax',polyorder=6)
   round(Im(solutions), 10)
   # Real numbers, when imaginary part = 0
   # fx.zero <- Re(solutions)[!(round(Im(solutions), 5))] # these are real numbers only, since imaginary part =0
-  # JL 240327 - reduce sensitivity to find solutions
+  # JL 240327 - adjust sensitivity to find solutions
   fx.zero <- Re(solutions)[!(round(Im(solutions), 10))] # these are real numbers only, since imaginary part =0
 
   # If there is a solution
@@ -425,7 +425,7 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
       if(abs(polyorder/4 - floor(polyorder/4)) == 0) polyorder <- polyorder-1
 
       # Use high order, minimum=13
-      if(polyorder < 13) message("Few grid points for inflection point determination")
+      if(polyorder < 13) message("!! Few grid points for inflection point determination !!")
 
       # Highest order: 99
       polyorder <- min(99,polyorder)
@@ -473,7 +473,7 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
 #' @export
 #'
 get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
-                                 scaling='linear',polyorder=5) {
+                                 scaling='linear',polyorder=9) {
 
   n.segment        <- nrow(lm.ref)-1
   n.segment.query  <- nrow(lm.query)-1
@@ -491,7 +491,7 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
   # if(n.segment>1)  ref.x.start     <- lm.ref$x[n.segment]
   # if(n.segment>1)  query.x.start   <- lm.query$x[n.segment]
 
-  # Translate to x=0
+  # Get open end
   t0          <- ref %>% filter(x >= ref.x.start)
   q0          <- query %>% filter(x >= query.x.start)
 
@@ -529,6 +529,31 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
 
   t0 <- t0 %>% filter(y>=tminykeep,y<=tmaxykeep)
   q0 <- q0 %>% filter(y>=qminykeep,y<=qmaxykeep)
+
+
+  # Check lengths:
+
+  # -- For James to move: -----
+  stop_quietly <- function() {
+    opt <- options(show.error.messages = FALSE)
+    on.exit(options(opt))
+    stop()
+  }
+
+  if(nrow(t0)<(polyorder+1))
+  {
+    message(paste0("Less than ",(polyorder+1)," gridpoints for reference last segment. Currently: ",nrow(t0)," only"))
+    message(paste("---> Please adjust typical curves (finer grid)"))
+    message("*** Vachette processing stopped ***")
+    stop_quietly()
+  }
+  if(nrow(q0)<(polyorder+1))
+  {
+    message(paste0("Less than ",(polyorder+1)," gridpoints for query last segment. Currently: ",nrow(q0)," only"))
+    message(paste("---> Please adjust typical curves (finer grid)"))
+    message("*** Vachette processing stopped ***")
+    stop_quietly()
+  }
 
   #  -----------------------------
 
@@ -1395,45 +1420,6 @@ print.vachette_data <- function(x, ...) {
     }
 
     # ---------------------------------------------------------------
-    # ----          Check number of gridpoints per segment        ---
-    # ---------------------------------------------------------------
-
-    # JL 02-Feb-2024
-    polyorder <- 13
-
-    # -- For James to move: -----
-    stop_quietly <- function() {
-      opt <- options(show.error.messages = FALSE)
-      on.exit(options(opt))
-      stop()
-    }
-    # ----------------------------
-
-    for(iseg in c(1:(nrow(my.ref.lm.refined)-1)))
-    {
-      ref.seg <- ref %>% filter(x>=my.ref.lm.refined$x[iseg] & x<=my.ref.lm.refined$x[(iseg+1)])
-      if(nrow(ref.seg)<(polyorder+3))
-      {
-        message(paste0("Less than ",(polyorder+3)," gridpoints for segment between \"",
-                      my.ref.lm.refined$type[iseg],"\" and \"",my.ref.lm.refined$type[(iseg+1)],
-                      "\" of the reference curve. Currently: ",nrow(ref.seg)," only"))
-        message(paste("---> Please adjust typical curves (finer grid)"))
-        message("*** Vachette processing stopped ***")
-        stop_quietly()
-      }
-      query.seg <- query %>% filter(x>=my.query.lm.refined$x[iseg] & x<=my.query.lm.refined$x[(iseg+1)])
-      if(nrow(query.seg)<(polyorder+3))
-      {
-        message(paste0("Less than ",(polyorder+3)," gridpoints for segment between \"",
-                      my.ref.lm.refined$type[iseg],"\" and \"",my.ref.lm.refined$type[(iseg+1)],
-                      "\" of the query curve at covariate/region combination nr: ",i.ucov, "Currently; ",nrow(query.seg)," only"))
-        message(paste("---> Please adjust typical curves (finer grid)"))
-        message("*** Vachette processing stopped ***")
-        stop_quietly()
-      }
-    }
-
-    # ---------------------------------------------------------------
     # ----          Calculate open end x.scaling factors          ---
     # ---------------------------------------------------------------
 
@@ -1450,8 +1436,8 @@ print.vachette_data <- function(x, ...) {
       message("No landmarks detected, x=0 assumed first landmark")
     }
 
-    # ---- Test for sigmoid ---- #
-
+    # JL 02-Feb-2024
+    polyorder <- 9
     SIGMOID = FALSE
     if (nrow(my.ref.lm.refined) == 3 & my.ref.lm.refined$type[2] == 'inflec')
     {
@@ -1468,7 +1454,6 @@ print.vachette_data <- function(x, ...) {
 
     scaling   <- 'linear'
     ngrid.fit <- 10
-    print("get.query.x.open.end(1)")
     my.query.lm     <- suppressWarnings(
       get.query.x.open.end(ref,query,my.ref.lm.refined,my.query.lm.refined,
                            ngrid=ngrid.fit,scaling=scaling,polyorder=polyorder)
@@ -1494,7 +1479,6 @@ print.vachette_data <- function(x, ...) {
       my.query.lm.refined.mirror$type[3] <- 'start'
       my.query.lm.refined.mirror         <- my.query.lm.refined.mirror %>% arrange(x)
 
-      print("get.query.x.open.end(2)")
       my.query.lm.mirror     <- suppressWarnings(
         get.query.x.open.end(ref.mirror,query.mirror,my.ref.lm.refined.mirror,my.query.lm.refined.mirror,
                              ngrid=ngrid.fit,scaling=scaling,polyorder=polyorder)
