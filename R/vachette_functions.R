@@ -931,6 +931,47 @@ print.vachette_data <- function(x, ...) {
       data <- data %>%
         mutate(AMT = ifelse(II != 0, 1, 0))
     }
+    if (data_type == "sim.data") {
+      dose_data_full <- data %>%
+        select(REP, x, ID, AMT, ADDL, II) %>%
+        filter(ADDL > 0)
+      dose_data_rep_split <- split(data, f = data$REP)
+      for (j in seq_along(dose_data_rep_split)) {
+        dose_data <- dose_data_rep_split[[j]]
+        dosing <- list()
+
+        for (i in 1:nrow(dose_data)) {
+          dose_data_row <- slice(dose_data, i)
+          dosing[[i]] <- data.frame(
+            x = seq(
+              from = dose_data_row$x,
+              by = as.numeric(dose_data_row$II),
+              length.out = as.numeric(dose_data_row$ADDL) + 1
+            ),
+            ID = dose_data_row$ID,
+            AMT = dose_data_row$AMT
+          )
+        }
+      dose_data_expanded <- do.call(rbind, dosing)
+      data <- filter(data, ADDL == 0) %>%
+        select(-ADDL,-II)
+
+      data_new <- bind_rows(data, dose_data_expanded) %>%
+        arrange(ID, x)
+
+      data <- data_new %>%
+        # JL 20-JUN-2023 fix dosenr problem: let AMT rec be first
+        arrange(ID,x,-AMT) %>%
+        # -------------------------------------------------------------------
+      group_by(ID) %>%
+        mutate(dosenr = cumsum(AMT != 0)) %>%
+        ungroup() %>%
+        filter(is.na(AMT) | AMT == 0) %>%
+        select(-AMT)
+      dose_data_rep_split[[j]] <- data
+      }
+      data <- do.call(rbind, dose_data_rep_split)
+    } else {
     dose_data <- data %>%
       select(x, ID, AMT, ADDL, II) %>%
       filter(ADDL > 0)
@@ -963,13 +1004,24 @@ print.vachette_data <- function(x, ...) {
       ungroup() %>%
       filter(is.na(AMT) | AMT == 0) %>%
       select(-AMT)
-
+    }
   }  else if ("EVID" %in% colnames(data)) {
     message(
       "`EVID` column found in ",
       data_type,
       ", creating `dosenr` column in data for corresponding ref.dosenr value"
     )
+    if (data_type == "sim.data") {
+      data <- data %>%
+        # JL 20-JUN-2023 prevent dosenr problem: let EVID=1 rec be before EVID=0
+        arrange(REP, ID,x,-EVID) %>%
+        # -------------------------------------------------------------------
+      group_by(REP, ID) %>%
+        mutate(dosenr = cumsum(EVID == 1)) %>%
+        ungroup() %>%
+        filter(EVID == 0) %>%
+        select(-EVID)
+    } else {
     data <- data %>%
       # JL 20-JUN-2023 prevent dosenr problem: let EVID=1 rec be before EVID=0
       arrange(ID,x,-EVID) %>%
@@ -979,7 +1031,19 @@ print.vachette_data <- function(x, ...) {
       ungroup() %>%
       filter(EVID == 0) %>%
       select(-EVID)
+    }
   } else if ("AMT" %in% colnames(data)) {
+    if (data_type == "sim.data") {
+      data <- data %>%
+        # JL 20-JUN-2023 prevent dosenr problem: let AMT rec be first
+        arrange(REP, ID,x,-AMT) %>%
+        # -------------------------------------------------------------------
+      group_by(REP, ID) %>%
+        mutate(dosenr = cumsum(AMT != 0)) %>% #if values NA: cumsum(!is.na(amt))
+        ungroup() %>%
+        filter(is.na(AMT) | AMT == 0) %>%
+        select(-AMT)
+    } else {
     data <- data %>%
       # JL 20-JUN-2023 prevent dosenr problem: let AMT rec be first
       arrange(ID,x,-AMT) %>%
@@ -989,6 +1053,7 @@ print.vachette_data <- function(x, ...) {
       ungroup() %>%
       filter(is.na(AMT) | AMT == 0) %>%
       select(-AMT)
+    }
   } else {
     # final control flow should be understood as no dose information in the data, no ref.dosnr, message such e.g., sigmoid model
     message("`dosenr` column is required and not found in ", data_type," `dosenr` can be automatically calculated using `EVID`, `AMT`, or `ADDL/II` columns in the data. Use the 'mappings' argument if these columns are named differently in your input data.")

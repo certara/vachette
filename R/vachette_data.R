@@ -122,7 +122,8 @@ vachette_data <-
     stopifnot(names(covariates) %in% names(sim.data))
     #Join dosenr from obs.data by ID and x key if dosenr missing
     if ("dosenr" %notin% colnames(sim.data)) {
-      sim.data <- left_join(sim.data, obs.data %>% select(ID, x, dosenr), by = c("ID", "x"))
+      #sim.data <- left_join(sim.data, obs.data %>% select(ID, x, dosenr), by = c("ID", "x"))
+      sim.data <- .calculate_dose_number(sim.data, data_type = "sim.data")
     }
   } else {
     VVPC <- FALSE
