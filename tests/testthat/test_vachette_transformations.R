@@ -87,7 +87,7 @@ test_that("vachette transformations are accurate for sigmoid", {
 
   set.seed(121)
 
-  vd <- vachette_data(
+  vd <- suppressWarnings(vachette_data(
     obs.data = read.csv(system.file(package = "vachette", "examples", "sigmoid-obs.csv")),
     typ.data = read.csv(system.file(package = "vachette", "examples", "sigmoid-typ.csv")),
     covariates = c(WT = 70),
@@ -95,6 +95,7 @@ test_that("vachette transformations are accurate for sigmoid", {
                  x = "bmx"),
     ref.dosenr = 1,
     log.x = TRUE
+  )
   )
 
   vd <- vd |>
