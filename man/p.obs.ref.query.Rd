@@ -4,12 +4,10 @@
 \alias{p.obs.ref.query}
 \title{p.obs.ref.query}
 \usage{
-p.obs.ref.query(vachette_data, log.x = FALSE)
+p.obs.ref.query(vachette_data)
 }
 \arguments{
 \item{vachette_data}{Object of class \code{vachette_data}}
-
-\item{log.x}{Set to \code{TRUE} to plot x axis on log scale}
 }
 \value{
 Object of class \code{ggplot2}

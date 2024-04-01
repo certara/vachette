@@ -4,12 +4,10 @@
 \alias{p.scaled.typical.full.curves.landmarks}
 \title{p.scaled.typical.full.curves.landmarks}
 \usage{
-p.scaled.typical.full.curves.landmarks(vachette_data, log.x = FALSE)
+p.scaled.typical.full.curves.landmarks(vachette_data)
 }
 \arguments{
 \item{vachette_data}{Object of class\code{vachette_data}}
-
-\item{log.x}{Set to \code{TRUE} to plot x axis on log scale}
 }
 \description{
 p.scaled.typical.full.curves.landmarks
