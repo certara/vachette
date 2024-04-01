@@ -9,14 +9,11 @@ apply_transformations(vachette_data, ...)
 
 \method{apply_transformations}{vachette_data}(
   vachette_data,
-  lm.refine = FALSE,
   tol.end = 0.001,
   tol.noise = 1e-08,
   step.x.factor = 1.5,
   ngrid.fit = 100,
   window = 17,
-  window.d1.refine = 7,
-  window.d2.refine = 5,
   ...
 )
 }
@@ -24,8 +21,6 @@ apply_transformations(vachette_data, ...)
 \item{vachette_data}{object of class \code{vachette_data}}
 
 \item{...}{Additional arguments}
-
-\item{lm.refine}{logical; Refine landmark x-position. Default \code{FALSE}}
 
 \item{tol.end}{numeric; Relative tolerance to determine last x open end reference}
 
@@ -36,10 +31,6 @@ apply_transformations(vachette_data, ...)
 \item{ngrid.fit}{numeric; number of grid points in last query segment for matching last reference segment}
 
 \item{window}{integer; size (gridpoints) of Savitzky Golay smoothing window for landmark position determination}
-
-\item{window.d1.refine}{integer; size (gridpoints) of Savitzky Golay smoothing window for refinement of first derivative landmark position}
-
-\item{window.d2.refine}{integer; size (gridpoints) of Savitzky Golay smoothing window for refinement of second derivative landmark position.}
 }
 \description{
 Apply vachette transformations

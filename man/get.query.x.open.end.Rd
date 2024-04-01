@@ -10,7 +10,8 @@ get.query.x.open.end(
   lm.ref,
   lm.query,
   ngrid = 100,
-  scaling = "linear"
+  scaling = "linear",
+  polyorder = 9
 )
 }
 \arguments{

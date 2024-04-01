@@ -7,6 +7,7 @@
 #' @param covariates named character vector; Covariate names with reference values in vachette transformation
 #' @param ref.dosenr integer; Dose number to use as the reference dose, corresponding to value in "dosenr" column in input data
 #' @param iiv.correction logical; Apply inter-individual variability correction. Default \code{FALSE}
+#' @param log.x logical; Apply log(x) conversion. Default \code{FALSE}
 #' @param error.model character; Applied error model, \code{"proportional"} or \code{"additive"}. Default \code{"proportional"}
 #' @param model.name character; Optional model name for plot output
 #' @param mappings named character vector;  Optional mappings to be included if column names in input \code{data.frame} differ from required column names.
@@ -70,120 +71,139 @@ vachette_data <-
            sim.data = NULL,
            covariates,
            ref.dosenr,
+           log.x = FALSE,
            iiv.correction = FALSE,
            error.model = c("proportional", "additive"),
            model.name = NULL,
            mappings = NULL) {
 
-  vachette_data_env <- environment()
-  # Column Validation Check
-  .validate_columns(mappings, obs.data, typ.data, sim.data, iiv.correction) %>%
-    list2env(envir = vachette_data_env)
+    vachette_data_env <- environment()
+    # Column Validation Check
+    .validate_columns(mappings, obs.data, typ.data, sim.data, iiv.correction) %>%
+      list2env(envir = vachette_data_env)
 
-  # Process/assign covariates
-  covariates <- .process_covariates(covariates, obs.data)
+    # Process/assign covariates
+    covariates <- .process_covariates(covariates, obs.data)
 
-  obs.data <- .calculate_dose_number(obs.data, data_type = "obs.data")
-  typ.data <- .calculate_dose_number(typ.data, data_type = "typ.data")
+    obs.data <- .calculate_dose_number(obs.data, data_type = "obs.data")
+    typ.data <- .calculate_dose_number(typ.data, data_type = "typ.data")
 
-  number_of_doses <- unique(obs.data[["dosenr"]])
-  if (missing(ref.dosenr)) {
-    if (length(number_of_doses) > 1) {
-      warning("ref.dosenr argument is missing and more than one dose number found in data,
+    number_of_doses <- unique(obs.data[["dosenr"]])
+    if (missing(ref.dosenr)) {
+      if (length(number_of_doses) > 1) {
+        warning("ref.dosenr argument is missing and more than one dose number found in data,
               setting ref.dosenr to 1", call. = FALSE)
+      }
+      ref.dosenr <- 1
     }
-    ref.dosenr <- 1
-  }
-  # ensure value supplied to ref.dosenr exists inside dosenr column
-  if (ref.dosenr %notin% number_of_doses) {
-    stop("ref.dosenr value of ", ref.dosenr, " not found in dosenr column in ", data_type, call. = FALSE)
-  }
-
-  # Region is the Vachette terminology for the time between two dose administrations
-  ref.region <- ref.dosenr
-  # "Dummy" observations replicate number
-  obs.data$REP <- 1
-  error <- match.arg(error.model)
-  # assign error flags
-  if (error == "proportional") {
-    ADD_TR <- FALSE
-    PROP_TR <- TRUE
-  } else {
-    ADD_TR <- TRUE
-    PROP_TR <- FALSE
-  }
-
-  stopifnot(names(covariates) %in% names(typ.data))
-
-  if (!is.null(sim.data)) {
-    VVPC <- TRUE
-    stopifnot(names(covariates) %in% names(sim.data))
-    #Join dosenr from obs.data by ID and x key if dosenr missing
-    if ("dosenr" %notin% colnames(sim.data)) {
-      sim.data <- left_join(sim.data, obs.data %>% select(ID, x, dosenr), by = c("ID", "x"))
+    # ensure value supplied to ref.dosenr exists inside dosenr column
+    if (ref.dosenr %notin% number_of_doses) {
+      stop("ref.dosenr value of ", ref.dosenr, " not found in dosenr column in ", data_type, call. = FALSE)
     }
-  } else {
-    VVPC <- FALSE
-    # "Dummy" vpc simulated observations dataset
-    sim.data <- obs.data
+
+    # Region is the Vachette terminology for the time between two dose administrations
+    ref.region <- ref.dosenr
+    # "Dummy" observations replicate number
+    obs.data$REP <- 1
+    error <- match.arg(error.model)
+    # assign error flags
+    if (error == "proportional") {
+      ADD_TR <- FALSE
+      PROP_TR <- TRUE
+    } else {
+      ADD_TR <- TRUE
+      PROP_TR <- FALSE
+    }
+
+    stopifnot(names(covariates) %in% names(typ.data))
+
+    if (!is.null(sim.data)) {
+      VVPC <- TRUE
+      stopifnot(names(covariates) %in% names(sim.data))
+      #Join dosenr from obs.data by ID and x key if dosenr missing
+      if ("dosenr" %notin% colnames(sim.data)) {
+        #sim.data <- left_join(sim.data, obs.data %>% select(ID, x, dosenr), by = c("ID", "x"))
+        sim.data <- .calculate_dose_number(sim.data, data_type = "sim.data")
+      }
+    } else {
+      VVPC <- FALSE
+      # "Dummy" vpc simulated observations dataset
+      sim.data <- obs.data
+    }
+
+    # Retain required columns
+    if (iiv.correction) {
+      obs_cols_to_select <- c("REP", "ID", "x", "PRED", "IPRED", "OBS", "dosenr")
+    } else {
+      obs_cols_to_select <- c("REP", "ID", "x", "OBS", "dosenr")
+    }
+    typ_cols_to_select <- c("ID", "x", "PRED", "dosenr")
+    obs.data  <-
+      obs.data %>% dplyr::select(dplyr::all_of(obs_cols_to_select), dplyr::all_of(names(covariates)))
+    sim.data  <-
+      sim.data %>% dplyr::select(dplyr::all_of(obs_cols_to_select), dplyr::all_of(names(covariates)))
+    typ.data  <-
+      typ.data %>% dplyr::select(dplyr::all_of(typ_cols_to_select), dplyr::all_of(names(covariates)))
+
+    # Extract first/last observed x (look for max x/time in obs and sim data)
+    # xstart <- min(obs.data$x,sim.data$x)
+    # xstop  <- max(obs.data$x,sim.data$x)
+    # Define unique covariate combination as new 'COV' column.
+    obs.orig <- obs.data %>%
+      mutate(COV = paste(!!!syms(names(covariates))))
+    sim.orig <- sim.data %>%
+      mutate(COV = paste(!!!syms(names(covariates))))
+    typ.orig <- typ.data %>%
+      mutate(COV = paste(!!!syms(names(covariates))))
+
+    .define_and_enumerate_regions(typ.orig, obs.orig, sim.orig, covariates, ref.dosenr, ref.region) %>%
+      list2env(envir = vachette_data_env)
+
+    # Apply IIV Correction
+    typ.orig <- typ.orig %>%
+      mutate(y=PRED)
+    # to apply
+    if(iiv.correction) {
+      obs.orig$y <- obs.orig$OBS  - obs.orig$IPRED + obs.orig$PRED
+      sim.orig$y <- sim.orig$OBS  - sim.orig$IPRED + sim.orig$PRED
+    } else {
+      obs.orig$y <- obs.orig$OBS
+      sim.orig$y <- sim.orig$OBS
+    }
+
+    if(log.x) {
+      message("Applying log(x) conversion")
+      if(sum(typ.orig$x)<=0) stop("Error, no log(x) conversion possible for x <= 0 (typical)")
+      if(sum(obs.orig$x)<=0) stop("Error, no log(x) conversion possible for x <= 0 (observations)")
+      if(sum(sim.orig$x)<=0) stop("Error, no log(x) conversion possible for x <= 0 (simulation)")
+      typ.orig$x <- log(typ.orig$x)
+      obs.orig$x <- log(obs.orig$x)
+      sim.orig$x <- log(sim.orig$x)
+
+      # if(xstart<=0 | xstop<=0) stop("Error, no log(x) conversion possible for observed/simulated x <= 0")
+      # xstart <- log(xstart)
+      # xstop  <- log(xstop)
+    }
+
+    list(
+      model.name = model.name,
+      covariates = covariates,
+      VVPC = VVPC,
+      ADD_TR = ADD_TR,
+      PROP_TR = PROP_TR,
+      obs.orig = obs.orig,
+      sim.orig = sim.orig,
+      typ.orig = typ.orig,
+      tab.ucov = tab.ucov,
+      ref.region = ref.region,
+      ref.dosenr = ref.dosenr,
+      log.x = log.x,
+      # xstart = xstart,
+      # xstop = xstop,
+      n.ucov = n.ucov
+    ) %>%
+      structure(class = "vachette_data")
   }
-
-  # Retain required columns
-  if (iiv.correction) {
-    obs_cols_to_select <- c("REP", "ID", "x", "PRED", "IPRED", "OBS", "dosenr")
-  } else {
-    obs_cols_to_select <- c("REP", "ID", "x", "OBS", "dosenr")
-  }
-  typ_cols_to_select <- c("ID", "x", "PRED", "dosenr")
-  obs.data  <-
-    obs.data %>% dplyr::select(dplyr::all_of(obs_cols_to_select), dplyr::all_of(names(covariates)))
-  sim.data  <-
-    sim.data %>% dplyr::select(dplyr::all_of(obs_cols_to_select), dplyr::all_of(names(covariates)))
-  typ.data  <-
-    typ.data %>% dplyr::select(dplyr::all_of(typ_cols_to_select), dplyr::all_of(names(covariates)))
-
-  # Extract last observed x (look for max x/time in obs and sim data)
-  xstop <- max(obs.data$x,sim.data$x)
-  # Define unique covariate combination as new 'COV' column.
-  obs.orig <- obs.data %>%
-    mutate(COV = paste(!!!syms(names(covariates))))
-  sim.orig <- sim.data %>%
-    mutate(COV = paste(!!!syms(names(covariates))))
-  typ.orig <- typ.data %>%
-    mutate(COV = paste(!!!syms(names(covariates))))
-
-  .define_and_enumerate_regions(typ.orig, obs.orig, sim.orig, covariates, ref.dosenr, ref.region) %>%
-    list2env(envir = vachette_data_env)
-
-  # Apply IIV Correction
-  typ.orig <- typ.orig %>%
-    mutate(y=PRED)
-  # to apply
-  if(iiv.correction) {
-    obs.orig$y <- obs.orig$OBS  - obs.orig$IPRED + obs.orig$PRED
-    sim.orig$y <- sim.orig$OBS  - sim.orig$IPRED + sim.orig$PRED
-  } else {
-    obs.orig$y <- obs.orig$OBS
-    sim.orig$y <- sim.orig$OBS
-  }
-
-  list(
-    model.name = model.name,
-    covariates = covariates,
-    VVPC = VVPC,
-    ADD_TR = ADD_TR,
-    PROP_TR = PROP_TR,
-    obs.orig = obs.orig,
-    sim.orig = sim.orig,
-    typ.orig = typ.orig,
-    tab.ucov = tab.ucov,
-    ref.region = ref.region,
-    ref.dosenr = ref.dosenr,
-    xstop = xstop,
-    n.ucov = n.ucov
-  ) %>%
-    structure(class = "vachette_data")
-}
 
 #' @export
 update.vachette_data <- function(vachette_data, ...) {
@@ -351,14 +371,11 @@ update.vachette_data <- function(vachette_data, ...) {
 #' Apply vachette transformations
 #'
 #' @param vachette_data object of class \code{vachette_data}
-#' @param lm.refine logical; Refine landmark x-position. Default \code{FALSE}
 #' @param tol.end numeric; Relative tolerance to determine last x open end reference
 #' @param tol.noise numeric; Relative tolerance for landmark determination typical curves
 #' @param step.x.factor numeric; x-axis extension factor to search for last x, i.e., to determine where close enough to asymptote
 #' @param ngrid.fit numeric; number of grid points in last query segment for matching last reference segment
 #' @param window integer; size (gridpoints) of Savitzky Golay smoothing window for landmark position determination
-#' @param window.d1.refine integer; size (gridpoints) of Savitzky Golay smoothing window for refinement of first derivative landmark position
-#' @param window.d2.refine integer; size (gridpoints) of Savitzky Golay smoothing window for refinement of second derivative landmark position.
 #' @param ... Additional arguments
 #' @name apply_transformations
 #' @export
@@ -368,60 +385,77 @@ apply_transformations <- function(vachette_data, ...) UseMethod("apply_transform
 #' @export
 apply_transformations.vachette_data <-
   function(vachette_data,
-           lm.refine = FALSE,
            tol.end = 0.001,
            tol.noise = 1e-8,
            step.x.factor = 1.5,
            ngrid.fit = 100,
-           window = 17,     # Savitzky Golay smoothing - initial landmarks
-           window.d1.refine = 7,     # Savitzky Golay smoothing - refine landmarks - first derivative
-           window.d2.refine = 5,
+           window = 17,              # Savitzky Golay smoothing - initial landmarks
            ...) {
 
-  stopifnot(inherits(vachette_data, "vachette_data"))
+    stopifnot(inherits(vachette_data, "vachette_data"))
 
-  args <- list(...)
+    args <- list(...)
 
-  if (!is.null(args$zero_asymptote)) {
-    zero_asymptote <- args$zero_asymptote
-  } else {
-    zero_asymptote <- TRUE
-  }
+    if (!is.null(args$asymptote_right)) {
+      asymptote_right <- args$asymptote_right
+    } else {
+      asymptote_right <- TRUE
+    }
 
-  vachette_transformed_data <- .calculate_transformations(vachette_data,
-                                                         lm.refine,
-                                                         tol.end,
-                                                         tol.noise,
-                                                         step.x.factor,
-                                                         ngrid.fit,
-                                                         window,
-                                                         window.d1.refine,
-                                                         window.d2.refine,
-                                                         zero_asymptote = zero_asymptote)
-  if (vachette_data$VVPC) {
-    vachette_transformed_data_sim <- .calculate_transformations(vachette_data,
-                                                           lm.refine,
-                                                           tol.end,
-                                                           tol.noise,
-                                                           step.x.factor,
-                                                           ngrid.fit,
-                                                           window,
-                                                           window.d1.refine,
-                                                           window.d2.refine,
-                                                           run_sim = TRUE,
-                                                           zero_asymptote = zero_asymptote)
-    sim.all <- vachette_transformed_data_sim$obs.all
-  } else {
-    sim.all <- NULL
-  }
+    if (!is.null(args$asymptote_left)) {
+      asymptote_left <- args$asymptote_left
+    } else {
+      asymptote_left <- FALSE
+    }
+
+    if (!is.null(args$zero_asymptote_right)) {
+      zero_asymptote_right <- args$zero_asymptote_right
+    } else {
+      zero_asymptote_right <- TRUE
+    }
+
+    if (!is.null(args$zero_asymptote_left)) {
+      zero_asymptote_left <- args$zero_asymptote_left
+    } else {
+      zero_asymptote_left <- FALSE
+    }
+
+    vachette_transformed_data <- .calculate_transformations(vachette_data,
+                                                            tol.end,
+                                                            tol.noise,
+                                                            step.x.factor,
+                                                            ngrid.fit,
+                                                            window,
+                                                            asymptote_right = asymptote_right,
+                                                            asymptote_left  = asymptote_left,
+                                                            zero_asymptote_right = zero_asymptote_right,
+                                                            zero_asymptote_left  = zero_asymptote_left)
+    if (vachette_data$VVPC) {
+      vachette_transformed_data_sim <- .calculate_transformations(vachette_data,
+                                                                  tol.end,
+                                                                  tol.noise,
+                                                                  step.x.factor,
+                                                                  ngrid.fit,
+                                                                  window,
+                                                                  run_sim = TRUE,
+                                                                  asymptote_right = asymptote_right,
+                                                                  asymptote_left  = asymptote_left,
+                                                                  zero_asymptote_right = zero_asymptote_right,
+                                                                  zero_asymptote_left = zero_asymptote_left)
+      sim.all <- vachette_transformed_data_sim$obs.all
+    } else {
+      sim.all <- NULL
+    }
 
     update(vachette_data,
            obs.all = vachette_transformed_data$obs.all,
+           obs.excluded = vachette_transformed_data$obs.excluded,
            sim.all = sim.all,
            curves.all = vachette_transformed_data$curves.all,
            curves.scaled.all = vachette_transformed_data$curves.scaled.all,
            ref.extensions.all = vachette_transformed_data$ref.extensions.all,
            lm.all = vachette_transformed_data$lm.all,
+           curvature.all = vachette_transformed_data$curvature.all,
            nseg = vachette_transformed_data$nseg)
   }
 
