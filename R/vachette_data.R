@@ -430,27 +430,12 @@ apply_transformations.vachette_data <-
                                                             asymptote_left  = asymptote_left,
                                                             zero_asymptote_right = zero_asymptote_right,
                                                             zero_asymptote_left  = zero_asymptote_left)
-    if (vachette_data$VVPC) {
-      vachette_transformed_data_sim <- .calculate_transformations(vachette_data,
-                                                                  tol.end,
-                                                                  tol.noise,
-                                                                  step.x.factor,
-                                                                  ngrid.fit,
-                                                                  window,
-                                                                  run_sim = TRUE,
-                                                                  asymptote_right = asymptote_right,
-                                                                  asymptote_left  = asymptote_left,
-                                                                  zero_asymptote_right = zero_asymptote_right,
-                                                                  zero_asymptote_left = zero_asymptote_left)
-      sim.all <- vachette_transformed_data_sim$obs.all
-    } else {
-      sim.all <- NULL
-    }
+
 
     update(vachette_data,
            obs.all = vachette_transformed_data$obs.all,
            obs.excluded = vachette_transformed_data$obs.excluded,
-           sim.all = sim.all,
+           sim.all = vachette_transformed_data$sim.all,
            curves.all = vachette_transformed_data$curves.all,
            curves.scaled.all = vachette_transformed_data$curves.scaled.all,
            ref.extensions.all = vachette_transformed_data$ref.extensions.all,
