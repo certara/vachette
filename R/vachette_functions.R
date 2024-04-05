@@ -1112,7 +1112,17 @@ print.vachette_data <- function(x, ...) {
   ref.region <- vachette_data$ref.region
   ref.dosenr <- vachette_data$ref.dosenr
 
-  for(i.ucov in c(1:dim(tab.ucov)[1])) {
+  n_iter <- nrow(tab.ucov)
+  pb <- txtProgressBar(min = 0,
+                       max = n_iter,
+                       style = 3,
+                       width = n_iter
+                       )
+  init_time <- numeric(n_iter)
+  end_time <- numeric(n_iter)
+
+  for(i.ucov in c(1:n_iter)) {
+    init_time[i.ucov] <- Sys.time()
     # Initialize
     REMOVE_OBS         <- FALSE
     remove.obs.after.x <- NULL
@@ -1122,6 +1132,8 @@ print.vachette_data <- function(x, ...) {
     cat(paste('i.ucov',i.ucov,'\n'))
     print(tab.ucov[i.ucov,])
     cat('-------------------------\n')
+
+
 
     # ---------------------------------------------------------------
     # ----  Define reference and query curves and observations    ---
@@ -2304,6 +2316,20 @@ print.vachette_data <- function(x, ...) {
 
     message(paste0(nrow(obs.excluded)," observations excluded for all i.ucov"))
 
+    ### Message Time
+    end_time[i.ucov] <- Sys.time()
+    setTxtProgressBar(pb, i.ucov)
+    time <- round(lubridate::seconds_to_period(sum(end_time - init_time)), 0)
+
+    # Estimated remaining time based on the
+    # mean time that took to run the previous iterations
+    est <- n_iter * (mean(end_time[end_time != 0] - init_time[init_time != 0])) - time
+    remainining <- round(lubridate::seconds_to_period(est), 0)
+
+    cat(paste(" // Execution time:", time,
+              " // Estimated time remaining:", remainining), "")
+
+
   }
 
   # Check additive/prop transformations
@@ -2367,6 +2393,8 @@ print.vachette_data <- function(x, ...) {
     sim.all <- NULL
   }
 
+  close(pb)
+
   return(
     list(
       obs.all      = obs.all,
@@ -2381,3 +2409,4 @@ print.vachette_data <- function(x, ...) {
   )
 
 }
+
