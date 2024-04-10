@@ -1082,7 +1082,6 @@ print.vachette_data <- function(x, ...) {
                                        step.x.factor = 1.5,
                                        ngrid.fit = 100,
                                        window = 17,     # peak detection window - initial landmarks
-                                       run_sim = FALSE,
                                        asymptote_right = TRUE,
                                        asymptote_left = FALSE,
                                        zero_asymptote_right = TRUE,
@@ -1093,6 +1092,7 @@ print.vachette_data <- function(x, ...) {
   curves.all           <- NULL
   curves.scaled.all    <- NULL
   obs.all              <- NULL
+  sim.all              <- NULL
   obs.excluded         <- NULL
 
   my.ref.lm.all    <- NULL
@@ -1112,7 +1112,17 @@ print.vachette_data <- function(x, ...) {
   ref.region <- vachette_data$ref.region
   ref.dosenr <- vachette_data$ref.dosenr
 
-  for(i.ucov in c(1:dim(tab.ucov)[1])) {
+  n_iter <- nrow(tab.ucov)
+  pb <- txtProgressBar(min = 0,
+                       max = n_iter,
+                       style = 3,
+                       width = n_iter
+                       )
+  init_time <- numeric(n_iter)
+  end_time <- numeric(n_iter)
+
+  for(i.ucov in c(1:n_iter)) {
+    init_time[i.ucov] <- Sys.time()
     # Initialize
     REMOVE_OBS         <- FALSE
     remove.obs.after.x <- NULL
@@ -1122,6 +1132,8 @@ print.vachette_data <- function(x, ...) {
     cat(paste('i.ucov',i.ucov,'\n'))
     print(tab.ucov[i.ucov,])
     cat('-------------------------\n')
+
+
 
     # ---------------------------------------------------------------
     # ----  Define reference and query curves and observations    ---
@@ -1320,16 +1332,10 @@ print.vachette_data <- function(x, ...) {
       query <- rbind(query,query.curve.next)
     }
 
-    # Should we perform transformations on obs or sim data
-    if (!run_sim){
       obs.query   <- obs.orig %>%
         filter(ucov == i.ucov) %>%
         mutate(ref = tab.ucov$ref[i.ucov])  # Flag for reference data
-    } else {
-      obs.query   <- sim.orig %>%
-        filter(ucov == i.ucov)  %>%
-        mutate(ref = tab.ucov$ref[i.ucov])  # Flag for reference data
-    }
+
 
     # Create PRED for obs.query data points by linear interpolation
     # May be needed for reference extrapolation, see obs.query$PRED
@@ -2093,6 +2099,7 @@ print.vachette_data <- function(x, ...) {
 
     }
 
+
     # Collect all typical curves with scaling factors and scaled x,y values
     query.scaled$y.scaled <- approx(ref$x,ref$y,xout=query.scaled$x.scaled)$y
 
@@ -2162,6 +2169,53 @@ print.vachette_data <- function(x, ...) {
         obs.query <- rbind(obs.query,obs.query.add)
       }
 
+      # can start here with sim.data, since everything before was x.scaling
+
+      if (!is.null(sim.orig)) {
+        sim.query.orig <- dplyr::inner_join(sim.orig %>% dplyr::select(REP, ID, x, y),
+                                            obs.query.orig %>% dplyr::select(-REP, -y, -OBS),
+                                            by = c("ID", "x"))
+        sim.query      <- NULL
+        for (iseg in c(1:nseg))
+        {
+          # Original query.lm needed for scaling factor
+          # Ref segment length
+          ref.seg.length <- my.ref.lm$x[iseg + 1] - my.ref.lm$x[iseg]
+          # Query segment length
+          query.seg.length <- my.query.lm$x[iseg + 1] - my.query.lm$x[iseg]
+          # Scaling factor
+          if (!EXTENSION)
+            sim.query.tmp <- sim.query.orig %>%
+            filter((nseg == 1 &
+                      x >= my.query.lm$x[iseg] & x <= my.query.lm$x[iseg + 1]) |
+                     (nseg > 1 &
+                        x > my.query.lm$x[iseg] & x <= my.query.lm$x[iseg + 1])
+            )
+          if (EXTENSION)
+            sim.query.tmp <- sim.query.orig %>%
+            filter((
+              nseg == 1 &
+                x >= my.query.lm.extension$x[iseg] &
+                x <= my.query.lm.extension$x[iseg + 1]
+            ) |
+              (
+                nseg > 1 &
+                  x > my.query.lm.extension$x[iseg] &
+                  x <= my.query.lm.extension$x[iseg + 1]
+              )
+            )
+          sim.query.add <- sim.query.tmp %>%
+            mutate(seg = iseg) %>%
+            mutate(y.scaling     = 1, y.scaled = 1) %>%               # dummies, To remove
+            mutate(x.shift.ref   = 0 - my.ref.lm$x[iseg]) %>%
+            mutate(x.shift.query = 0 - my.query.lm$x[iseg]) %>%
+            mutate(x.trans       = x + x.shift.query) %>%            # May be redefine to my.ref.lm$x[iseg]
+            mutate(x.scaling     = ref.seg.length / query.seg.length) %>%
+            mutate(x.scaled      = x.scaling * x.trans - x.shift.ref)  # Back to corresponding ref position
+
+          sim.query <- rbind(sim.query, sim.query.add)
+        }
+      }
 
       # ---------------------------------------------------------------
       # ----            Vachettte y-scaling of observations         ---
@@ -2193,6 +2247,23 @@ print.vachette_data <- function(x, ...) {
         # New position
         obs.query$ylog.scaled      <- obs.query$ylog.diff + obs.query$ylog.ref
         obs.query$y.scaled         <- exp(obs.query$ylog.scaled)
+
+        if (!is.null(sim.orig)) {
+          sim.query <-  sim.query %>% mutate(ylog = ifelse(y>0,log(y),NA))
+          sim.query$ylog.query       <- ifelse(!is.na(sim.query$ylog),
+                                               approx(x=query$x, y=query$ylog, xout = sim.query$x)$y,
+                                               NA)
+          # log difference sim.query to query curve
+          sim.query$ylog.diff        <- sim.query$ylog - sim.query$ylog.query
+
+          # Position on ref curve (position at x.scaled!!)
+          sim.query$ylog.ref         <- ifelse(!is.na(sim.query$ylog),
+                                               approx(x=ref$x, y=ref$ylog, xout = sim.query$x.scaled)$y,
+                                               NA)
+          # New position
+          sim.query$ylog.scaled      <- sim.query$ylog.diff + sim.query$ylog.ref
+          sim.query$y.scaled         <- exp(sim.query$ylog.scaled)
+        }
       }
 
       # In case of additive error model
@@ -2214,8 +2285,29 @@ print.vachette_data <- function(x, ...) {
                                           NA)
         # New position
         obs.query$y.scaled      <- obs.query$y.diff + obs.query$y.ref
+
+        if (!is.null(sim.orig)) {
+          sim.query$y.query       <- ifelse(!is.na(sim.query$y),
+                                            approx(x=query$x, y=query$y, xout = sim.query$x)$y,
+                                            NA)
+          # difference sim.query to query curve
+          sim.query$y.diff        <- sim.query$y - sim.query$y.query
+
+          # Position on ref curve (position at x.scaled!!)
+          sim.query$y.ref         <- ifelse(!is.na(sim.query$y),
+                                            approx(x=ref$x, y=ref$y, xout = sim.query$x.scaled)$y,
+                                            NA)
+          # New position
+          sim.query$y.scaled      <- sim.query$y.diff + sim.query$y.ref
+
+        }
       }
+
       obs.all      <- rbind(obs.all,obs.query)
+
+      if (!is.null(sim.orig)) {
+        sim.all      <- rbind(sim.all,sim.query)
+      }
 
     } # If there are observations to transform
 
@@ -2224,10 +2316,23 @@ print.vachette_data <- function(x, ...) {
 
     message(paste0(nrow(obs.excluded)," observations excluded for all i.ucov"))
 
-  } # All i.ucov's
+    ### Message Time
+    end_time[i.ucov] <- Sys.time()
+    setTxtProgressBar(pb, i.ucov)
+    time <- round(lubridate::seconds_to_period(sum(end_time - init_time)), 0)
+
+    # Estimated remaining time based on the
+    # mean time that took to run the previous iterations
+    est <- n_iter * (mean(end_time[end_time != 0] - init_time[init_time != 0])) - time
+    remainining <- round(lubridate::seconds_to_period(est), 0)
+
+    cat(paste(" // Execution time:", time,
+              " // Estimated time remaining:", remainining), "")
+
+
+  }
 
   # Check additive/prop transformations
-  #Init columns
   obs.all$dist.add.orig <- NA
   obs.all$dist.add.transformed <- NA
   obs.all$dist.prop.orig <- NA
@@ -2256,9 +2361,44 @@ print.vachette_data <- function(x, ...) {
   obs.all <- obs.all %>%
     arrange(REP, ID, x)
 
+  if (!is.null(sim.orig)) {
+    sim.all$dist.add.orig <- NA
+    sim.all$dist.add.transformed <- NA
+    sim.all$dist.prop.orig <- NA
+    sim.all$dist.prop.transformed <- NA
+    # All ucov's
+    n.ucov <- vachette_data$n.ucov
+    for(i.ucov in c(1:n.ucov))
+    {
+      typ.curve <- typ.orig %>% filter(ucov==i.ucov)
+      ref.curve <- typ.orig %>% filter(ucov==ref.ucov)
+      sim       <- sim.all  %>% filter(ucov==i.ucov)
+
+      # Additive distances to original curves
+      sim.all$dist.add.orig[sim.all$ucov==i.ucov] <- approx(typ.curve$x,typ.curve$y,xout=sim$x)$y - sim$y
+      # Vachette transformed - distances to ref curve
+      sim.all$dist.add.transformed[sim.all$ucov==i.ucov] <- approx(ref.curve$x,ref.curve$y,xout=sim$x.scaled)$y - sim$y.scaled
+
+      # Proportional distances to original curves (assume all y > 0)
+      # sim.all$dist.prop.orig[sim.all$ucov==i.ucov]        <- log(approx(typ.curve$x,typ.curve$y,xout=obs$x)$y) - log(obs$y)
+      sim.all$dist.prop.orig[sim.all$ucov==i.ucov]        <- approx(typ.curve$x,log(typ.curve$y),xout=sim$x)$y - log(sim$y)
+      # Vachette transformed - distances to ref curve
+      # sim.all$dist.prop.transformed[sim.all$ucov==i.ucov] <- log(approx(ref.curve$x,ref.curve$y,xout=obs$x.scaled)$y) - log(obs$y.scaled)
+      sim.all$dist.prop.transformed[sim.all$ucov==i.ucov] <- approx(ref.curve$x,log(ref.curve$y),xout=sim$x.scaled)$y - log(sim$y.scaled)
+    }
+
+    sim.all <- sim.all %>%
+      arrange(REP, ID, x)
+  } else {
+    sim.all <- NULL
+  }
+
+  close(pb)
+
   return(
     list(
       obs.all      = obs.all,
+      sim.all      = sim.all,
       obs.excluded = obs.excluded,
       curves.all   = curves.all,
       curves.scaled.all  = curves.scaled.all,
@@ -2269,3 +2409,4 @@ print.vachette_data <- function(x, ...) {
   )
 
 }
+

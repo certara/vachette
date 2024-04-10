@@ -32,5 +32,6 @@ Imports:
     Hmisc,
     grid,
     purrr,
-    minpack.lm
+    minpack.lm,
+    lubridate
 Config/testthat/edition: 3
