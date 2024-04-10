@@ -52,8 +52,6 @@ If "dosenr" column is missing it will be automatically calculated using the prio
      \item{"ADDL"/"II": If "ADDL" and "II" are available in data, "dosenr" will be calculated given additional dose number and interval}
      \item{"AMT": If only "AMT" column exists in data, "dosenr" will be calculated using \code{cumsum(AMT!=0)}}
    }
- If \code{sim.data} argument is used, "dosenr" is not required in corresponding \code{sim.data} \code{data.frame}; "dosenr" is extracted from
- \code{obs.data} and merged into \code{sim.data} by "ID" and "x" key.
 }
 \section{Required columns \code{obs.data}}{
 
