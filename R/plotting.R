@@ -615,8 +615,21 @@ p.obs.excluded <- function(vachette_data) {
   obs.excluded <- vachette_data$obs.excluded
   curves.all   <- vachette_data$curves.all
 
-  xstart <- min(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
-  xstop  <- max(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
+  xstart <- min(vachette_data$obs.orig$x)
+  xstop  <- max(vachette_data$obs.orig$x)
+
+  # # For better legend
+  obs.excluded$reason[obs.excluded$reason=="Less or equal to zero"] <- "Less or equal\nto zero"
+  obs.excluded$reason[obs.excluded$reason=="Without corresponding ref segment"] <- "Without corresp.\nref segment"
+  obs.excluded$reason[obs.excluded$reason=="Without typical curve"] <- "Without\ntypical curve"
+
+  shapes <- c("Less or equal\nto zero" = 1,
+              "Without corresp.\nref segment" = 3,
+              "Without\ntypical curve" = 4)
+
+  # shapes <- c("Less or equal to zero" = 1,
+  #             "Without corresponding ref segment" = 3,
+  #             "Without typical curve" = 4)
 
   gg <- obs.excluded %>%
     ggplot(aes(x=x,y=y)) +
@@ -624,8 +637,9 @@ p.obs.excluded <- function(vachette_data) {
     geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y),lwd=1,col='blue') +
     geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y),pch=19,col='lightgrey') +
     geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y),pch=19,col='lightgrey') +
-    geom_point(data=obs.excluded %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19,col='red') +
-    geom_point(data=obs.excluded %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),pch=19,col='blue')
+    geom_point(data=obs.excluded %>% filter(ref=='Yes'),aes(x=x,y=y,pch=factor(reason)),col='red') +
+    geom_point(data=obs.excluded %>% filter(ref=='No'),aes(x=x,y=y,pch=factor(reason)),col='blue') +
+    scale_shape_manual(values = shapes)
 
   gg <- gg + coord_cartesian(xlim=c(xstart,xstop))
 
@@ -637,7 +651,8 @@ p.obs.excluded <- function(vachette_data) {
                             "=",
                             vachette_data$covariates,
                             collapse = ", "
-                          )))
+                          )),
+         shape = "Reason\nexclusion:")
 
   if (log.x) {
     gg <- gg +
@@ -667,6 +682,8 @@ p.vachette.arrow <- function(vachette_data) {
   if(!is.null(ref.extensions.all)) max.x.ucov <- ref.extensions.all$ucov[ref.extensions.all$x == max(ref.extensions.all$x)][1]
   if(is.null(ref.extensions.all))  extensiontxt <- ""
   if(!is.null(ref.extensions.all)) extensiontxt <- "Dashed: extrapolation reference curve"
+
+  n.excluded <- nrow(vachette_data$obs.excluded)
 
   # After scaling
   xstart <- min(vachette_data$obs.all$x.scaled)
@@ -710,17 +727,22 @@ p.vachette.arrow <- function(vachette_data) {
   gg <- gg + coord_cartesian(xlim=c(xstart,xstop))
 
   gg <- gg +
-    labs(title=paste0(vachette_data$model.name,"; Observations + transformations"),
-         subtitle = paste0(if (vachette_data$ADD_TR)
-           "Additive Error; ", if (vachette_data$PROP_TR)
-             "Proportional Error; ",extensiontxt),
-         caption = paste0("Reference Covariate: ",
-                          paste0(
-                            names(vachette_data$covariates),
-                            "=",
-                            vachette_data$covariates,
-                            collapse = ", "
-                          )))
+    labs(
+      title = paste0(vachette_data$model.name, "; Observations + transformations"),
+      subtitle = paste0(if (vachette_data$ADD_TR)
+        "Additive Error; ", if (vachette_data$PROP_TR)
+          "Proportional Error; ",extensiontxt,
+        if(n.excluded>0) "\n",
+        if(n.excluded>0) n.excluded,
+        if(n.excluded>0) " observations not transformed and not displayed"),
+      caption = paste0("Reference Covariate: ",
+                       paste0(
+                         names(vachette_data$covariates),
+                         "=",
+                         vachette_data$covariates,
+                         collapse = ", "
+                       ))
+    )
 
   if (log.x) {
     gg <- gg +
@@ -747,6 +769,8 @@ p.vachette <- function(vachette_data) {
 
   obs.all            <- vachette_data$obs.all
   curves.all         <- vachette_data$curves.all
+
+  n.excluded <- nrow(vachette_data$obs.excluded)
 
   # After scaling
   xstart <- min(vachette_data$obs.all$x.scaled)
@@ -810,7 +834,10 @@ p.vachette <- function(vachette_data) {
       title = paste0(vachette_data$model.name, "; Observations + transformations"),
       subtitle = paste0(if (vachette_data$ADD_TR)
         "Additive Error; ", if (vachette_data$PROP_TR)
-          "Proportional Error; ",extensiontxt),
+          "Proportional Error; ",extensiontxt,
+        if(n.excluded>0) "\n",
+        if(n.excluded>0) n.excluded,
+        if(n.excluded>0) " observations not transformed and not displayed"),
       caption = paste0("Reference Covariate: ",
                        paste0(
                          names(vachette_data$covariates),

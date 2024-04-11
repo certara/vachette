@@ -1357,11 +1357,28 @@ print.vachette_data <- function(x, ...) {
                                     obs.query %>%
                                       filter(x < min(query$x) | x > max(query$x)) %>%
                                       mutate(exclude=1) %>%
-                                    mutate(reason="Observations without typical curve"))
+                                      mutate(reason="Without typical curve"))
         # Keep the rest
         obs.query          <- obs.query %>%
           filter(x >= min(query$x) & x <= max(query$x))
       }
+      if(i.ucov == ref.ucov)
+      {
+        out <- obs.query %>% filter(x > max(query$x))
+        if(nrow(out)>0)
+        {
+          message("Some obs cannot be associated with reference curve")
+          obs.query.excluded <- rbind(obs.query.excluded,
+                                      obs.query %>%
+                                        filter(x > max(query$x)) %>%
+                                        mutate(exclude=1) %>%
+                                        mutate(reason="Without typical curve"))
+          # Keep the rest
+          obs.query          <- obs.query %>%
+            filter(x <= max(query$x))
+        }
+      }
+
 
     # ---------------------------------------------------------------
     # ----               Determine landmark positions             ---
@@ -1446,12 +1463,12 @@ print.vachette_data <- function(x, ...) {
     my.ref.lm.refined   <- my.ref.lm.transf
     my.query.lm.refined <- my.query.lm.transf
 
-    # No need to exclude if observations belong to reference
+    # # No need to exclude if observations belong to reference
     if(i.ucov == ref.ucov)
     {
       # Update obs.query
       message(paste0("REFERENCE! No need to remove ",nrow(obs.query %>% filter(exclude==1)),
-                     " query observations for i.ucov=",i.ucov))
+                     " observations for i.ucov=",i.ucov))
 
       # obs.query.excluded <- NULL
       obs.query          <- obs.query %>% filter(exclude==0)
@@ -1461,11 +1478,11 @@ print.vachette_data <- function(x, ...) {
     if(i.ucov != ref.ucov)
     {
       # Update obs.query
-      message(paste0("Removing ",nrow(obs.query %>% filter(exclude==1))," query observations for i.ucov=",i.ucov))
+      message(paste0("Removing ",nrow(obs.query %>% filter(exclude==1))," observations for i.ucov=",i.ucov))
 
       obs.query.excluded <- rbind(obs.query.excluded,
                                   obs.query %>% filter(exclude==1) %>%
-                                    mutate(reason="Observation without corresponding ref segment"))
+                                    mutate(reason="Without corresponding ref segment"))
       obs.query          <- obs.query %>% filter(exclude==0)
     }
 
@@ -2260,7 +2277,7 @@ print.vachette_data <- function(x, ...) {
           message("Zero observations cannot be transformed with proportional error model")
           obs.query.excluded <- rbind(obs.query.excluded,
                         obs.query %>% filter(y<=0) %>%
-                          mutate(reason = "Observations less or equal to zero") %>%
+                          mutate(reason = "Less or equal to zero") %>%
                           mutate(exclude=1) %>%
                           select(-seg,-y.scaling,-y.scaled,-x.shift.ref,
                                  -x.shift.query,-x.trans,-x.scaling,-x.scaled))
