@@ -599,6 +599,57 @@ p.obs.cov <- function(vachette_data) {
   return(gg)
 }
 
+
+#' p.obs.excluded
+#'
+#' @param vachette_data Object of class \code{vachette_data}
+#' @return Object of class \code{ggplot2}
+#' @export
+#'
+p.obs.excluded <- function(vachette_data) {
+  #stopifnot(length(vachette_data$covariates) == 1)
+  stopifnot(inherits(vachette_data, "vachette_data"))
+  log.x <- vachette_data$log.x
+
+  obs.all      <- vachette_data$obs.all
+  obs.excluded <- vachette_data$obs.excluded
+  curves.all   <- vachette_data$curves.all
+
+  xstart <- min(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
+  xstop  <- max(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
+
+  gg <- obs.excluded %>%
+    ggplot(aes(x=x,y=y)) +
+    geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y),lwd=1,col='red') +
+    geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y),lwd=1,col='blue') +
+    geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y),pch=19,col='lightgrey') +
+    geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y),pch=19,col='lightgrey') +
+    geom_point(data=obs.excluded %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),pch=19,col='red') +
+    geom_point(data=obs.excluded %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),pch=19,col='blue')
+
+  gg <- gg + coord_cartesian(xlim=c(xstart,xstop))
+
+  gg <- gg +
+    labs(title=paste0(vachette_data$model.name,";\nObservations excluded from transformation (colored)"),
+         caption = paste0("Reference Covariate: ",
+                          paste0(
+                            names(vachette_data$covariates),
+                            "=",
+                            vachette_data$covariates,
+                            collapse = ", "
+                          )))
+
+  if (log.x) {
+    gg <- gg +
+      labs(x = "ln(x)")
+  }
+
+  gg <- gg +
+    render
+
+  return(gg)
+}
+
 #' p.vachette.arrow
 #'
 #' @param vachette_data Object of class \code{vachette_data}
