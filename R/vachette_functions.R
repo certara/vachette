@@ -147,11 +147,11 @@ extremes <- function(x,y,type='minmax',polyorder=6)
 
   Im(solutions)
   # Which imaginary are numbers very close to 0,
-  round(Im(solutions), 10)
+  round(Im(solutions), 5)
   # Real numbers, when imaginary part = 0
   # fx.zero <- Re(solutions)[!(round(Im(solutions), 5))] # these are real numbers only, since imaginary part =0
   # JL 240327 - adjust sensitivity to find solutions
-  fx.zero <- Re(solutions)[!(round(Im(solutions), 10))] # these are real numbers only, since imaginary part =0
+  fx.zero <- Re(solutions)[!(round(Im(solutions), 5))] # these are real numbers only, since imaginary part =0
 
   # If there is a solution
   if (!is.na(fx.zero[1]))
@@ -170,6 +170,10 @@ extremes <- function(x,y,type='minmax',polyorder=6)
     if(sum(keep)==1) fx.0 <- fx.zero[keep]
     # if(sum(keep)>1) stop('Cannot handle: multiple inflection points detected using polynomial fit')
     if(sum(keep)>1)  fx.0 <- c(fx.zero[keep])
+
+    print(paste0("Searched for: ",type))
+    mydata %>% ggplot(aes(x=x,y=y))+geom_point()
+    print(paste0("returned: ",fx.0))
 
     return(fx.0)
   }
@@ -241,9 +245,9 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
   # ------------------------------------------------
   # Stop detecting extremes and inflection points if curve does not change anymore within
   #      tolerance with respect to last datapoint provided
-  y.noise <- data.frame(noise = abs(y - y[length(y)]), flag = (abs(y - y[length(y)])) < tol) %>% mutate(n=row_number())
+  # y.noise <- data.frame(noise = abs(y - y[length(y)]), flag = (abs(y - y[length(y)])) < tol) %>% mutate(n=row_number())
   # Last non-noise data point:
-  y.last.data <- max((y.noise %>% filter(flag==F))$n)
+  # y.last.data <- max((y.noise %>% filter(flag==F))$n)
 
   # ------- Start collecting landmarks -----------
 
@@ -1126,14 +1130,14 @@ print.vachette_data <- function(x, ...) {
     # Initialize
     REMOVE_OBS         <- FALSE
     remove.obs.after.x <- NULL
+    obs.query.excluded <- NULL
 
     cat('\n')
+    cat(' T E S T\n')
     cat('-------------------------\n')
     cat(paste('i.ucov',i.ucov,'\n'))
     print(tab.ucov[i.ucov,])
     cat('-------------------------\n')
-
-
 
     # ---------------------------------------------------------------
     # ----  Define reference and query curves and observations    ---
@@ -1332,14 +1336,32 @@ print.vachette_data <- function(x, ...) {
       query <- rbind(query,query.curve.next)
     }
 
+    # Observations dataframe
       obs.query   <- obs.orig %>%
         filter(ucov == i.ucov) %>%
-        mutate(ref = tab.ucov$ref[i.ucov])  # Flag for reference data
+        mutate(ref = tab.ucov$ref[i.ucov]) %>%  # Flag for reference data
+        mutate(exclude = 0)
 
-
-    # Create PRED for obs.query data points by linear interpolation
+    # Create PRED for obs.query data points by linear interpolation only if not available
     # May be needed for reference extrapolation, see obs.query$PRED
-    obs.query$PRED <- approx(x=query$x,y=query$y,xout=obs.query$x)$y
+    if (sum(grepl("PRED",names(obs.query)))==0) obs.query$PRED <- approx(x=query$x,y=query$y,xout=obs.query$x)$y
+
+    # ---------------------------------------------------------------
+    # ---- Flag when obs cannot be associated with query curve     --
+    # ---------------------------------------------------------------
+
+      if(i.ucov != ref.ucov)
+      {
+        message("Some obs cannot be associated with query curve")
+        obs.query.excluded <- rbind(obs.query.excluded,
+                                    obs.query %>%
+                                      filter(x < min(query$x) | x > max(query$x)) %>%
+                                      mutate(exclude=1) %>%
+                                    mutate(reason="Observations without typical curve"))
+        # Keep the rest
+        obs.query          <- obs.query %>%
+          filter(x >= min(query$x) & x <= max(query$x))
+      }
 
     # ---------------------------------------------------------------
     # ----               Determine landmark positions             ---
@@ -1360,9 +1382,6 @@ print.vachette_data <- function(x, ...) {
     # Number of landmarks
     n.lm.ref   <- nrow(my.ref.lm.init)
     n.lm.query <- nrow(my.query.lm.init)
-
-    # Add exclusion-from-transformation column
-    obs.query$exclude <- 0
 
     # New (temporary) landmark dataframe
     my.ref.lm.transf   <- my.ref.lm.init
@@ -1434,8 +1453,8 @@ print.vachette_data <- function(x, ...) {
       message(paste0("REFERENCE! No need to remove ",nrow(obs.query %>% filter(exclude==1)),
                      " query observations for i.ucov=",i.ucov))
 
-      obs.query.excluded <- NULL
-      # obs.query          <- obs.query %>% filter(exclude==0)
+      # obs.query.excluded <- NULL
+      obs.query          <- obs.query %>% filter(exclude==0)
     }
 
     # Remove observations if no matching reference segment available
@@ -1444,7 +1463,9 @@ print.vachette_data <- function(x, ...) {
       # Update obs.query
       message(paste0("Removing ",nrow(obs.query %>% filter(exclude==1))," query observations for i.ucov=",i.ucov))
 
-      obs.query.excluded <- obs.query %>% filter(exclude==1)
+      obs.query.excluded <- rbind(obs.query.excluded,
+                                  obs.query %>% filter(exclude==1) %>%
+                                    mutate(reason="Observation without corresponding ref segment"))
       obs.query          <- obs.query %>% filter(exclude==0)
     }
 
@@ -1453,42 +1474,42 @@ print.vachette_data <- function(x, ...) {
     n.query.landmarks <- nrow(my.query.lm.refined)
 
     # Count
-    if(n.ref.landmarks != n.query.landmarks)
-    {
-      message("No matching number landmarks between reference and query")
-
-      if(n.ref.landmarks < n.query.landmarks)
-      {
-        # Shorten query curve
-        message("Shortened query curve")
-        my.query.lm.refined <- my.query.lm.refined[1:(n.ref.landmarks+1),]
-        my.query.lm.refined$type[nrow(my.query.lm.refined)] <- 'end'
-        # Remove obs after (new) "end"
-        REMOVE_OBS <- TRUE
-        remove.obs.after.x <- my.query.lm.refined$x[nrow(my.query.lm.refined)]
-
-        obs.removed <- obs.query %>% filter(x >  remove.obs.after.x)
-        obs.query   <- obs.query %>% filter(x <= remove.obs.after.x)
-
-        message("New Query")
-        print(my.query.lm.refined)
-
-        message("Observation ignored (not transformed):")
-        print(obs.removed)
-
-      }
-      if(n.ref.landmarks > n.query.landmarks)
-      {
-        # Shorten ref curve, no further action needed
-        message("Shortened ref curve")
-        my.ref.lm.refined <- my.ref.lm.refined[1:(n.query.landmarks+1),]
-        my.ref.lm.refined$type[nrow(my.ref.lm.refined)] <- 'end'
-
-        message("New Ref")
-        print(my.ref.lm.refined)
-
-      }
-    }
+    # if(n.ref.landmarks != n.query.landmarks)
+    # {
+    #   message("No matching number landmarks between reference and query")
+    #
+    #   if(n.ref.landmarks < n.query.landmarks)
+    #   {
+    #     # Shorten query curve
+    #     message("Shortened query curve")
+    #     my.query.lm.refined <- my.query.lm.refined[1:(n.ref.landmarks+1),]
+    #     my.query.lm.refined$type[nrow(my.query.lm.refined)] <- 'end'
+    #     # Remove obs after (new) "end"
+    #     REMOVE_OBS <- TRUE
+    #     remove.obs.after.x <- my.query.lm.refined$x[nrow(my.query.lm.refined)]
+    #
+    #     obs.removed <- obs.query %>% filter(x >  remove.obs.after.x)
+    #     obs.query   <- obs.query %>% filter(x <= remove.obs.after.x)
+    #
+    #     message("New Query")
+    #     print(my.query.lm.refined)
+    #
+    #     message("Observation ignored (not transformed):")
+    #     print(obs.removed)
+    #
+    #   }
+    #   if(n.ref.landmarks > n.query.landmarks)
+    #   {
+    #     # Shorten ref curve, no further action needed
+    #     message("Shortened ref curve")
+    #     my.ref.lm.refined <- my.ref.lm.refined[1:(n.query.landmarks+1),]
+    #     my.ref.lm.refined$type[nrow(my.ref.lm.refined)] <- 'end'
+    #
+    #     message("New Ref")
+    #     print(my.ref.lm.refined)
+    #
+    #   }
+    # }
 
     # ---------------------------------------------------------------
     # ----          Calculate open end x.scaling factors          ---
@@ -1507,7 +1528,7 @@ print.vachette_data <- function(x, ...) {
       message("No landmarks detected, x=0 assumed first landmark")
     }
 
-    # JL 02-Feb-2024
+    # JL 04-APR-2024
     polyorder <- 9
     SIGMOID = FALSE
     if (nrow(my.ref.lm.refined) == 3 & my.ref.lm.refined$type[2] == 'inflec')
@@ -1575,7 +1596,6 @@ print.vachette_data <- function(x, ...) {
     # Recalc landmark y's
     my.ref.lm$y    <- approx(ref$x,ref$y,     xout=my.ref.lm$x)$y
     my.query.lm$y  <- approx(query$x,query$y, xout=my.query.lm$x)$y
-
     # Collect all landmarks
     my.ref.lm.all   <- rbind(my.ref.lm.all,   my.ref.lm   %>% mutate(i.ucov = i.ucov))
     my.query.lm.all <- rbind(my.query.lm.all, my.query.lm %>% mutate(i.ucov = i.ucov))
@@ -2108,7 +2128,6 @@ print.vachette_data <- function(x, ...) {
     if(EXTENSION) query.scaled$seg <- approx(ref$x,ref$seg,
                                              xout=query.scaled$x.scaled,
                                              method = 'constant')$y
-
     curves.all            <- rbind(curves.all,query)              # Included reference curve extrapolation
     curves.scaled.all     <- rbind(curves.scaled.all,query.scaled)
 
@@ -2214,6 +2233,7 @@ print.vachette_data <- function(x, ...) {
             mutate(x.scaled      = x.scaling * x.trans - x.shift.ref)  # Back to corresponding ref position
 
           sim.query <- rbind(sim.query, sim.query.add)
+
         }
       }
 
@@ -2231,6 +2251,22 @@ print.vachette_data <- function(x, ...) {
         # PROPORTIONAL - log scale addition. Take full ref and curve curves ....
         ref            <- ref   %>% mutate(ylog = ifelse(y>0,log(y),NA))
         query          <- query %>% mutate(ylog = ifelse(y>0,log(y),NA))
+
+        # Exclude if y<=0:
+        if(sum(obs.query <= 0) & i.ucov != ref.ucov)
+        {
+          print(names(obs.query.excluded))
+          print(names(obs.query))
+          message("Zero observations cannot be transformed with proportional error model")
+          obs.query.excluded <- rbind(obs.query.excluded,
+                        obs.query %>% filter(y<=0) %>%
+                          mutate(reason = "Observations less or equal to zero") %>%
+                          mutate(exclude=1) %>%
+                          select(-seg,-y.scaling,-y.scaled,-x.shift.ref,
+                                 -x.shift.query,-x.trans,-x.scaling,-x.scaled))
+          obs.query <- obs.query %>% filter(y>0)
+        }
+
         obs.query      <- obs.query %>% mutate(ylog = ifelse(y>0,log(y),NA))
 
         # Position on query curve
@@ -2304,7 +2340,6 @@ print.vachette_data <- function(x, ...) {
       }
 
       obs.all      <- rbind(obs.all,obs.query)
-
       if (!is.null(sim.orig)) {
         sim.all      <- rbind(sim.all,sim.query)
       }
