@@ -431,8 +431,8 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
       # Use high order, minimum=13
       if(polyorder < 13) message("!! Few grid points for inflection point determination !!")
 
-      # Highest order: 99
-      polyorder <- min(99,polyorder)
+      # Highest order: 70
+      polyorder <- min(70,polyorder)
 
       message(paste0("Polynomial order for open end curve fitting = ",polyorder))
 
