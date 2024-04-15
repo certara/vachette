@@ -374,6 +374,7 @@ update.vachette_data <- function(vachette_data, ...) {
 #' @param step.x.factor numeric; x-axis extension factor to search for last x, i.e., to determine where close enough to asymptote
 #' @param ngrid.fit numeric; number of grid points in last query segment for matching last reference segment
 #' @param window integer; size (gridpoints) of Savitzky Golay smoothing window for landmark position determination
+#' @param log_file character; File path to direct console output e.g., \code{"log.txt"}
 #' @param ... Additional arguments
 #' @name apply_transformations
 #' @export
@@ -387,7 +388,8 @@ apply_transformations.vachette_data <-
            tol.noise = 1e-8,
            step.x.factor = 1.5,
            ngrid.fit = 100,
-           window = 17,              # Savitzky Golay smoothing - initial landmarks
+           window = 17,
+           log_file = NULL,
            ...) {
 
     stopifnot(inherits(vachette_data, "vachette_data"))
@@ -418,6 +420,21 @@ apply_transformations.vachette_data <-
       zero_asymptote_left <- FALSE
     }
 
+    if (!is.null(log_file)) {
+      if (file.exists(log_file))  {
+        res <- askYesNo(msg = paste0(log_file, " exists and will be overwritten"))
+        if (res) {
+          unlink(log_file)
+        } else {
+          stop("Cannot delete log file. Set argument `log_file`=NULL to ignore.")
+        }
+      }
+      conn <- file(log_file, open = "at")
+      assign("vachette_log_file", value = conn, envir = vachette_env)
+      on.exit(close(conn))
+      on.exit(assign("vachette_log_file", value = NULL, envir = vachette_env), add = TRUE)
+    }
+
     vachette_transformed_data <- .calculate_transformations(vachette_data,
                                                             tol.end,
                                                             tol.noise,
@@ -428,7 +445,6 @@ apply_transformations.vachette_data <-
                                                             asymptote_left  = asymptote_left,
                                                             zero_asymptote_right = zero_asymptote_right,
                                                             zero_asymptote_left  = zero_asymptote_left)
-
 
     update(vachette_data,
            obs.all = vachette_transformed_data$obs.all,

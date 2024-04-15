@@ -33,5 +33,5 @@ Imports:
     grid,
     purrr,
     minpack.lm,
-    lubridate
+    progress
 Config/testthat/edition: 3
