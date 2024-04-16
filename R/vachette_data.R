@@ -402,6 +402,7 @@ apply_transformations.vachette_data <-
       asymptote_right <- TRUE
     }
 
+
     if (!is.null(args$asymptote_left)) {
       asymptote_left <- args$asymptote_left
     } else {
@@ -420,6 +421,13 @@ apply_transformations.vachette_data <-
       zero_asymptote_left <- FALSE
     }
 
+    summary_out$values[["asymptote_right"]] <- asymptote_right
+    summary_out$values[["asymptote_left"]] <- asymptote_left
+    summary_out$values[["zero_asymptote_right"]] <- zero_asymptote_right
+    summary_out$values[["zero_asymptote_left"]] <- zero_asymptote_left
+
+    assign("summary_out", summary_out, envir = vachette_env)
+
     if (!is.null(log_file)) {
       if (file.exists(log_file))  {
         res <- askYesNo(msg = paste0(log_file, " exists and will be overwritten"))
@@ -435,16 +443,32 @@ apply_transformations.vachette_data <-
       on.exit(assign("vachette_log_file", value = NULL, envir = vachette_env), add = TRUE)
     }
 
-    vachette_transformed_data <- .calculate_transformations(vachette_data,
-                                                            tol.end,
-                                                            tol.noise,
-                                                            step.x.factor,
-                                                            ngrid.fit,
-                                                            window,
-                                                            asymptote_right = asymptote_right,
-                                                            asymptote_left  = asymptote_left,
-                                                            zero_asymptote_right = zero_asymptote_right,
-                                                            zero_asymptote_left  = zero_asymptote_left)
+    vachette_transformed_data <-
+      tryCatch({
+        .calculate_transformations(
+          vachette_data,
+          tol.end,
+          tol.noise,
+          step.x.factor,
+          ngrid.fit,
+          window,
+          asymptote_right = asymptote_right,
+          asymptote_left  = asymptote_left,
+          zero_asymptote_right = zero_asymptote_right,
+          zero_asymptote_left  = zero_asymptote_left
+        )
+      }, error = function(e) {
+        warning(e$message)
+        summary_out <- get("summary_out", envir = vachette_env)
+        return(update(vachette_data, summary = summary_out))
+      })
+
+    summary_out <- get("summary_out", envir = vachette_env)
+    summary_out$values[["asymptote_right"]] <- asymptote_right
+    summary_out$values[["asymptote_left"]] <- asymptote_left
+    summary_out$values[["zero_asymptote_right"]] <- zero_asymptote_right
+    summary_out$values[["zero_asymptote_left"]] <- zero_asymptote_left
+
 
     update(vachette_data,
            obs.all = vachette_transformed_data$obs.all,
@@ -455,6 +479,7 @@ apply_transformations.vachette_data <-
            ref.extensions.all = vachette_transformed_data$ref.extensions.all,
            lm.all = vachette_transformed_data$lm.all,
            curvature.all = vachette_transformed_data$curvature.all,
-           nseg = vachette_transformed_data$nseg)
+           nseg = vachette_transformed_data$nseg,
+           summary = summary_out)
   }
 
