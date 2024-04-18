@@ -421,13 +421,6 @@ apply_transformations.vachette_data <-
       zero_asymptote_left <- FALSE
     }
 
-    summary_out$values[["asymptote_right"]] <- asymptote_right
-    summary_out$values[["asymptote_left"]] <- asymptote_left
-    summary_out$values[["zero_asymptote_right"]] <- zero_asymptote_right
-    summary_out$values[["zero_asymptote_left"]] <- zero_asymptote_left
-
-    assign("summary_out", summary_out, envir = vachette_env)
-
     if (!is.null(log_file)) {
       if (file.exists(log_file))  {
         res <- askYesNo(msg = paste0(log_file, " exists and will be overwritten"))
@@ -459,27 +452,30 @@ apply_transformations.vachette_data <-
         )
       }, error = function(e) {
         warning(e$message)
-        summary_out <- get("summary_out", envir = vachette_env)
-        return(update(vachette_data, summary = summary_out))
+        # vachette_summary <- get("summary_out", envir = vachette_env)
+        vachette_env$summary_out$values[["asymptote_right"]] <- asymptote_right
+        vachette_env$summary_out$values[["asymptote_left"]] <- asymptote_left
+        vachette_env$summary_out$values[["zero_asymptote_right"]] <- zero_asymptote_right
+        vachette_env$summary_out$values[["zero_asymptote_left"]] <- zero_asymptote_left
+        return(update(vachette_data, summary = vachette_env$summary_out))
       })
 
-    summary_out <- get("summary_out", envir = vachette_env)
-    summary_out$values[["asymptote_right"]] <- asymptote_right
-    summary_out$values[["asymptote_left"]] <- asymptote_left
-    summary_out$values[["zero_asymptote_right"]] <- zero_asymptote_right
-    summary_out$values[["zero_asymptote_left"]] <- zero_asymptote_left
+    vachette_env$summary_out$values[["asymptote_right"]] <- asymptote_right
+    vachette_env$summary_out$values[["asymptote_left"]] <- asymptote_left
+    vachette_env$summary_out$values[["zero_asymptote_right"]] <- zero_asymptote_right
+    vachette_env$summary_out$values[["zero_asymptote_left"]] <- zero_asymptote_left
 
+    return(update(vachette_data,
+             obs.all = vachette_transformed_data$obs.all,
+             obs.excluded = vachette_transformed_data$obs.excluded,
+             sim.all = vachette_transformed_data$sim.all,
+             curves.all = vachette_transformed_data$curves.all,
+             curves.scaled.all = vachette_transformed_data$curves.scaled.all,
+             ref.extensions.all = vachette_transformed_data$ref.extensions.all,
+             lm.all = vachette_transformed_data$lm.all,
+             curvature.all = vachette_transformed_data$curvature.all,
+             nseg = vachette_transformed_data$nseg,
+             summary = vachette_env$summary_out))
 
-    update(vachette_data,
-           obs.all = vachette_transformed_data$obs.all,
-           obs.excluded = vachette_transformed_data$obs.excluded,
-           sim.all = vachette_transformed_data$sim.all,
-           curves.all = vachette_transformed_data$curves.all,
-           curves.scaled.all = vachette_transformed_data$curves.scaled.all,
-           ref.extensions.all = vachette_transformed_data$ref.extensions.all,
-           lm.all = vachette_transformed_data$lm.all,
-           curvature.all = vachette_transformed_data$curvature.all,
-           nseg = vachette_transformed_data$nseg,
-           summary = summary_out)
-  }
+}
 
