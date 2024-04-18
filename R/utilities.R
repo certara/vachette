@@ -39,20 +39,6 @@ summary.vachette_data <- function(x, ...) {
   cat(sprintf("Covariate reference:\t%s", paste0(paste0(names(x$covariates), "=", x$covariates), collapse = " , ")),"\n")
   cat(sprintf("Unique covariate combinations:\t\t%s", x$summary$values$n_iter), "\n")
 
-  errors <- x$summary$errors
-
-  if(length(errors) > 0){
-    cat("\nErrors:\n")
-    for (i in seq_along(errors)){
-      emsg <- errors[[i]]
-      if (any(nzchar(emsg))) {
-        cat("\n\t---i.ucov = ", i, "---", "\n")
-        cat(emsg)
-      }
-    }
-    return(invisible(x))
-  }
-
   cat("\n--------------------------------------------\n")
   cat("vachette transformations")
   cat("\n--------------------------------------------\n")
@@ -63,18 +49,30 @@ summary.vachette_data <- function(x, ...) {
   cat(sprintf("\tZero asymptote right:\t%s", x$summary$values$zero_asymptote_right), "\n")
   cat(sprintf("\tZero asymptote left:\t%s", x$summary$values$zero_asymptote_left), "\n")
 
+
+  errors <- x$summary$errors
+
+  if(length(errors) > 0){
+    cat("\nErrors:")
+    for (i in seq_along(errors)){
+      emsg <- errors[[i]]
+      if (any(nzchar(emsg))) {
+        cat("\n\t---i.ucov = ", i, "---", "\n")
+        cat(emsg)
+      }
+    }
+  } else {
   cat("\nObservations:\n")
   cat(sprintf("\tN transformed:\t\t%s", nrow(x$obs.all) - nrow(x$obs.excluded)), "\n")
   cat(sprintf("\tN excluded:\t\t%s", nrow(x$obs.excluded)), "\n")
-
-
   cat("\nObservations Excluded:\n")
   print.data.frame(x$obs.excluded %>% dplyr::select(-c("REP", "COV", "PRED", "exclude")))
+  }
 
   warnings <- x$summary$warnings
 
   if(length(warnings) > 0){
-    cat("\nWarnings:\n")
+    cat("\n\nWarnings:")
     for (i in seq_along(warnings)){
       wmsg <- warnings[[i]]
       if (any(nzchar(wmsg))) {
