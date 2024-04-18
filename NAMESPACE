@@ -2,6 +2,7 @@
 
 S3method(apply_transformations,vachette_data)
 S3method(print,vachette_data)
+S3method(summary,vachette_data)
 S3method(update,vachette_data)
 export(apply_transformations)
 export(get.query.x.open.end)
