@@ -1152,7 +1152,11 @@ print.vachette_data <- function(x, ...) {
 
   n_iter <- nrow(tab.ucov)
 
-  # summary_out <- get("summary_out", envir = vachette_env)
+  vachette_env$summary_out <- list(errors = list(),
+                                   warnings = list(),
+                                   values = list()
+  )
+
   vachette_env$summary_out$values[["n_iter"]] <- n_iter
   vachette_env$summary_out$values[["start_time"]] <- Sys.time()
 
