@@ -4,10 +4,12 @@
 \alias{summary.vachette_data}
 \title{Summarise \code{vachette_data}}
 \usage{
-\method{summary}{vachette_data}(x, ...)
+\method{summary}{vachette_data}(x, log_file = NULL, ...)
 }
 \arguments{
 \item{x}{An \code{vachette_data}.}
+
+\item{log_file}{character; File path to direct console output e.g., \code{"log.txt"}}
 
 \item{...}{Additional args.}
 }
