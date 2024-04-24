@@ -187,8 +187,8 @@ vachette_data <-
       xmax_obs <- max(obs.orig[obs.orig$COV==cov,]$x)
       xmax_typ <- max(typ.orig[typ.orig$COV==cov,]$x)
       if (xmax_typ < xmax_obs) {
-        warning("Maximum x value for below covariate(s) in `typ.data` is less than the maximum x value `obs.data`, it is recommended to simulate longer:\n",
-                paste0(names(covariates), "=", strsplit(cov, split = " ")[[1]], collapse = "\t"), call. = FALSE)
+        warning("Maximum x value for ID = ", typ.orig[typ.orig$COV==cov,]$ID[1], " in `typ.data` is less than the maximum x value in `obs.data`, it is recommended to simulate longer:\n",
+                "Unique covariate(s):\t", paste0(names(covariates), "=", strsplit(cov, split = " ")[[1]], collapse = "\t"), call. = FALSE)
       }
     }
 
