@@ -1208,7 +1208,7 @@ print.vachette_data <- function(x, ...) {
     ref.ucov <- unique(ref$ucov)
 
     if(length(ref.ucov) != 1){
-      emsg <- "\nERROR:\nlength ref.ucov != 1\n*** Vachette processing stopped ***"
+      emsg <- "\nERROR:\nmore than one reference covariate declared\n*** Vachette processing stopped ***"
       vachette_env$summary_out$errors[[i.ucov]] <- emsg
       log_output(emsg)
       stop(emsg)     # A single ref only possible
