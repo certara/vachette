@@ -143,9 +143,6 @@ vachette_data <-
     typ.data  <-
       typ.data %>% dplyr::select(dplyr::all_of(typ_cols_to_select), dplyr::all_of(names(covariates)))
 
-    # Extract first/last observed x (look for max x/time in obs and sim data)
-    # xstart <- min(obs.data$x,sim.data$x)
-    # xstop  <- max(obs.data$x,sim.data$x)
     # Define unique covariate combination as new 'COV' column.
     obs.orig <- obs.data %>%
       mutate(COV = paste(!!!syms(names(covariates))))
@@ -181,6 +178,18 @@ vachette_data <-
       # if(xstart<=0 | xstop<=0) stop("Error, no log(x) conversion possible for observed/simulated x <= 0")
       # xstart <- log(xstart)
       # xstop  <- log(xstop)
+    }
+
+    # Check max x in typical curves is greater than max x in obs, if not, warn
+    ucov <- unique(obs.orig$COV)
+
+    for (cov in ucov){
+      xmax_obs <- max(obs.orig[obs.orig$COV==cov,]$x)
+      xmax_typ <- max(typ.orig[typ.orig$COV==cov,]$x)
+      if (xmax_typ < xmax_obs) {
+        warning("Maximum x value for below covariate(s) in `typ.data` is less than the maximum x value `obs.data`, it is recommended to simulate longer:\n",
+                paste0(names(covariates), "=", strsplit(cov, split = " ")[[1]], collapse = "\t"), call. = FALSE)
+      }
     }
 
     list(
