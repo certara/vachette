@@ -4,10 +4,14 @@
 \alias{summary.vachette_data}
 \title{Summarise \code{vachette_data}}
 \usage{
-\method{summary}{vachette_data}(x, log_file = NULL, ...)
+\method{summary}{vachette_data}(x, verbose = FALSE, trim = TRUE, log_file = NULL, ...)
 }
 \arguments{
 \item{x}{An \code{vachette_data}.}
+
+\item{verbose}{logical; Set to \code{TRUE} to view additional warnings output}
+
+\item{trim}{logical; If \code{TRUE}, only the first 20 rows are printed for \code{data.frame} output. Set to \code{FALSE} to display all rows}
 
 \item{log_file}{character; File path to direct console output e.g., \code{"log.txt"}}
 
