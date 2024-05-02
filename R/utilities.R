@@ -28,12 +28,12 @@ log_output <- function(message) {
 #'
 #' Summary generic used to return information about \code{vachette_data} object
 #'
-#' @param x An \code{vachette_data}.
+#' @param x \code{vachette_data} object.
 #' @param verbose logical; Set to \code{TRUE} to view additional warnings output
 #' @param trim logical; If \code{TRUE}, only the first 20 rows are printed for \code{data.frame} output. Set to \code{FALSE} to display all rows
 #' @param log_file character; File path to direct console output e.g., \code{"log.txt"}
-#' @param ... Additional args.
-#' @return Returns \code{x} invisibly.
+#' @param ... additional args.
+#' @return \code{x} invisibly.
 #' @export
 summary.vachette_data <-
   function(x,

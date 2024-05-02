@@ -763,9 +763,9 @@ funk <- function(param,y.scaling.start,t1,q1,t1.fit,q1.fit,ngrid=10){
 #'
 #' Print generic used to return information about \code{vachette_data} object
 #'
-#' @param x An \code{vachette_data}.
-#' @param ... Additional args.
-#' @return Returns \code{x} invisibly.
+#' @param x \code{vachette_data} object.
+#' @param ... additional args.
+#' @return \code{x} invisibly.
 #' @export
 print.vachette_data <- function(x, ...) {
   stopifnot(inherits(x, "vachette_data"))

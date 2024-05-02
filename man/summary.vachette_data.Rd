@@ -7,7 +7,7 @@
 \method{summary}{vachette_data}(x, verbose = FALSE, trim = TRUE, log_file = NULL, ...)
 }
 \arguments{
-\item{x}{An \code{vachette_data}.}
+\item{x}{\code{vachette_data} object.}
 
 \item{verbose}{logical; Set to \code{TRUE} to view additional warnings output}
 
@@ -15,10 +15,10 @@
 
 \item{log_file}{character; File path to direct console output e.g., \code{"log.txt"}}
 
-\item{...}{Additional args.}
+\item{...}{additional args.}
 }
 \value{
-Returns \code{x} invisibly.
+\code{x} invisibly.
 }
 \description{
 Summary generic used to return information about \code{vachette_data} object
