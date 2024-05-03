@@ -113,6 +113,7 @@ multi.approx <- function(x,y,yout,tol=1e-9) {
 # Get min/max or inflec for curve via polynomial fit
 extremes <- function(x,y,type='minmax',polyorder=6)
 {
+  warning_out <- get("warning_out", envir = vachette_env)
   mydata <- data.frame(x=x,y=y)
 
   # Polynomial fit
@@ -162,8 +163,11 @@ extremes <- function(x,y,type='minmax',polyorder=6)
     # Check domain
     if(sum(out)>0)
     {
-      log_output('Warning: ignoring inflection point solutions using polynomial fit at:')
-      log_output(paste('  x = ',paste(fx.zero[out]),collapse=' '))
+      wmsg <- paste0("WARNING: ignoring inflection point solutions using polynomial fit at:\n",
+                     "x = ", paste(fx.zero[out]), "\n", collapse= " ")
+      log_output(wmsg)
+      warning_out <- c(warning_out, wmsg)
+      assign("warning_out", warning_out, envir = vachette_env)
     }
 
     if(sum(keep)==0) fx.0 <- NA  # No solution
@@ -202,6 +206,8 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
   # JL230909. Two step process
   # 1. split by extremes
   # 2. between pair of extremes search for inflection points
+  warning_out <- get("warning_out", envir = vachette_env)
+
 
   # Make numeric
   x <- as.numeric(x)
@@ -441,7 +447,10 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
 
       if(!is.na(f2.0[1]) & length(f2.0) > 1)
       {
-        log_output("Warning: multiple inflection points detected for a segment. First inflection point only used")
+        wmsg <- "WARNING: multiple inflection points detected for a segment. First inflection point only used"
+        warning_out <- c(warning_out, wmsg)
+        assign("warning_out", warning_out, envir = vachette_env)
+        log_output(wmsg)
         f2.0 <- f2.0[1]
       }
 
@@ -479,11 +488,18 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
 get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
                                  scaling='linear',polyorder=9) {
 
+  warning_out <- get("warning_out", envir = vachette_env)
+
   n.segment        <- nrow(lm.ref)-1
   n.segment.query  <- nrow(lm.query)-1
   ref.region       <- ref$region[1]
   query.region     <- query$region[1]
-  if(n.segment != n.segment.query) stop("Error: unequal number of segments reference/query")
+
+  if(n.segment != n.segment.query) {
+    emsg <- "\nERROR:\nunequal number of segments reference/query\n*** Vachette processing stopped ***"
+    log_output(emsg)
+    stop(emsg)
+  }
 
   # define starting landmark point (updated JL 240228, holds for first region only)
   if(n.segment==1 & ref.region  ==1) ref.x.start     <- 0
@@ -537,26 +553,27 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
 
   # Check lengths:
 
-  # -- For James to move: -----
-  stop_quietly <- function() {
-    opt <- options(show.error.messages = FALSE)
-    on.exit(options(opt))
-    stop()
-  }
-
   if(nrow(t0)<(polyorder+1))
   {
-    log_output(paste0("Less than ",(polyorder+1)," gridpoints for reference last segment. Currently: ",nrow(t0)," only"))
-    log_output(paste("---> Please adjust typical curves (finer grid)"))
-    log_output("*** Vachette processing stopped ***")
-    stop_quietly()
+    e1 <- paste0("ERROR:\nLess than ",(polyorder+1)," gridpoints for reference last segment. Currently: ",nrow(t0)," only\n")
+    log_output(e1)
+    e2 <- paste("---> Please adjust typical curves (finer grid)\n")
+    log_output(e2)
+    e3 <- "*** Vachette processing stopped ***"
+    log_output(e3)
+    error_out <- c(e1, e2, e3)
+    stop(error_out)
   }
   if(nrow(q0)<(polyorder+1))
   {
-    log_output(paste0("Less than ",(polyorder+1)," gridpoints for query last segment. Currently: ",nrow(q0)," only"))
-    log_output(paste("---> Please adjust typical curves (finer grid)"))
-    log_output("*** Vachette processing stopped ***")
-    stop_quietly()
+    e1 <- paste0("ERROR:\nLess than ",(polyorder+1)," gridpoints for query last segment. Currently: ",nrow(q0)," only\n")
+    log_output(e1)
+    e2 <- paste("---> Please adjust typical curves (finer grid)\n")
+    log_output(e2)
+    e3 <- ("*** Vachette processing stopped ***")
+    log_output(e3)
+    error_out <- c(e1, e2, e3)
+    stop(error_out)
   }
 
   #  -----------------------------
@@ -620,9 +637,14 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
   y.scale.optim.end <- exp(result$par[2])
 
   # message(paste("x.scaling = ",x.scaling.optim))
-  if(x.scaling.optim<=0) log_output("WARNING: zero or negative open end x.scaling factor")
+  if(x.scaling.optim<=0) {
+    wmsg <- "WARNING:\nzero or negative open end x.scaling factor"
+    warning_out <- c(warning_out, wmsg)
+    assign("warning_out", warning_out, envir = vachette_env)
+    log_output(wmsg)
+  }
 
-  log_output(paste0("Optimized last segment x.scaling ",signif(x.scaling.optim,4)))
+  log_output(paste0("Optimized last segment x.scaling ", signif(x.scaling.optim,4)))
 
   # Check if last.x fitted curve <= last.x template curve
   # (original translated curves)
@@ -649,7 +671,11 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
 
     log_output(paste("x.scaling = ",x.scaling.optim))
 
-    if(x.scaling.optim<=0) stop("ERROR: (Still) zero or negative open end x.scaling factor")
+    if(x.scaling.optim<=0) {
+      emsg <- "\nERROR:\n(Still) zero or negative open end x.scaling factor\n*** Vachette processing stopped ***"
+      log_output(emsg)
+      stop(emsg)
+    }
 
     log_output(paste0("Updated (reversed) last segment x.scaling ",signif(x.scaling.optim,4)))
 
@@ -737,9 +763,9 @@ funk <- function(param,y.scaling.start,t1,q1,t1.fit,q1.fit,ngrid=10){
 #'
 #' Print generic used to return information about \code{vachette_data} object
 #'
-#' @param x An \code{vachette_data}.
-#' @param ... Additional args.
-#' @return Returns \code{x} invisibly.
+#' @param x \code{vachette_data} object.
+#' @param ... additional args.
+#' @return \code{x} invisibly.
 #' @export
 print.vachette_data <- function(x, ...) {
   stopifnot(inherits(x, "vachette_data"))
@@ -1091,11 +1117,13 @@ print.vachette_data <- function(x, ...) {
                                        zero_asymptote_right = TRUE,
                                        zero_asymptote_left = TRUE) {
 
-  # if (!is.null(log_file)) {
-  #   # Start redirecting all output to log_file
-  #   sink(log_file, append = TRUE, type = "output")
-  #   sink(log_file, append = TRUE, type = "message")
-  # }
+  #retaining this affects the trycatch
+  #on.exit(assign("summary_out", summary_out, envir = vachette_env), add = TRUE)
+  # summary_out <- list(errors = list(),
+  #      warnings = list(),
+  #      values = list()
+  # )
+
 
   # Collect all Vachette query curves and original/transformed observations (incl reference)
   ref.extensions.all   <- NULL
@@ -1123,6 +1151,15 @@ print.vachette_data <- function(x, ...) {
   ref.dosenr <- vachette_data$ref.dosenr
 
   n_iter <- nrow(tab.ucov)
+
+  vachette_env$summary_out <- list(errors = list(),
+                                   warnings = list(),
+                                   values = list()
+  )
+
+  vachette_env$summary_out$values[["n_iter"]] <- n_iter
+  vachette_env$summary_out$values[["start_time"]] <- Sys.time()
+
   pb <- progress::progress_bar$new(
     format = "  vachette transformations [:bar] :percent :elapsed elapsed / :eta remaining",
     total = n_iter, clear = FALSE)
@@ -1131,6 +1168,8 @@ print.vachette_data <- function(x, ...) {
   end_time <- numeric(n_iter)
 
   for(i.ucov in c(1:n_iter)) {
+    warning_out <- c()
+    assign("warning_out", warning_out, envir = vachette_env)
     pb$tick()
     init_time[i.ucov] <- Sys.time()
     # Initialize
@@ -1168,7 +1207,12 @@ print.vachette_data <- function(x, ...) {
 
     ref.ucov <- unique(ref$ucov)
 
-    if(length(ref.ucov) != 1) stop("Error: length ref.ucov != 1")     # A single ref only possible
+    if(length(ref.ucov) != 1){
+      emsg <- "\nERROR:\nmore than one reference covariate declared\n*** Vachette processing stopped ***"
+      vachette_env$summary_out$errors[[i.ucov]] <- emsg
+      log_output(emsg)
+      stop(emsg)     # A single ref only possible
+    }
 
     ref.region.type <- tab.ucov$region.type[tab.ucov$ucov==ref.ucov]
 
@@ -1199,11 +1243,21 @@ print.vachette_data <- function(x, ...) {
       ref.next      <- typ.orig %>% filter(eval(parse(text = filter_ref_next)))
 
       # Raise error if empty
-      if(is.null(ref.next)) stop("Error: No typical curve for next reference region found")
+      if(is.null(ref.next)) {
+        emsg <- "\nERROR:\nNo typical curve for next reference region found\n*** Vachette processing stopped ***"
+        vachette_env$summary_out$errors[[i.ucov]] <- emsg
+        log_output(emsg)
+        stop(emsg)     # A single ref only possible
+      }
 
       ref.next.ucov <- unique(ref.next$ucov)
 
-      if(length(ref.next.ucov) != 1) stop("Error: length ref.next.ucov != 1")     # A single ref only possible
+      if(length(ref.next.ucov) != 1) {
+        emsg <- "\nERROR:\nlength ref.next.ucov != 1\n*** Vachette processing stopped ***"
+        vachette_env$summary_out$errors[[i.ucov]] <- emsg
+        log_output(emsg)
+        stop(emsg)     # A single ref only possible
+      }
 
       ref.next.grid.point.x <- ref.next$x[1]
     }
@@ -1248,11 +1302,21 @@ print.vachette_data <- function(x, ...) {
       query.next      <- typ.orig %>% filter(eval(parse(text = filter_query_next)))
 
       # Raise error if empty
-      if(is.null(query.next)) stop("Error: No typical curve for next query region found")
+      if(is.null(query.next)) {
+        emsg <- "\nERROR:\nNo typical curve for next query region found\n*** Vachette processing stopped ***"
+        vachette_env$summary_out$errors[[i.ucov]] <- emsg
+        log_output(emsg)
+        stop(emsg)
+      }
 
       query.next.ucov <- unique(query.next$ucov)
 
-      if(length(query.next.ucov) != 1) stop("Error: length query.next.ucov != 1")     # A single query only possible
+      if(length(query.next.ucov) != 1) {
+        emsg <- "\nERROR:\nlength query.next.ucov != 1\n*** Vachette processing stopped ***"
+        vachette_env$summary_out$errors[[i.ucov]] <- emsg
+        log_output(emsg)
+        stop(emsg)
+      }
 
       query.next.grid.point.x <- query.next$x[1]
 
@@ -1542,8 +1606,19 @@ print.vachette_data <- function(x, ...) {
 
     # JL 27-Jan-2024
     # Warn user in case we do not have landmarks. x=0 will be used as "surrogate" landmark.
-    if(nrow(my.ref.lm.refined) == 0) stop("Error in simulated data (1)")
-    if(nrow(my.ref.lm.refined) == 1) stop("Error in simulated data (2)")
+    if(nrow(my.ref.lm.refined) == 0) {
+      emsg <- "\nERROR:\n error in simulated data (1)\n*** Vachette processing stopped ***"
+      vachette_env$summary_out$errors[[i.ucov]] <- emsg
+      log_output(emsg)
+      stop(emsg)
+    }
+    if(nrow(my.ref.lm.refined) == 1) {
+      emsg <- "\nERROR:\nerror in simulated data (2)*** Vachette processing stopped ***"
+      vachette_env$summary_out$errors[[i.ucov]] <- emsg
+      log_output(emsg)
+      stop(emsg)
+    }
+
     if(nrow(my.ref.lm.refined) == 2)
     {
       log_output("No landmarks detected, x=0 assumed first landmark")
@@ -1567,10 +1642,24 @@ print.vachette_data <- function(x, ...) {
 
     scaling   <- 'linear'
     ngrid.fit <- 10
-    my.query.lm     <- suppressWarnings(
-      get.query.x.open.end(ref,query,my.ref.lm.refined,my.query.lm.refined,
-                           ngrid=ngrid.fit,scaling=scaling,polyorder=polyorder)
-    )
+    # ADD tryCatch here to catch error, add it to appropriate icuv, then stop, can likely remove error logging within get.query.x.open.end
+    my.query.lm     <- tryCatch({
+      suppressWarnings(
+        get.query.x.open.end(
+          ref,
+          query,
+          my.ref.lm.refined,
+          my.query.lm.refined,
+          ngrid = ngrid.fit,
+          scaling = scaling,
+          polyorder = polyorder
+        )
+      )
+    }, error = function(e) {
+      emsg <- e$message
+      vachette_env$summary_out$errors[[i.ucov]] <- emsg
+      stop(emsg)
+    })
 
     # If Sigmoid, also carry out mirrored curve for x.scaling of first segment
     if(SIGMOID)
@@ -1913,10 +2002,13 @@ print.vachette_data <- function(x, ...) {
         ref.extensions.all  <- rbind(ref.extensions.all,ref.curve.next)  # Included reference curve extrapolation
 
         # Check:
-        if(cur.ref.seg != cur.query.seg) stop("Error segment number assignment in reference extrapolation block")
+        if(cur.ref.seg != cur.query.seg) {
+          emsg <- "\nERROR:\n segment number assignment in reference extrapolation block\n*** Vachette processing stopped ***"
+          vachette_env$summary_out$errors[[i.ucov]] <- emsg
+          log_output(emsg)
+          stop(emsg)
+        }
       }
-
-
 
       # Only needed when there are query observations found outside the typical query fitted last.x
       # [May also be activated if the typical curve has been cut off a bit to soon]
@@ -2135,7 +2227,12 @@ print.vachette_data <- function(x, ...) {
         ref.extensions.all  <- rbind(ref.extensions.all,ref.curve.prev)  # Included reference curve extrapolation
 
         # Check:
-        if(cur.ref.seg != cur.query.seg) stop("Error segment number assignment in reference extrapolation block")
+        if(cur.ref.seg != cur.query.seg) {
+          emsg <- "\nERROR:\nsegment number assignment in reference extrapolation block\n*** Vachette processing stopped ***"
+          vachette_env$summary_out$errors[[i.ucov]] <- emsg
+          log_output(emsg)
+          stop(emsg)
+        }
       }
 
     }
@@ -2374,6 +2471,7 @@ print.vachette_data <- function(x, ...) {
 
     ### Message Time
     # end_time[i.ucov] <- Sys.time()
+    vachette_env$summary_out$warnings[[i.ucov]] <- get("warning_out", envir = vachette_env)
   }
 
   # Check additive/prop transformations
@@ -2436,6 +2534,8 @@ print.vachette_data <- function(x, ...) {
   } else {
     sim.all <- NULL
   }
+
+
 
   return(
     list(
