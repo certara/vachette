@@ -111,7 +111,7 @@ multi.approx <- function(x,y,yout,tol=1e-9) {
 
 
 # Get min/max or inflec for curve via polynomial fit
-extremes <- function(x,y,type='minmax',polyorder=6)
+extremes <- function(x,y,type='minmax',polyorder=6, tol.poly=0.001)
 {
   warning_out <- get("warning_out", envir = vachette_env)
   mydata <- data.frame(x=x,y=y)
@@ -146,13 +146,29 @@ extremes <- function(x,y,type='minmax',polyorder=6)
   if (type=='minmax') solutions = polyroot(f1.coeff)
   if (type=='inflec') solutions = polyroot(f2.coeff)
 
-  Im(solutions)
-  # Which imaginary are numbers very close to 0,
-  round(Im(solutions), 5)
-  # Real numbers, when imaginary part = 0
-  # fx.zero <- Re(solutions)[!(round(Im(solutions), 5))] # these are real numbers only, since imaginary part =0
-  # JL 240327 - adjust sensitivity to find solutions
-  fx.zero <- Re(solutions)[!(round(Im(solutions), 5))] # these are real numbers only, since imaginary part =0
+  # AL 04182024
+  # solve the poly
+  fx.zero <- Re(solutions)[!(round(Im(solutions), 5))]
+  if (type=='minmax') {
+    poly.eval=array(0,length(fx.zero))
+    for (j in 1:length(fx.zero)) {
+      y.eval = f1.coeff[1]
+      for (i in 1:(length(f1.coeff)-1)) {
+        y.eval = y.eval + f1.coeff[i + 1]*fx.zero[j]^i
+      }
+      poly.eval[j] = y.eval
+    }
+  }
+  if (type=='inflec') {
+    poly.eval=array(0,length(fx.zero))
+    for (j in 1:length(fx.zero)) {
+      y.eval = f2.coeff[1]
+      for (i in 1:(length(f2.coeff)-1)) {
+        y.eval = y.eval + f2.coeff[i + 1]*fx.zero[j]^i
+      }
+      poly.eval[j] = y.eval
+    }
+  }
 
   # If there is a solution
   if (!is.na(fx.zero[1]))
@@ -171,15 +187,46 @@ extremes <- function(x,y,type='minmax',polyorder=6)
     }
 
     if(sum(keep)==0) fx.0 <- NA  # No solution
-    if(sum(keep)==1) fx.0 <- fx.zero[keep]
+    if(sum(keep)==1) {
+      fx.0 <- fx.zero[keep]
+      poly.eval <- poly.eval[keep]
+    }
     # if(sum(keep)>1) stop('Cannot handle: multiple inflection points detected using polynomial fit')
-    if(sum(keep)>1)  fx.0 <- c(fx.zero[keep])
+    if(sum(keep)>1)  {
+      fx.0 <- c(fx.zero[keep])
+      poly.eval <- c(poly.eval[keep])
+    }
+
+
+    # only for inflection point
+    if(sum(keep)!=0 & type=='inflec')
+    {
+      # take the first solution to the poly
+      fx.0 = min(fx.0)
+      poly.eval = poly.eval[which(fx.0 == min(fx.0))]
+
+      # if above tolerance is not a true zero
+      if (min(abs(poly.eval))>tol.poly) {
+        fx.0 <- NA
+        message('Warning: ignoring inflection solution of poly as > tol.poly:')
+        message(paste('  x = ',paste(fx.0[which(abs(poly.eval)==min(abs(poly.eval)))]),collapse=' '))
+      }
+    } else if (sum(keep)!=0 & type=='minmax') {
+      if (length(which(abs(poly.eval)<tol.poly))!=0) {
+        fx.0 <- fx.0[which(abs(poly.eval)<tol.poly)]
+      } else {
+        fx.0 <- NA
+        message('Warning: ignoring minmax solution of poly as > tol.poly:')
+        message(paste('  x = ',paste(fx.0[which(abs(poly.eval)>=tol.poly)]),collapse=' '))
+      }
+    }
 
     log_output(paste0("Searched for: ",type))
-    mydata %>% ggplot(aes(x=x,y=y))+geom_point()
     log_output(paste0("returned: ",fx.0))
 
-    return(fx.0)
+      return(fx.0)
+
+
   }
 
   # No solution
@@ -437,8 +484,8 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
       # Use high order, minimum=13
       if(polyorder < 13) log_output("!! Few grid points for inflection point determination !!")
 
-      # Highest order: 99
-      polyorder <- min(99,polyorder)
+      # Highest order: 70
+      polyorder <- min(70,polyorder)
 
       log_output(paste0("Polynomial order for open end curve fitting = ",polyorder))
 
@@ -2243,9 +2290,20 @@ print.vachette_data <- function(x, ...) {
 
     # JL 230607 Assign part of curve mapped to extrapolated part of reference curve, if required
     # Only extension part....
-    if(EXTENSION) query.scaled$seg <- approx(ref$x,ref$seg,
-                                             xout=query.scaled$x.scaled,
-                                             method = 'constant')$y
+    # AL 18042024 left-continuous for step function
+    # if(EXTENSION) query.scaled$seg <- approx(ref$x,ref$seg,
+    #                                          xout=query.scaled$x.scaled,
+    #                                          method = 'constant', f=1)$y
+    # AL 22042024, assign the segment using reference position
+    if(EXTENSION) {
+      for (w in 1:(dim(my.ref.lm)[1]-1)){
+        for (j in 1:dim(query.scaled)[1]) {
+          if (query.scaled$x.scaled[j]>=my.ref.lm$x[w] & query.scaled$x.scaled[j]<=my.ref.lm$x[w+1]){
+            query.scaled$seg[j]=w
+          }
+        }
+      }
+    }
     curves.all            <- rbind(curves.all,query)              # Included reference curve extrapolation
     curves.scaled.all     <- rbind(curves.scaled.all,query.scaled)
 

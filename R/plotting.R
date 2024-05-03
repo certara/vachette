@@ -627,18 +627,23 @@ p.obs.excluded <- function(vachette_data) {
               "Without corresp.\nref segment" = 3,
               "Without\ntypical curve" = 4)
 
-  # shapes <- c("Less or equal to zero" = 1,
-  #             "Without corresponding ref segment" = 3,
-  #             "Without typical curve" = 4)
-
   gg <- obs.excluded %>%
     ggplot(aes(x=x,y=y)) +
-    geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y),lwd=1,col='red') +
-    geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y),lwd=1,col='blue') +
+    geom_line(data=curves.all %>% filter(ref=='Yes'),aes(x=x,y=y,col='Reference'),lwd=1) +
+    geom_line(data=curves.all %>% filter(ref=='No'),aes(x=x,y=y,col='Query'),lwd=1) +
+    scale_color_manual(
+      name = 'Data type',
+      breaks = c('Query',
+                 'Reference'),
+      values = c(
+        'Query' = 'blue',
+        'Reference' = 'red'
+      )
+    ) +
     geom_point(data=obs.all %>% filter(ref=='Yes'),aes(x=x,y=y),pch=19,col='lightgrey') +
     geom_point(data=obs.all %>% filter(ref=='No'),aes(x=x,y=y),pch=19,col='lightgrey') +
-    geom_point(data=obs.excluded %>% filter(ref=='Yes'),aes(x=x,y=y,pch=factor(reason)),col='red') +
-    geom_point(data=obs.excluded %>% filter(ref=='No'),aes(x=x,y=y,pch=factor(reason)),col='blue') +
+    geom_point(data=obs.excluded %>% filter(ref=='Yes'),aes(x=x,y=y,pch=factor(reason),col='Reference')) +
+    geom_point(data=obs.excluded %>% filter(ref=='No'),aes(x=x,y=y,pch=factor(reason),col='Query')) +
     scale_shape_manual(values = shapes)
 
   gg <- gg + coord_cartesian(xlim=c(xstart,xstop))
