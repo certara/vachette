@@ -7,12 +7,12 @@
 \method{print}{vachette_data}(x, ...)
 }
 \arguments{
-\item{x}{An \code{vachette_data}.}
+\item{x}{\code{vachette_data} object.}
 
-\item{...}{Additional args.}
+\item{...}{additional args.}
 }
 \value{
-Returns \code{x} invisibly.
+\code{x} invisibly.
 }
 \description{
 Print generic used to return information about \code{vachette_data} object

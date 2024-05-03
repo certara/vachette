@@ -14,6 +14,7 @@ apply_transformations(vachette_data, ...)
   step.x.factor = 1.5,
   ngrid.fit = 100,
   window = 17,
+  log_file = NULL,
   ...
 )
 }
@@ -31,6 +32,8 @@ apply_transformations(vachette_data, ...)
 \item{ngrid.fit}{numeric; number of grid points in last query segment for matching last reference segment}
 
 \item{window}{integer; size (gridpoints) of Savitzky Golay smoothing window for landmark position determination}
+
+\item{log_file}{character; File path to direct console output e.g., \code{"log.txt"}}
 }
 \description{
 Apply vachette transformations

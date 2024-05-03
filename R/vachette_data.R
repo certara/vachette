@@ -143,9 +143,6 @@ vachette_data <-
     typ.data  <-
       typ.data %>% dplyr::select(dplyr::all_of(typ_cols_to_select), dplyr::all_of(names(covariates)))
 
-    # Extract first/last observed x (look for max x/time in obs and sim data)
-    # xstart <- min(obs.data$x,sim.data$x)
-    # xstop  <- max(obs.data$x,sim.data$x)
     # Define unique covariate combination as new 'COV' column.
     obs.orig <- obs.data %>%
       mutate(COV = paste(!!!syms(names(covariates))))
@@ -181,6 +178,18 @@ vachette_data <-
       # if(xstart<=0 | xstop<=0) stop("Error, no log(x) conversion possible for observed/simulated x <= 0")
       # xstart <- log(xstart)
       # xstop  <- log(xstop)
+    }
+
+    # Check max x in typical curves is greater than max x in obs, if not, warn
+    ucov <- unique(obs.orig$COV)
+
+    for (cov in ucov){
+      xmax_obs <- max(obs.orig[obs.orig$COV==cov,]$x)
+      xmax_typ <- max(typ.orig[typ.orig$COV==cov,]$x)
+      if (xmax_typ < xmax_obs) {
+        warning("Maximum x value for ID = ", typ.orig[typ.orig$COV==cov,]$ID[1], " in `typ.data` is less than the maximum x value in `obs.data`, it is recommended to simulate longer:\n",
+                "Unique covariate(s):\t", paste0(names(covariates), "=", strsplit(cov, split = " ")[[1]], collapse = "\t"), call. = FALSE)
+      }
     }
 
     list(
@@ -374,6 +383,7 @@ update.vachette_data <- function(vachette_data, ...) {
 #' @param step.x.factor numeric; x-axis extension factor to search for last x, i.e., to determine where close enough to asymptote
 #' @param ngrid.fit numeric; number of grid points in last query segment for matching last reference segment
 #' @param window integer; size (gridpoints) of Savitzky Golay smoothing window for landmark position determination
+#' @param log_file character; File path to direct console output e.g., \code{"log.txt"}
 #' @param ... Additional arguments
 #' @name apply_transformations
 #' @export
@@ -387,7 +397,8 @@ apply_transformations.vachette_data <-
            tol.noise = 1e-8,
            step.x.factor = 1.5,
            ngrid.fit = 100,
-           window = 17,              # Savitzky Golay smoothing - initial landmarks
+           window = 17,
+           log_file = NULL,
            ...) {
 
     stopifnot(inherits(vachette_data, "vachette_data"))
@@ -399,6 +410,7 @@ apply_transformations.vachette_data <-
     } else {
       asymptote_right <- TRUE
     }
+
 
     if (!is.null(args$asymptote_left)) {
       asymptote_left <- args$asymptote_left
@@ -418,27 +430,61 @@ apply_transformations.vachette_data <-
       zero_asymptote_left <- FALSE
     }
 
-    vachette_transformed_data <- .calculate_transformations(vachette_data,
-                                                            tol.end,
-                                                            tol.noise,
-                                                            step.x.factor,
-                                                            ngrid.fit,
-                                                            window,
-                                                            asymptote_right = asymptote_right,
-                                                            asymptote_left  = asymptote_left,
-                                                            zero_asymptote_right = zero_asymptote_right,
-                                                            zero_asymptote_left  = zero_asymptote_left)
+    if (!is.null(log_file)) {
+      if (file.exists(log_file))  {
+        res <- askYesNo(msg = paste0(log_file, " exists and will be overwritten"))
+        if (res) {
+          unlink(log_file)
+        } else {
+          stop("Cannot delete log file. Set argument `log_file`=NULL to ignore.")
+        }
+      }
+      conn <- file(log_file, open = "at")
+      assign("vachette_log_file", value = conn, envir = vachette_env)
+      on.exit(close(conn))
+      on.exit(assign("vachette_log_file", value = NULL, envir = vachette_env), add = TRUE)
+    }
 
+    vachette_transformed_data <-
+      tryCatch({
+        .calculate_transformations(
+          vachette_data,
+          tol.end,
+          tol.noise,
+          step.x.factor,
+          ngrid.fit,
+          window,
+          asymptote_right = asymptote_right,
+          asymptote_left  = asymptote_left,
+          zero_asymptote_right = zero_asymptote_right,
+          zero_asymptote_left  = zero_asymptote_left
+        )
+      }, error = function(e) {
+        warning(e$message)
+        # vachette_summary <- get("summary_out", envir = vachette_env)
+        vachette_env$summary_out$values[["asymptote_right"]] <- asymptote_right
+        vachette_env$summary_out$values[["asymptote_left"]] <- asymptote_left
+        vachette_env$summary_out$values[["zero_asymptote_right"]] <- zero_asymptote_right
+        vachette_env$summary_out$values[["zero_asymptote_left"]] <- zero_asymptote_left
+        return(update(vachette_data, summary = vachette_env$summary_out))
+      })
 
-    update(vachette_data,
-           obs.all = vachette_transformed_data$obs.all,
-           obs.excluded = vachette_transformed_data$obs.excluded,
-           sim.all = vachette_transformed_data$sim.all,
-           curves.all = vachette_transformed_data$curves.all,
-           curves.scaled.all = vachette_transformed_data$curves.scaled.all,
-           ref.extensions.all = vachette_transformed_data$ref.extensions.all,
-           lm.all = vachette_transformed_data$lm.all,
-           curvature.all = vachette_transformed_data$curvature.all,
-           nseg = vachette_transformed_data$nseg)
-  }
+    vachette_env$summary_out$values[["asymptote_right"]] <- asymptote_right
+    vachette_env$summary_out$values[["asymptote_left"]] <- asymptote_left
+    vachette_env$summary_out$values[["zero_asymptote_right"]] <- zero_asymptote_right
+    vachette_env$summary_out$values[["zero_asymptote_left"]] <- zero_asymptote_left
+
+    return(update(vachette_data,
+             obs.all = vachette_transformed_data$obs.all,
+             obs.excluded = vachette_transformed_data$obs.excluded,
+             sim.all = vachette_transformed_data$sim.all,
+             curves.all = vachette_transformed_data$curves.all,
+             curves.scaled.all = vachette_transformed_data$curves.scaled.all,
+             ref.extensions.all = vachette_transformed_data$ref.extensions.all,
+             lm.all = vachette_transformed_data$lm.all,
+             curvature.all = vachette_transformed_data$curvature.all,
+             nseg = vachette_transformed_data$nseg,
+             summary = vachette_env$summary_out))
+
+}
 
