@@ -177,14 +177,14 @@ extremes <- function(x,y,type='minmax',polyorder=6, tol.poly=0.001)
     keep  <- fx.zero >= min(mydata$x) & fx.zero <= max(mydata$x)
 
     # Check domain
-    if(sum(out)>0)
-    {
-      wmsg <- paste0("WARNING: ignoring inflection point solutions using polynomial fit at:\n",
-                     "x = ", paste(fx.zero[out]), "\n", collapse= " ")
-      log_output(wmsg)
-      warning_out <- c(warning_out, wmsg)
-      assign("warning_out", warning_out, envir = vachette_env)
-    }
+    # if(sum(out)>0)
+    # {
+    #   wmsg <- paste0("WARNING: ignoring inflection point solutions using polynomial fit at:\n",
+    #                  "x = ", paste(fx.zero[out]), "\n", collapse= " ")
+    #   log_output(wmsg)
+    #   warning_out <- c(warning_out, wmsg)
+    #   assign("warning_out", warning_out, envir = vachette_env)
+    # }
 
     if(sum(keep)==0) fx.0 <- NA  # No solution
     if(sum(keep)==1) {
