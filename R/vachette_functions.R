@@ -1478,7 +1478,7 @@ print.vachette_data <- function(x, ...) {
                                     obs.query %>%
                                       filter(x < min(query$x) | x > max(query$x)) %>%
                                       mutate(exclude=1) %>%
-                                      mutate(reason="Without typical curve"))
+                                      mutate(reason="Missing typical curve"))
         # Keep the rest
         obs.query          <- obs.query %>%
           filter(x >= min(query$x) & x <= max(query$x))
@@ -1493,7 +1493,7 @@ print.vachette_data <- function(x, ...) {
                                       obs.query %>%
                                         filter(x > max(query$x)) %>%
                                         mutate(exclude=1) %>%
-                                        mutate(reason="Without typical curve"))
+                                        mutate(reason="Missing typical curve"))
           # Keep the rest
           obs.query          <- obs.query %>%
             filter(x <= max(query$x))
