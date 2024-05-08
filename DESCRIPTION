@@ -33,5 +33,6 @@ Imports:
     grid,
     purrr,
     minpack.lm,
-    progress
+    progress,
+    photobiology
 Config/testthat/edition: 3
