@@ -90,7 +90,7 @@ summary.vachette_data <-
     }
 
     if (trim && n_ucov > 20) {
-      log_output(paste0("[set argument verbose = TRUE -- omitted ", n_ucov - 20, " rows]"))
+      log_output(paste0("[set argument trim = FALSE -- omitted ", n_ucov - 20, " rows]"))
     }
 
     if (!is.null(x$summary)){
@@ -157,7 +157,7 @@ summary.vachette_data <-
       }
       if (trim && n_obs_excl > 20) {
         log_output(paste0(
-          "[set argument verbose = TRUE -- omitted ",
+          "[set argument trim = FALSE -- omitted ",
           n_obs_excl - 20,
           " rows]"
         ))
