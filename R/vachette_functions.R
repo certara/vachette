@@ -208,21 +208,27 @@ extremes <- function(x,y,type='minmax',polyorder=6, tol.poly=0.001)
       # if above tolerance is not a true zero
       if (min(abs(poly.eval))>tol.poly) {
         fx.0 <- NA
-        message('Warning: ignoring inflection solution of poly as > tol.poly:')
-        message(paste('  x = ',paste(fx.0[which(abs(poly.eval)==min(abs(poly.eval)))]),collapse=' '))
+        wmsg <- paste0("WARNING: ignoring inflection solution of poly as > tol.poly:\n",
+                       "x = ", paste(fx.0[which(abs(poly.eval)==min(abs(poly.eval)))]),collapse=' ')
+        log_output(wmsg)
+        warning_out <- c(warning_out, wmsg)
       }
     } else if (sum(keep)!=0 & type=='minmax') {
       if (length(which(abs(poly.eval)<tol.poly))!=0) {
         fx.0 <- fx.0[which(abs(poly.eval)<tol.poly)]
       } else {
         fx.0 <- NA
-        message('Warning: ignoring minmax solution of poly as > tol.poly:')
-        message(paste('  x = ',paste(fx.0[which(abs(poly.eval)>=tol.poly)]),collapse=' '))
+        wmsg <- paste0("WARNING: ignoring minmax solution of poly as > tol.poly:\n",
+                       "x = ", paste(fx.0[which(abs(poly.eval)>=tol.poly)]),collapse=' ')
+        log_output(wmsg)
+        warning_out <- c(warning_out, wmsg)
       }
     }
 
     log_output(paste0("Searched for: ",type))
     log_output(paste0("returned: ",fx.0))
+    assign("warning_out", warning_out, envir = vachette_env)
+
 
       return(fx.0)
 
@@ -1747,8 +1753,6 @@ print.vachette_data <- function(x, ...) {
 
     # x.scaling is based on unchanged ref
     my.ref.lm     <- my.ref.lm.refined
-
-    log_output(" *** Carry out checks (to be implemented) ***")
 
     # Recalc landmark y's
     my.ref.lm$y    <- approx(ref$x,ref$y,     xout=my.ref.lm$x)$y
