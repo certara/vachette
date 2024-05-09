@@ -207,21 +207,21 @@ extremes <- function(x,y,type='minmax',polyorder=6, tol.poly=0.001)
 
       # if above tolerance is not a true zero
       if (min(abs(poly.eval))>tol.poly) {
-        fx.0 <- NA
         wmsg <- paste0("WARNING: ignoring inflection solution of poly as > tol.poly:\n",
                        "x = ", paste(fx.0[which(abs(poly.eval)==min(abs(poly.eval)))]),collapse=' ')
         log_output(wmsg)
         warning_out <- c(warning_out, wmsg)
+        fx.0 <- NA
       }
     } else if (sum(keep)!=0 & type=='minmax') {
       if (length(which(abs(poly.eval)<tol.poly))!=0) {
         fx.0 <- fx.0[which(abs(poly.eval)<tol.poly)]
       } else {
-        fx.0 <- NA
         wmsg <- paste0("WARNING: ignoring minmax solution of poly as > tol.poly:\n",
                        "x = ", paste(fx.0[which(abs(poly.eval)>=tol.poly)]),collapse=' ')
         log_output(wmsg)
         warning_out <- c(warning_out, wmsg)
+        fx.0 <- NA
       }
     }
 
@@ -1476,7 +1476,7 @@ print.vachette_data <- function(x, ...) {
         log_output("Some obs cannot be associated with query curve")
         obs.query.excluded <- rbind(obs.query.excluded,
                                     obs.query %>%
-                                      filter(x < min(query$x) | x > max(query$x)) %>%
+                                      filter(x <= min(query$x) | x > max(query$x)) %>% # AL, 09 May 2024
                                       mutate(exclude=1) %>%
                                       mutate(reason="Missing typical curve"))
         # Keep the rest
@@ -1485,13 +1485,13 @@ print.vachette_data <- function(x, ...) {
       }
       if(i.ucov == ref.ucov)
       {
-        out <- obs.query %>% filter(x > max(query$x))
+        out <- obs.query %>% filter(x <= min(query$x) | x > max(query$x)) # AL, 09 May 2024
         if(nrow(out)>0)
         {
           log_output("Some obs cannot be associated with reference curve")
           obs.query.excluded <- rbind(obs.query.excluded,
                                       obs.query %>%
-                                        filter(x > max(query$x)) %>%
+                                        filter(x <= min(query$x) | x > max(query$x)) %>% # AL, 09 May 2024
                                         mutate(exclude=1) %>%
                                         mutate(reason="Missing typical curve"))
           # Keep the rest
