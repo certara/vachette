@@ -1603,7 +1603,7 @@ print.vachette_data <- function(x, ...) {
 
       obs.query.excluded <- rbind(obs.query.excluded,
                                   obs.query %>% filter(exclude==1) %>%
-                                    mutate(reason="Without corresponding ref segment"))
+                                    mutate(reason="Missing corresponding ref segment"))
       obs.query          <- obs.query %>% filter(exclude==0)
     }
 

@@ -620,12 +620,12 @@ p.obs.excluded <- function(vachette_data) {
 
   # # For better legend
   obs.excluded$reason[obs.excluded$reason=="Less or equal to zero"] <- "Less or equal\nto zero"
-  obs.excluded$reason[obs.excluded$reason=="Without corresponding ref segment"] <- "Without corresp.\nref segment"
-  obs.excluded$reason[obs.excluded$reason=="Without typical curve"] <- "Without\ntypical curve"
+  obs.excluded$reason[obs.excluded$reason=="Missing corresponding ref segment"] <- "Missing corresp.\nref segment"
+  obs.excluded$reason[obs.excluded$reason=="Missing typical curve"] <- "Missing\ntypical curve"
 
   shapes <- c("Less or equal\nto zero" = 1,
-              "Without corresp.\nref segment" = 3,
-              "Without\ntypical curve" = 4)
+              "Missing corresp.\nref segment" = 3,
+              "Missing\ntypical curve" = 4)
 
   gg <- obs.excluded %>%
     ggplot(aes(x=x,y=y)) +
