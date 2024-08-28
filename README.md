@@ -105,7 +105,7 @@ p.scaled.typical.curves(vd)
 p.obs.excluded(vd)
 ```
 
-![]vignettes/img/readme-plots-6.png)<!-- -->
+![](vignettes/img/readme-plots-6.png)<!-- -->
 
 View excluded observations
 
