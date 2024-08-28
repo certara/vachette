@@ -4,10 +4,10 @@
 \alias{summary.vachette_data}
 \title{Summarise \code{vachette_data}}
 \usage{
-\method{summary}{vachette_data}(x, verbose = FALSE, trim = TRUE, log_file = NULL, ...)
+\method{summary}{vachette_data}(object, verbose = FALSE, trim = TRUE, log_file = NULL, ...)
 }
 \arguments{
-\item{x}{\code{vachette_data} object.}
+\item{object}{\code{vachette_data} object.}
 
 \item{verbose}{logical; Set to \code{TRUE} to view additional warnings output}
 

@@ -2,72 +2,96 @@
 output: github_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message=FALSE)
 ```
 
 # vachette
-A method for visualization of PMx models.
 
-Vachette builds off previous work done in [V2ACHER](https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.12679), providing a method to visualize PKPD analyses which are impacted by covariate effects.
+A method to visualize PKPD analyses which are impacted by 
+covariate effects. Variability-Aligned Covariate Harmonized-Effects 
+and Time-Transformation Equivalent (VACHETTE) facilitates intuitive 
+overlays of data and model predictions, allowing for comprehensive 
+comparison without dilution effects. VACHETTE improves upon previous
+methods [V2ACHER](https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.12679), enabling its
+application to all pharmacometric models and enhancing Visual Predictive
+Checks (VPC) by integrating data into cohesive plots that can highlight 
+model misspecifications.
 
 ## Installation
+
+## Development 
 
 ```{r, eval = FALSE}
 remotes::install_github("certara/vachette")
 ```
 
-## Examples
+## Released 
 
-### IV
+```{r, eval = FALSE}
+install.packages("vachette")
+```
 
-```{r iv}
-# Import Example Data
-obs.data <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv"))
-typ.data <- read.csv(system.file(package = "vachette", "examples", "iv-typ.csv"))
+## Usage
 
+For a full overview of `vachette`, visit the following tutorial link: https://certara.shinyapps.io/vachette
+
+### Import Data
+
+The minimal required inputs for vachette are two data.frame objects: the observed (`obs.data`) and simulated predictions of typical curves (`typ.data`).
+
+The user also has the option to include simulated data (`sim.data`), in order to derive transformations needed for a VACHETTE VPC. The `sim.data` requires the same columns as `obs.data`, in addition to a required `REP` column to indicate the replicate number. Learn more about data requirements [here](https://certara.shinyapps.io/vachette/#section-how_it_works).
+
+Data files:
+
+* iv-obs.csv
+* iv-typ-minmax.csv
+
+```{r}
+obs <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv"))
+typ <- read.csv(system.file(package = "vachette", "examples", "iv-typ-minmax.csv"))
+```
+
+### Vachette Transformations
+
+Generate transformations for `obs.data` and `sim.data`
+
+```{r}
 library(vachette)
 
 vd <-
   vachette_data(
-    obs.data,
-    typ.data,
-    covariates = c(WT = 70),
-    mappings = c(OBS = "DV",
-                 x = "time"),
-    ref.dosenr = 1,
-    model.name = "Intravenous (i.v)"
-  )
-
-vd <- vd |>
+    obs.data = obs,
+    typ.data = typ,
+    covariates = c(WT=70),
+    mappings = c(x = "time",
+                 OBS = "DV"),
+    model.name  = "intravenous"
+  ) |>
   apply_transformations()
 
-p.vachette(vd)
-  
 ```
 
-### Oral Two-Cov 
+### Vachette Plot
 
-```{r oral_two_cov}
-obs.data <- read.csv(system.file(package = "vachette", "examples", "oral-two-cov-obs.csv"))
-typ.data  <- read.csv(system.file(package = "vachette", "examples", "oral-two-cov-typ.csv"))
+Generate `vachette` plots
 
-vd <-
-  vachette_data(
-    obs.data,
-    typ.data,
-    covariates =  c(WT = 70, AGE = 30),
-    mappings = c(OBS = "DV",
-                 x = "time"),
-    ref.dosenr = 1,
-    model.name = "oral-two-cov"
-  )
-
-vd <- vd |>
-  apply_transformations(window = 23,
-                        window.d1.refine = 7,
-                        window.d2.refine = 5)
+```{r readme-plots}
+p.obs.ref.query(vd) 
 
 p.vachette(vd)
 
+p.scaled.typical.full.curves.landmarks(vd)
+
+p.scaling.factor(vd)
+
+p.scaled.typical.curves(vd)
+
+p.obs.excluded(vd)
+```
+
+View excluded observations
+
+```{r}
+vd$obs.excluded
 ```

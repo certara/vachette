@@ -2,13 +2,31 @@
 % Please edit documentation in R/plotting.R
 \name{p.scaling.factor}
 \alias{p.scaling.factor}
-\title{p.scaling.factor}
+\title{Plot Scaling Factors for Typical Curves}
 \usage{
 p.scaling.factor(vachette_data)
 }
 \arguments{
-\item{vachette_data}{Object of class\code{vachette_data}}
+\item{vachette_data}{An object of class \code{vachette_data}, which contains
+the necessary data for plotting.}
+}
+\value{
+A \code{ggplot2} object representing the scaling factors for the curves.
+The plot includes facets for each curve type (reference or query),
+and it shows the scaling factors as a function of the x-axis values.
 }
 \description{
-p.scaling.factor
+This function generates a ggplot2 visualization of the scaling factors applied
+to the typical curves within a pharmacometric model. The plot differentiates between
+reference and query curves and illustrates how scaling factors vary across
+segments.
+}
+\details{
+The function creates a plot that displays
+the x-scaling factors for the curves, with different segments color-coded.
+The plot is faceted by curve type (reference or query).
+
+The plot's title includes the model name, and the caption provides details
+about the reference covariate(s) used. The x-axis range is dynamically set
+based on the minimum and maximum x values, before and after scaling.
 }

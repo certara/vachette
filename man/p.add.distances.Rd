@@ -2,16 +2,32 @@
 % Please edit documentation in R/plotting.R
 \name{p.add.distances}
 \alias{p.add.distances}
-\title{p.add.distances}
+\title{Plot Distances Before and After \code{vachette} Transformation Assuming Additive Error Model}
 \usage{
 p.add.distances(vachette_data)
 }
 \arguments{
-\item{vachette_data}{Object of class \code{vachette_data}}
+\item{vachette_data}{An object of class \code{vachette_data}, which contains
+the necessary data for plotting.}
 }
 \value{
-Object of class \code{ggplot2}
+A \code{ggplot2} object representing the plot of distances.
+The plot compares the original distances to the transformed distances, with
+segments color-coded.
 }
 \description{
-p.add.distances
+This function generates a ggplot2 visualization of the distances
+before and after a \code{vachette} transformation between observations and the
+relative typical curves.
+It is useful for assessing the impact of additive error
+model assumption on the distances.
+}
+\details{
+The function starts by setting the x-axis range based on the minimum
+and maximum values of the original and scaled distances. It then plots the
+distances before and after transformation, with a reference line
+indicating where the original and transformed distances are equal.
+
+The plot's title includes the model name, and the caption provides details
+about the reference covariate(s) used.
 }

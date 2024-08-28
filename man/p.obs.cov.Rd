@@ -2,16 +2,34 @@
 % Please edit documentation in R/plotting.R
 \name{p.obs.cov}
 \alias{p.obs.cov}
-\title{p.obs.cov}
+\title{Plot Observations and Typical Curves Faceted by Covariate}
 \usage{
 p.obs.cov(vachette_data)
 }
 \arguments{
-\item{vachette_data}{Object of class \code{vachette_data}}
+\item{vachette_data}{An object of class \code{vachette_data}, which contains
+the necessary data for plotting.}
 }
 \value{
-Object of class \code{ggplot2}
+A \code{ggplot2} object representing the observations and typical curves,
+faceted by covariate. The plot displays both the reference and query curves
+and their corresponding observations, color-coded for easy comparison.
 }
 \description{
-p.obs.cov
+This function generates a ggplot2 visualization of observations and typical
+curves within a pharmacometric model, faceted by unique covariate values (ucov).
+The plot compares the observed data against the typical reference and query curves,
+with each facet representing a different covariate value.
+}
+\details{
+The function begins by ensuring that the input \code{vachette_data}
+is of the correct class. It then constructs a plot that displays the reference
+and query data, differentiating them using distinct colors, and faceting the
+plot by unique covariate values. Observations are represented by points,
+while the typical curves are depicted as lines.
+
+The plot's title includes the model name, and the caption provides details
+about the reference covariate(s) used. The x-axis range is dynamically set
+based on the minimum and maximum x values, before and after scaling.
+If the x-axis is logarithmic, the axis label is adjusted accordingly.
 }

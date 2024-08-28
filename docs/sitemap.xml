@@ -37,10 +37,22 @@
     <loc>/reference/multi.approx.html</loc>
   </url>
   <url>
+    <loc>/reference/oral_absorption_obs.html</loc>
+  </url>
+  <url>
+    <loc>/reference/oral_absorption_sim.html</loc>
+  </url>
+  <url>
+    <loc>/reference/oral_absorption_typ.html</loc>
+  </url>
+  <url>
     <loc>/reference/p.add.distances.html</loc>
   </url>
   <url>
     <loc>/reference/p.obs.cov.html</loc>
+  </url>
+  <url>
+    <loc>/reference/p.obs.excluded.html</loc>
   </url>
   <url>
     <loc>/reference/p.obs.ref.query.html</loc>
@@ -77,6 +89,9 @@
   </url>
   <url>
     <loc>/reference/refine.x.multi.landmarks.html</loc>
+  </url>
+  <url>
+    <loc>/reference/summary.vachette_data.html</loc>
   </url>
   <url>
     <loc>/reference/theme_vachette.html</loc>

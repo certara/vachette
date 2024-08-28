@@ -2,16 +2,33 @@
 % Please edit documentation in R/plotting.R
 \name{p.obs.excluded}
 \alias{p.obs.excluded}
-\title{p.obs.excluded}
+\title{Plot Excluded Observations with Reasons for Exclusion}
 \usage{
 p.obs.excluded(vachette_data)
 }
 \arguments{
-\item{vachette_data}{Object of class \code{vachette_data}}
+\item{vachette_data}{An object of class \code{vachette_data}, which contains
+the necessary data for plotting.}
 }
 \value{
-Object of class \code{ggplot2}
+A \code{ggplot2} object representing the excluded observations and
+their corresponding reasons for exclusion. The plot also displays the typical
+reference and query curves for comparison.
 }
 \description{
-p.obs.excluded
+This function generates a ggplot2 visualization of observations that were
+excluded from the transformation process within a pharmacometric model.
+The plot includes both the included and excluded observations, with the
+excluded ones color-coded by reason for exclusion.
+}
+\details{
+The function  plots the reference and query curves along
+with the observations. Observations that were excluded from the transformation
+process are highlighted and labeled with the reason for exclusion, while
+included observations are shown in light grey.
+
+The plot's title includes the model name, and the caption provides details
+about the reference covariate(s) used. The x-axis range is dynamically set
+based on the minimum and maximum x values from the original observations.
+If the x-axis is logarithmic, the axis label is adjusted accordingly.
 }

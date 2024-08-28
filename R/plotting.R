@@ -1,25 +1,4 @@
 
-#' Plot theme for vachette
-#'
-#' A ggplot2 theme for vachette plot output
-#'
-#' @return \code{theme, gg}
-#' @export
-#'
-#' @examples
-#' theme_vachette()
-#'
-theme_vachette <- function() {
-  ggplot2::theme_bw()+
-    ggplot2::theme(text = ggplot2::element_text(size=16),
-                   axis.text.x = ggplot2::element_text(size=14),
-                   axis.text.y = ggplot2::element_text(size=14),
-                   plot.title = ggplot2::element_text(size=14),
-                   plot.subtitle=ggplot2::element_text(size=12))
-
-}
-
-
 # For same looks and feel of plots:
 render <- theme_bw() +
   theme(text = element_text(size=16),
@@ -31,50 +10,32 @@ render <- theme_bw() +
         plot.caption = element_text(hjust = 0, vjust = 1, size = 10)
   )
 
-# Multiple plots on one page:
-multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 
-  # Make a list from the ... arguments and plotlist
-  plots <- c(list(...), plotlist)
-
-  numPlots = length(plots)
-
-  # If layout is NULL, then use 'cols' to determine layout
-  if (is.null(layout)) {
-    # Make the panel
-    # ncol: Number of columns of plots
-    # nrow: Number of rows needed, calculated from # of cols
-    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                     ncol = cols, nrow = ceiling(numPlots/cols))
-  }
-
-  if (numPlots==1) {
-    print(plots[[1]])
-
-  } else {
-    # Set up the page
-    grid::grid.newpage()
-    grid::pushViewport(grid::viewport(layout = grid::grid.layout(nrow(layout), ncol(layout))))
-
-    # Make each plot, in the correct location
-    for (i in 1:numPlots) {
-      # Get the i,j matrix positions of the regions that contain this subplot
-      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-
-      print(plots[[i]], vp = grid::viewport(layout.pos.row = matchidx$row,
-                                            layout.pos.col = matchidx$col))
-    }
-  }
-}
-
-
-#' p.scaled.typical.curves.landmarks
+#' Plot \code{vachette} Transformed Typical Curves with Landmarks
 #'
-#' @param vachette_data Object of class\code{vachette_data}
+#' This function generates a ggplot2 visualization of the \code{vachette} transformed
+#' typical curves and their corresponding landmarks for a given pharmacometric model.
+#' The plot highlights the segments of the reference and query curves, with a special emphasis
+#' on the landmark positions.
+#'
+#' @inheritParams p.prop.distances
+#'
+#' @return A \code{ggplot2} object representing the \code{vachette} transformed typical curves with
+#' their landmarks. The plot displays different segments of the curves in different color,
+#' and landmarks marked with black crosses.
+#'
+#' @details The function plots the typical curves along with their
+#' segments and marking the landmarks. If the x-axis is
+#' logarithmic, it adjusts the axis label accordingly.
+#'
+#' The plot's title includes the model name, and the caption provides details
+#' about the reference covariate(s) used. The x-axis range is dynamically set
+#' based on the minimum and maximum x values, before and after scaling.
 #'
 #' @export
 p.scaled.typical.curves.landmarks <- function(vachette_data) {
 
+  x <- y <- ucov <- ref <- x.scaled <- y.scaled <- seg <- NULL
   stopifnot(inherits(vachette_data, "vachette_data"))
   log.x <- vachette_data$log.x
 
@@ -98,7 +59,7 @@ p.scaled.typical.curves.landmarks <- function(vachette_data) {
 
   gg <- gg +
     labs(title=paste0(model.name,"; Typical curve segments"),
-         subtitle = "Dashed line: Reference typical curve\nGrey: unused part of typical curve",
+         subtitle = "Dashed line: Reference typical curve\nGrey: Unused part of typical curve",
          caption = paste0("Reference Covariate: ",
                           paste0(
                             names(vachette_data$covariates),
@@ -118,12 +79,31 @@ p.scaled.typical.curves.landmarks <- function(vachette_data) {
   return(gg)
 }
 
-#' p.scaled.typical.full.curves.landmarks
+#' Plot Full \code{vachette} Transformed Typical Curves with Landmarks
 #'
-#' @param vachette_data Object of class\code{vachette_data}
+#' This function generates a ggplot2 visualization of the full \code{vachette} transformed typical
+#' curves and their corresponding landmarks for a given pharmacometric model.
+#' The plot highlights the segments of the reference and query curves, with a special emphasis on
+#' specific landmark positions.
+#'
+#' @inheritParams p.prop.distances
+#'
+#' @return A \code{ggplot2} object representing the full \code{vachette} transformed typical curves
+#' with their landmarks. The plot displays different segments of the curves in different colors,
+#' and landmarks marked with black crosses.
+#'
+#' @details The function plots the full typical curves along with
+#' their segments, applying specific styling to the reference curve and marking
+#' the landmarks. If the x-axis is logarithmic, it adjusts the axis label accordingly.
+#'
+#' The plot's title includes the model name, and the caption provides details
+#' about the reference covariate(s) used. The x-axis range is dynamically set
+#' based on the minimum and maximum x values, before and after scaling.
+#'
 #' @export
 p.scaled.typical.full.curves.landmarks <- function(vachette_data) {
 
+  x <- y <- ucov <- ref <- x.scaled <- y.scaled <- seg <- NULL
   stopifnot(inherits(vachette_data, "vachette_data"))
   log.x <- vachette_data$log.x
 
@@ -141,7 +121,7 @@ p.scaled.typical.full.curves.landmarks <- function(vachette_data) {
     # Add landmark positions
     geom_point(data=lm.all,pch=3,size=4,col='black',stroke = 2)+
     labs(title=paste0(model.name,"; Typical curve segments"),
-         subtitle = "Dashed: Reference typical curve\nGrey: unused part of typical curve",
+         subtitle = "Dashed: Reference typical curve\nGrey: Unused part of typical curve",
          caption = paste0("Reference Covariate: ",
                           paste0(
                             names(vachette_data$covariates),
@@ -162,12 +142,30 @@ p.scaled.typical.full.curves.landmarks <- function(vachette_data) {
   return(gg)
 }
 
-#' p.scaling.factor
+#' Plot Scaling Factors for Typical Curves
 #'
-#' @param vachette_data Object of class\code{vachette_data}
+#' This function generates a ggplot2 visualization of the scaling factors applied
+#' to the typical curves within a pharmacometric model. The plot differentiates between
+#' reference and query curves and illustrates how scaling factors vary across
+#' segments.
+#'
+#' @inheritParams p.prop.distances
+#'
+#' @return A \code{ggplot2} object representing the scaling factors for the curves.
+#' The plot includes facets for each curve type (reference or query),
+#' and it shows the scaling factors as a function of the x-axis values.
+#'
+#' @details The function creates a plot that displays
+#' the x-scaling factors for the curves, with different segments color-coded.
+#' The plot is faceted by curve type (reference or query).
+#'
+#' The plot's title includes the model name, and the caption provides details
+#' about the reference covariate(s) used. The x-axis range is dynamically set
+#' based on the minimum and maximum x values, before and after scaling.
 #'
 #' @export
 p.scaling.factor <- function(vachette_data) {
+  ref <- x <- x.scaling <- seg <- NULL
   curves.scaled.all <- vachette_data$curves.scaled.all
   obs.all           <- vachette_data$obs.all
   model.name        <- vachette_data$model.name
@@ -194,14 +192,30 @@ p.scaling.factor <- function(vachette_data) {
     render
 }
 
-#' p.scaled.typical.curves
+#' Plot \code{vachette} Transformed Typical Curves
 #'
-#' @param vachette_data Object of class \code{vachette_data}
-#' @return Object of class \code{ggplot2}
+#' This function generates a ggplot2 visualization of the \code{vachette} transformed typical curves
+#' for a given pharmacometric model. It distinguishes between reference curves
+#' and query curves, showing how the curves transform.
+#'
+#' @inheritParams p.prop.distances
+#'
+#' @return A \code{ggplot2} object representing the \code{vachette} transformed typical curves. The plot
+#' shows both the reference and query curves, and the curves after
+#' the vachette transformation.
+#'
+#' @details The function creates a plot that distinguishes between
+#' reference curves (in red) and query curves (in blue). The dashed
+#' lines represent the curves after the vachette transformation.
+#'
+#' The plot's title includes the model name, and the caption provides details
+#' about the reference covariate(s) used. The x-axis range is dynamically set
+#' based on the minimum and maximum x values, before and after scaling.
+#'
 #' @export
-#'
 p.scaled.typical.curves <- function(vachette_data) {
 
+  x <- y <- ucov <- ref <- x.scaled <- y.scaled <- seg <- NULL
   stopifnot(inherits(vachette_data, "vachette_data"))
   log.x <- vachette_data$log.x
 
@@ -249,14 +263,32 @@ p.scaled.typical.curves <- function(vachette_data) {
   return(gg)
 }
 
-#' p.scaled.observation.curves
+#' Plot \code{vachette} Transformed Observation Curves
 #'
-#' @param vachette_data Object of class \code{vachette_data}
-#' @return Object of class \code{ggplot2}
+#' This function generates a ggplot2 visualization of transformed observation curves,
+#' including their transformations and overlays with reference curves. The plot is
+#' useful for comparing the original and the \code{vachette}
+#' transformed observation data against typical reference curves.
+#'
+#' @inheritParams p.prop.distances
+#'
+#' @return A \code{ggplot2} object representing the \code{vachette} transformed observation curves. The plot
+#' includes different layers for query observations, their transformed counterparts,
+#' and the reference curves, with appropriate color coding and line styles.
+#'
+#' @details The function constructs a plot that overlays
+#' observation curves with the corresponding reference curves. Query observations
+#' and their transformed curves are highlighted, and if applicable, an extrapolated
+#' segment of the reference curve is shown as a dashed line.
+#'
+#' The plot's title includes the model name, and the caption provides details
+#' about the reference covariate(s) used. The x-axis range is dynamically set
+#' based on the minimum and maximum x values, before and after scaling.
+#'
 #' @export
-#'
 p.scaled.observation.curves <- function(vachette_data) {
 
+  x <- y <- ID <- COV <- ref <- x.scaled <- y.scaled <- ucov <- NULL
   stopifnot(inherits(vachette_data, "vachette_data"))
   log.x <- vachette_data$log.x
 
@@ -340,14 +372,32 @@ p.scaled.observation.curves <- function(vachette_data) {
   return(gg)
 }
 
-#' p.scaled.observation.curves.by.id
+#' Plot \code{vachette} Transformed Observation Curves by Individual
 #'
-#' @param vachette_data Object of class \code{vachette_data}
-#' @return Object of class \code{ggplot2}
+#' This function generates a ggplot2 visualization of transformed observation curves
+#' facetted by individual, including their transformations and overlays
+#' with reference curves. The plot is useful for comparing the original and the \code{vachette}
+#' transformed observation data against typical reference curves.
+#'
+#' @inheritParams p.prop.distances
+#'
+#' @return A \code{ggplot2} object representing the \code{vachette} transformed observation curves. The plot
+#' includes different layers for query observations, their transformed counterparts,
+#' and the reference curves, with appropriate color coding and line styles.
+#'
+#' @details The function constructs a plot that overlays individual
+#' observation curves with the corresponding reference curves. Query observations
+#' and their transformed curves are highlighted, and if applicable, an extrapolated
+#' segment of the reference curve is shown as a dashed line.
+#'
+#' The plot's title includes the model name, and the caption provides details
+#' about the reference covariate(s) used. The x-axis range is dynamically set
+#' based on the minimum and maximum x values, before and after scaling.
+#'
 #' @export
-#'
 p.scaled.observation.curves.by.id <- function(vachette_data) {
 
+  x <- y <- ID <- COV <- ref <- x.scaled <- y.scaled <- ucov <- NULL
   stopifnot(inherits(vachette_data, "vachette_data"))
   log.x <- vachette_data$log.x
 
@@ -427,26 +477,44 @@ p.scaled.observation.curves.by.id <- function(vachette_data) {
 }
 
 
-#' p.add.distances
+#' Plot Distances Before and After \code{vachette} Transformation Assuming Additive Error Model
 #'
-#' @param vachette_data Object of class \code{vachette_data}
+#' This function generates a ggplot2 visualization of the distances
+#' before and after a \code{vachette} transformation between observations and the
+#' relative typical curves.
+#' It is useful for assessing the impact of additive error
+#' model assumption on the distances.
 #'
-#' @return Object of class \code{ggplot2}
+#' @inheritParams p.prop.distances
+#'
+#' @return A \code{ggplot2} object representing the plot of distances.
+#' The plot compares the original distances to the transformed distances, with
+#' segments color-coded.
+#'
+#' @details The function starts by setting the x-axis range based on the minimum
+#' and maximum values of the original and scaled distances. It then plots the
+#' distances before and after transformation, with a reference line
+#' indicating where the original and transformed distances are equal.
+#'
+#' The plot's title includes the model name, and the caption provides details
+#' about the reference covariate(s) used.
+#'
 #' @export
-#'
 p.add.distances <- function(vachette_data) {
-
+  dist.add.orig <- dist.add.transformed <- seg <- NULL
   xstart <- min(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
   xstop  <- max(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
 
   obs.all <- vachette_data$obs.all
-  # Additive distances before and after transformation
-  obs.all %>%
-    ggplot(aes(x=dist.add.orig,y=dist.add.transformed,col=factor(seg)))+
-    geom_abline(slope=1)+
-    geom_point()+
-    labs(title=paste0(vachette_data$model.name,"; Normal distances: original and after transformation"),
-         subtitle = paste0(if(vachette_data$ADD_TR) "Additive Error Transformation",if(vachette_data$PROP_TR) "Proportional Error Transformation"),
+
+  # Plot additive distances before and after transformation
+  gg <- obs.all %>%
+    ggplot(aes(x = dist.add.orig, y = dist.add.transformed, col = factor(seg))) +
+    geom_abline(slope = 1) +
+    geom_point() +
+    labs(title = paste0(vachette_data$model.name, "; Normal distances: original and after transformation"),
+         subtitle = paste0(if (vachette_data$ADD_TR) "Additive Error Transformation",
+                           if (vachette_data$PROP_TR) "Proportional Error Transformation"),
          caption = paste0("Reference Covariate: ",
                           paste0(
                             names(vachette_data$covariates),
@@ -455,19 +523,40 @@ p.add.distances <- function(vachette_data) {
                             collapse = ", "
                           )),
          x = 'Original distance',
-         x = 'Distance after transformation',
-         col="Segm.")+
+         y = 'Distance after transformation',
+         col = "Segment") +
     render
+
+  return(gg)
 }
 
-#' p.prop.distances
+
+#' Plot Distances Before and After \code{vachette} Transformation Assuming Proportional Error Model
 #'
-#' @param vachette_data Object of class \code{vachette_data}
+#' This function creates a ggplot2 visualization of the distances
+#' before and after the \code{vachette} transformation between observations
+#' and the relative typical curves. It is useful for assessing the impact of
+#' proportional error model assumption on the distances.
 #'
-#' @return Object of class \code{ggplot2}
+#' @param vachette_data An object of class \code{vachette_data}, which contains
+#' the necessary data for plotting.
+#'
+#' @return A \code{ggplot2} object representing the plot of distances.
+#' The plot compares the original distances on a logarithmic scale to the distances
+#' after transformation, color-coded by segment.
+#'
+#' @details The plot includes a reference line with a slope of 1, indicating where
+#' the original and transformed distances are equal. The title of the plot is
+#' dynamically generated based on the model name provided in the \code{vachette_data} object.
+#'
+#' The subtitle of the plot indicates whether an additive or proportional error
+#' transformation was applied. The caption provides the reference covariate(s)
+#' used in the model.
+#'
 #' @export
 #'
 p.prop.distances <- function(vachette_data) {
+  dist.prop.orig <- dist.prop.transformed <- seg <- NULL
   obs.all <- vachette_data$obs.all
   xstart <- min(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
   xstop  <- max(vachette_data$obs.all$x, vachette_data$obs.all$x.scaled)
@@ -493,14 +582,31 @@ p.prop.distances <- function(vachette_data) {
 
 }
 
-#' p.obs.ref.query
+#' Plot Observations and Typical Curves for Query and Reference Data
 #'
-#' @param vachette_data Object of class \code{vachette_data}
-#' @return Object of class \code{ggplot2}
+#' This function generates a ggplot2 visualization of the observations and typical curves
+#' for both query and reference data within a pharmacometric model. It is designed to
+#' compare the observed data against the typical reference and query curves.
+#'
+#' @inheritParams p.prop.distances
+#'
+#' @return A \code{ggplot2} object representing the observations and typical curves.
+#' The plot displays the query and reference curves and their corresponding observations,
+#' color-coded for easy comparison.
+#'
+#' @details The function plots the query and reference data,
+#' differentiating them using distinct colors. Observations are represented
+#' by points, while the typical curves are depicted as lines.
+#'
+#' The plot's title includes the model name, and the caption provides details
+#' about the reference covariate(s) used. The x-axis range is dynamically set
+#' based on the minimum and maximum x values, before and after scaling.
+#' If the x-axis is logarithmic, the axis label is adjusted accordingly.
+#'
 #' @export
-#'
 p.obs.ref.query <- function(vachette_data) {
-  #stopifnot(length(vachette_data$covariates) == 1)
+
+  x <- y <- ref <- ucov <- NULL
   stopifnot(inherits(vachette_data, "vachette_data"))
   log.x <- vachette_data$log.x
 
@@ -545,14 +651,33 @@ p.obs.ref.query <- function(vachette_data) {
 }
 
 
-#' p.obs.cov
+#' Plot Observations and Typical Curves Faceted by Covariate
 #'
-#' @param vachette_data Object of class \code{vachette_data}
-#' @return Object of class \code{ggplot2}
+#' This function generates a ggplot2 visualization of observations and typical
+#' curves within a pharmacometric model, faceted by unique covariate values (ucov).
+#' The plot compares the observed data against the typical reference and query curves,
+#' with each facet representing a different covariate value.
+#'
+#' @inheritParams p.prop.distances
+#'
+#' @return A \code{ggplot2} object representing the observations and typical curves,
+#' faceted by covariate. The plot displays both the reference and query curves
+#' and their corresponding observations, color-coded for easy comparison.
+#'
+#' @details The function begins by ensuring that the input \code{vachette_data}
+#' is of the correct class. It then constructs a plot that displays the reference
+#' and query data, differentiating them using distinct colors, and faceting the
+#' plot by unique covariate values. Observations are represented by points,
+#' while the typical curves are depicted as lines.
+#'
+#' The plot's title includes the model name, and the caption provides details
+#' about the reference covariate(s) used. The x-axis range is dynamically set
+#' based on the minimum and maximum x values, before and after scaling.
+#' If the x-axis is logarithmic, the axis label is adjusted accordingly.
+#'
 #' @export
-#'
 p.obs.cov <- function(vachette_data) {
-  #stopifnot(length(vachette_data$covariates) == 1)
+  x <- y <- ref <- NULL
   stopifnot(inherits(vachette_data, "vachette_data"))
   log.x <- vachette_data$log.x
 
@@ -600,14 +725,33 @@ p.obs.cov <- function(vachette_data) {
 }
 
 
-#' p.obs.excluded
+#' Plot Excluded Observations with Reasons for Exclusion
 #'
-#' @param vachette_data Object of class \code{vachette_data}
-#' @return Object of class \code{ggplot2}
+#' This function generates a ggplot2 visualization of observations that were
+#' excluded from the transformation process within a pharmacometric model.
+#' The plot includes both the included and excluded observations, with the
+#' excluded ones color-coded by reason for exclusion.
+#'
+#' @inheritParams p.prop.distances
+#'
+#' @return A \code{ggplot2} object representing the excluded observations and
+#' their corresponding reasons for exclusion. The plot also displays the typical
+#' reference and query curves for comparison.
+#'
+#' @details The function  plots the reference and query curves along
+#' with the observations. Observations that were excluded from the transformation
+#' process are highlighted and labeled with the reason for exclusion, while
+#' included observations are shown in light grey.
+#'
+#' The plot's title includes the model name, and the caption provides details
+#' about the reference covariate(s) used. The x-axis range is dynamically set
+#' based on the minimum and maximum x values from the original observations.
+#' If the x-axis is logarithmic, the axis label is adjusted accordingly.
+#'
 #' @export
-#'
 p.obs.excluded <- function(vachette_data) {
-  #stopifnot(length(vachette_data$covariates) == 1)
+
+  x <- y <- ref <- reason <- NULL
   stopifnot(inherits(vachette_data, "vachette_data"))
   log.x <- vachette_data$log.x
 
@@ -670,15 +814,35 @@ p.obs.excluded <- function(vachette_data) {
   return(gg)
 }
 
-#' p.vachette.arrow
+#' Plot Observations and \code{vachette} Transformed Observations with Connecting Arrows
 #'
-#' @param vachette_data Object of class \code{vachette_data}
-#' @return Object of class \code{ggplot2}
+#' This function generates a ggplot2 visualization of observations and their transformations
+#' within a pharmacometric model. The plot superimposes the observed query and reference data
+#' from original to \code{vachette} transformed values, showing direction of transformation.
+#' Reference and query curves are additionally overlaid for comparison.
+#'
+#' @inheritParams p.prop.distances
+#'
+#' @return A \code{ggplot2} object representing the observations, their transformations,
+#' and the corresponding reference and query curves. The plot also indicates if any
+#' extrapolated reference curves are present and how many observations were excluded
+#' from the transformation.
+#'
+#' @details The function plots the original and \code{vachette} transformed observations,
+#' with arrows showing the transformation path. Reference and query curves are
+#' also plotted, with extrapolated reference curves displayed as dashed lines
+#' if available. The subtitle provides information about the error model used
+#' (additive or proportional) and the number of excluded observations.
+#'
+#' The plot's title includes the model name, and the caption provides details
+#' about the reference covariate(s) used. The x-axis range is dynamically set
+#' based on the scaled x values. If the x-axis is logarithmic, the axis label
+#' is adjusted accordingly.
+#'
 #' @export
-#'
-#'
 p.vachette.arrow <- function(vachette_data) {
 
+  x <- y <- x.scaled <- y.scaled <- ref <- ucov <- seg <- NULL
   stopifnot(inherits(vachette_data, "vachette_data"))
   log.x <- vachette_data$log.x
   # JL 230607
@@ -761,14 +925,36 @@ p.vachette.arrow <- function(vachette_data) {
 
 }
 
-#' p.vachette
+#' Main Vachette Plot
 #'
-#' @param vachette_data Object of class \code{vachette_data}
-#' @return Object of class \code{ggplot2}
+#' This function generates the main Vachette plot, which visualizes all transformed
+#' data points within a pharmacometric model. The plot makes a clear distinction
+#' between reference data points (those that were not moved, shown in red) and
+#' transformed query data points (those that were moved, shown in purple).
+#'
+#' @inheritParams p.prop.distances
+#'
+#' @return A \code{ggplot2} object representing, which
+#' includes all observations, with reference data points shown in red, and
+#' transformed query data points shown in purple. The plot also includes
+#' reference curves and, if applicable, extrapolated reference curves as dashed lines.
+#'
+#' @details The function plots all the data points, highlighting
+#' reference points in red and transformed query points in purple. The plot
+#' also overlays reference curves, with extrapolated segments displayed as
+#' dashed lines if available. The subtitle provides information about the
+#' error model used (additive or proportional) and the number of excluded
+#' observations.
+#'
+#' The plot's title includes the model name, and the caption provides details
+#' about the reference covariate(s) used. The x-axis range is dynamically set
+#' based on the scaled x values. If the x-axis is logarithmic, the axis label
+#' is adjusted accordingly.
+#'
 #' @export
-#'
 p.vachette <- function(vachette_data) {
-  #stopifnot(length(vachette_data$covariates) == 1)
+  x <- y <- x.scaled <- y.scaled <- ref <- ucov <- seg <- NULL
+
   stopifnot(inherits(vachette_data, "vachette_data"))
   log.x <- vachette_data$log.x
 

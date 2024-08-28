@@ -5,12 +5,12 @@
 #' @import prospectr
 #' @importFrom Hmisc approxExtrap
 #' @importFrom purrr map_dfr
+#' @importFrom magrittr %>%
 #' @importFrom minpack.lm nls.lm nls.lm.control
+#' @importFrom utils askYesNo capture.output head
 #' @rawNamespace import(stats, except = c(filter, lag))
 #'
 NULL
-
-`%>%`<- magrittr::`%>%`
 
 #' Multi approx
 #'
@@ -22,10 +22,11 @@ NULL
 #' @param yout y value to approximate
 #' @param tol tolerance for max and min identification
 #'
-#' @export
+#' @noRd
 #'
 multi.approx <- function(x,y,yout,tol=1e-9) {
 
+  seg <- NULL
   yrange <- max(y,na.rm=T)-min(y,na.rm=T)
   tolval <- tol*yrange
 
@@ -226,7 +227,7 @@ extremes <- function(x,y,type='minmax',polyorder=6, tol.poly=0.001)
     }
 
     log_output(paste0("Searched for: ",type))
-    log_output(paste0("returned: ",fx.0))
+    log_output(paste0("Returned: ",fx.0))
     assign("warning_out", warning_out, envir = vachette_env)
 
 
@@ -250,7 +251,7 @@ extremes <- function(x,y,type='minmax',polyorder=6, tol.poly=0.001)
 #' @param w window size
 #' @param tol tolerance for max and min identification
 #'
-#' @export
+#' @noRd
 #'
 get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
   # Using splinefun to determine derivatives
@@ -536,11 +537,12 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
 #' @param ngrid number of points in last segment
 #' @param scaling scaling of x-axis
 #'
-#' @export
+#' @noRd
 #'
 get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
                                  scaling='linear',polyorder=9) {
 
+  x <- y <- NULL
   warning_out <- get("warning_out", envir = vachette_env)
 
   n.segment        <- nrow(lm.ref)-1
@@ -761,6 +763,7 @@ get.query.x.open.end <- function(ref,query,lm.ref,lm.query,ngrid=100,
 funk <- function(param,y.scaling.start,t1,q1,t1.fit,q1.fit,ngrid=10){
 
   # ---- Inits ------
+  x <- NULL
 
   x.scaling     <- exp(param[1])
   y.scaling.end <- exp(param[2])
@@ -994,6 +997,8 @@ print.vachette_data <- function(x, ...) {
 
 .calculate_dose_number <- function(data, data_type = c("obs.data", "typ.data", "sim.data")) {
 
+  II <- REP <- x <- ID <- AMT <- ADDL <- EVID <- NULL
+
   data_type <- match.arg(data_type)
 
   # If dose number provided, and column in data, use that
@@ -1170,12 +1175,6 @@ print.vachette_data <- function(x, ...) {
                                        zero_asymptote_right = TRUE,
                                        zero_asymptote_left = TRUE) {
 
-  #retaining this affects the trycatch
-  #on.exit(assign("summary_out", summary_out, envir = vachette_env), add = TRUE)
-  # summary_out <- list(errors = list(),
-  #      warnings = list(),
-  #      values = list()
-  # )
 
 
   # Collect all Vachette query curves and original/transformed observations (incl reference)
@@ -1189,6 +1188,8 @@ print.vachette_data <- function(x, ...) {
   my.ref.lm.all    <- NULL
   my.query.lm.all  <- NULL
   lm.all           <- NULL
+  ucov <- noise.flag <- exclude <- seg <- x.shift.query <- x.scaling <- x.trans <- NULL
+  x.shift.ref <- REP <- ID <- OBS <- y.scaling <- y.scaled <- x.scaled <- NULL
 
   tab.ucov <- vachette_data$tab.ucov
   stopifnot(!is.null(tab.ucov))
@@ -1232,7 +1233,7 @@ print.vachette_data <- function(x, ...) {
 
     log_output('\n----------------------------------------------------------\n')
     log_output(paste('---------------------','i.ucov = ', i.ucov,'----------------------\n'))
-    log_output(capture.output(print(tab.ucov[i.ucov,], row.names = FALSE)))
+    log_output(utils::capture.output(print(tab.ucov[i.ucov,], row.names = FALSE)))
     log_output('----------------------------------------------------------\n')
 
     # ---------------------------------------------------------------
@@ -1763,9 +1764,9 @@ print.vachette_data <- function(x, ...) {
 
     lm.all <- rbind(lm.all, my.query.lm %>% mutate(ucov = i.ucov))
 
-    log_output("Reference\n")
+    log_output("\nReference")
     log_output(capture.output(print(my.ref.lm)))
-    log_output("Query\n")
+    log_output("\nQuery")
     log_output(capture.output(print(my.query.lm)))
 
     # ---------------------------------------------------------------
@@ -1882,7 +1883,7 @@ print.vachette_data <- function(x, ...) {
         EXTENSION       <- TRUE
         EXTENSION_RIGHT <- TRUE
 
-        log_output('*** RIGHT Extension reference curve by exponential extrapolation ***')
+        log_output('\n*** RIGHT Extension reference curve by exponential extrapolation ***')
 
         # ---- QUERY -----
 
@@ -2070,7 +2071,7 @@ print.vachette_data <- function(x, ...) {
         EXTENSION      <- TRUE
         EXTENSION_LEFT <- TRUE
 
-        log_output('*** LEFT Extension reference curve by exponential extrapolation ***')
+        log_output('\n*** LEFT Extension reference curve by exponential extrapolation ***')
 
         # ---- QUERY -----
 
@@ -2227,7 +2228,7 @@ print.vachette_data <- function(x, ...) {
         # Exponential fit for no-asymptote (can be programmed more efficiently):
         if(!asymptote_left)
         {
-          log_output("  >> Applying NO-asymptote reference curve LEFT-side extrapolation **NEWLY** IMPLEMENTED")
+          log_output("  >> Applying NO-asymptote reference curve LEFT-side extrapolation")
 
           # Double mirror, so back to normal x-axis:
           x <- first6$x
@@ -2437,7 +2438,7 @@ print.vachette_data <- function(x, ...) {
         {
           # print(names(obs.query.excluded))
           # print(names(obs.query))
-          log_output("Zero observations cannot be transformed with proportional error model")
+          log_output("\nZero observations cannot be transformed with proportional error model")
           obs.query.excluded <- rbind(obs.query.excluded,
                         obs.query %>% filter(y<=0) %>%
                           mutate(reason = "Less or equal to zero") %>%
@@ -2601,7 +2602,7 @@ print.vachette_data <- function(x, ...) {
 
   return(
     list(
-      obs.all      = obs.all,
+      obs.all      = tidyr::as_tibble(obs.all),
       sim.all      = sim.all,
       obs.excluded = obs.excluded,
       curves.all   = curves.all,

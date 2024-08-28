@@ -48,53 +48,53 @@ Initialize vachette object with required data
 \details{
 If "dosenr" column is missing it will be automatically calculated using the priority of available columns:
    \itemize{
-     \item{"EVID": If available in data, "dosenr" will be calculated using \code{cumsum(EVID==1)}}
-     \item{"ADDL"/"II": If "ADDL" and "II" are available in data, "dosenr" will be calculated given additional dose number and interval}
-     \item{"AMT": If only "AMT" column exists in data, "dosenr" will be calculated using \code{cumsum(AMT!=0)}}
+     \item "EVID": If available in data, "dosenr" will be calculated using \code{cumsum(EVID==1)}
+     \item "ADDL"/"II": If "ADDL" and "II" are available in data, "dosenr" will be calculated given additional dose number and interval
+     \item "AMT": If only "AMT" column exists in data, "dosenr" will be calculated using \code{cumsum(AMT!=0)}
    }
 }
 \section{Required columns \code{obs.data}}{
 
 \itemize{
- \item{"ID"}{ - Subject ID}
- \item{"x"}{ - Typically time}
- \item{"PRED"}{ - Population prediction, required if \code{iiv.correction = TRUE}}
- \item{"IPRED"}{ - Individual prediction, required if \code{iiv.correction = TRUE}}
- \item{"OBS"}{ - DV}
- \item{"dosenr"}{ - Dose number; unique dose number for ID/time point.
- }
+ \item \code{"ID"} - Subject ID
+ \item \code{"x"} - Typically time
+ \item \code{"PRED"} - Population prediction, required if \code{iiv.correction = TRUE}
+ \item \code{"IPRED"} - Individual prediction, required if \code{iiv.correction = TRUE}
+ \item \code{"OBS"} - DV
+ \item \code{"dosenr"} - Dose number; unique dose number for ID/time point
 }
 }
 
 \section{Required columns \code{typ.data}}{
 
 \itemize{
- \item{"ID"}{ - Subject ID}
- \item{"x"}{ - Typically time}
- \item{"PRED"}{ - Population prediction}
- \item{"dosenr"}{ - Dose number; unique dose number for ID/time point}
+ \item \code{"ID"} - Subject ID
+ \item \code{"x"} - Typically time
+ \item \code{"PRED"} - Population prediction
+ \item \code{"dosenr"} - Dose number; unique dose number for ID/time point
 }
 }
 
 \section{Required columns \code{sim.data}}{
 
 \itemize{
- \item{"ID"}{ - Subject ID}
- \item{"x"}{ - Typically time}
- \item{"PRED"}{ - Population prediction, required if \code{iiv.correction = TRUE}}
- \item{"IPRED"}{ - Individual prediction, required if \code{iiv.correction = TRUE}}
- \item{"REP"}{ - Replicate number}
+ \item \code{"ID"} - Subject ID
+ \item \code{"x"} - Typically time
+ \item \code{"PRED"} - Population prediction, required if \code{iiv.correction = TRUE}
+ \item \code{"IPRED"} - Individual prediction, required if \code{iiv.correction = TRUE}
+ \item \code{"REP"} - Replicate number
 }
 }
 
 \examples{
 obs <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv"))
-typ <- read.csv(system.file(package = "vachette", "examples", "iv-typ.csv"))
+typ <- read.csv(system.file(package = "vachette", "examples", "iv-typ-minmax.csv"))
 
 vd <- vachette_data(
   obs.data = obs,
   typ.data = typ,
-  covariates = c(WT=70),
+  covariates = c(WT = 70),
+  mappings = c(OBS = "DV", x = "time"),
   model.name  = "IV"
  ) |>
  apply_transformations()

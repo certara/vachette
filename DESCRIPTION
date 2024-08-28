@@ -1,20 +1,29 @@
 Package: vachette
-Title: A Method for Visualization of PMx Models
-Version: 0.39.0
+Title: A Method for Visualization of Pharmacometric Models
+Version: 0.40.0
 Authors@R: c(
-      person("Jos", "Lommerse", email = "jos.lommerse@certara.com", role = c("aut", "cre")),
+      person("Jos", "Lommerse", email = "jos.lommerse@certara.com", role = c("aut")),
       person("Anna", "Largajolli", email = "anna.largajolli@certara.com", role = c("aut")),
-      person("James", "Craig", email = "james.craig@certara.com", role = c("aut")),
+      person("James", "Craig", email = "james.craig@certara.com", role = c("aut", "cre")),
+      person("Nele", "Mueller-Plock", email = "nele.mueller-plock@certara.com", role = c("ctb")),
       person("Jeff", "Sachs", email = "jeff_sachs@merck.com", role = c("ctb")),
+      person("Amy", "Cheung", email = "amy.cheung@certara.com", role = c("ctb")),
       person("Certara USA, Inc.", role = c("cph","fnd"))
       )
-Description: A method to visualize PKPD analyses which are impacted by covariate effects.
+Description: A method to visualize pharmacometric analyses which are impacted by 
+    covariate effects. Variability-Aligned Covariate Harmonized-Effects 
+    and Time-Transformation Equivalent (VACHETTE) facilitates intuitive 
+    overlays of data and model predictions, allowing for comprehensive 
+    comparison without dilution effects. VACHETTE improves upon previous
+    methods Lommerse et al. (2021) <doi:10.1002/psp4.12679>, enabling its
+    application to all pharmacometric models and enhancing Visual Predictive
+    Checks (VPC) by integrating data into cohesive plots that can highlight 
+    model misspecification.
 URL: https://github.com/certara/vachette
 BugReports: https://github.com/certara/vachette/issues
 Depends: R (>= 4.0)
 License: LGPL-3
 Encoding: UTF-8
-LazyData: true
 RoxygenNote: 7.3.1
 Suggests:
     knitr,
@@ -30,9 +39,10 @@ Imports:
     magrittr,
     prospectr,
     Hmisc,
-    grid,
     purrr,
     minpack.lm,
     progress,
+    rlang,
+    utils,
     photobiology
 Config/testthat/edition: 3
