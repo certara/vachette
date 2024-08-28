@@ -2,16 +2,31 @@
 % Please edit documentation in R/plotting.R
 \name{p.prop.distances}
 \alias{p.prop.distances}
-\title{p.prop.distances}
+\title{Plot Distances Before and After \code{vachette} Transformation Assuming Proportional Error Model}
 \usage{
 p.prop.distances(vachette_data)
 }
 \arguments{
-\item{vachette_data}{Object of class \code{vachette_data}}
+\item{vachette_data}{An object of class \code{vachette_data}, which contains
+the necessary data for plotting.}
 }
 \value{
-Object of class \code{ggplot2}
+A \code{ggplot2} object representing the plot of distances.
+The plot compares the log of the original distances to the log of the distances
+after transformation, color-coded by segment.
 }
 \description{
-p.prop.distances
+This function creates a ggplot2 visualization of the distances
+before and after the \code{vachette} transformation between observations
+and the relative typical curves. It is useful for assessing the impact of
+proportional error model assumption on the distances.
+}
+\details{
+The plot includes a reference line with a slope of 1, indicating where
+the original and transformed distances are equal. The title of the plot is
+dynamically generated based on the model name provided in the \code{vachette_data} object.
+
+The subtitle of the plot indicates whether an additive or proportional error
+transformation was applied. The caption provides the reference covariate(s)
+used in the model.
 }

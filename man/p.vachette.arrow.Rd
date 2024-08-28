@@ -2,18 +2,35 @@
 % Please edit documentation in R/plotting.R
 \name{p.vachette.arrow}
 \alias{p.vachette.arrow}
-\title{p.vachette.arrow}
+\title{Plot Observations and \code{vachette} Transformed Observations with Connecting Arrows}
 \usage{
-p.vachette.arrow(vachette_data, log.x = FALSE)
+p.vachette.arrow(vachette_data)
 }
 \arguments{
-\item{vachette_data}{Object of class \code{vachette_data}}
-
-\item{log.x}{Set to \code{TRUE} to plot x axis on log scale}
+\item{vachette_data}{An object of class \code{vachette_data}, which contains
+the necessary data for plotting.}
 }
 \value{
-Object of class \code{ggplot2}
+A \code{ggplot2} object representing the observations, their transformations,
+and the corresponding reference and query curves. The plot also indicates if any
+extrapolated reference curves are present and how many observations were excluded
+from the transformation.
 }
 \description{
-p.vachette.arrow
+This function generates a ggplot2 visualization of observations and their transformations
+within a pharmacometric model. The plot superimposes the observed query and reference data
+from original to \code{vachette} transformed values, showing direction of transformation.
+Reference and query curves are additionally overlaid for comparison.
+}
+\details{
+The function plots the original and \code{vachette} transformed observations,
+with arrows showing the transformation path. Reference and query curves are
+also plotted, with extrapolated reference curves displayed as dashed lines
+if available. The subtitle provides information about the error model used
+(additive or proportional) and the number of excluded observations.
+
+The plot's title includes the model name, and the caption provides details
+about the reference covariate(s) used. The x-axis range is dynamically set
+based on the scaled x values. If the x-axis is logarithmic, the axis label
+is adjusted accordingly.
 }

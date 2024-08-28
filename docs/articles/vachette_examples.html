@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vachette Examples • vachette</title>
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/united/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- Bootstrap --><link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/united/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="../bootstrap-toc.css">
 <script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">vachette</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.39.0.9002</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.40.0</span>
       </span>
     </div>
 
@@ -101,14 +101,14 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/certara/vachette" class="external-link">vachette</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/certara/tidyvpc" class="external-link">tidyvpc</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">egg</span><span class="op">)</span></span></code></pre></div>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org" class="external-link">tidyverse</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
 <h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a>
 </h2>
 <div class="section level3">
-<h3 id="iv">IV<a class="anchor" aria-label="anchor" href="#iv"></a>
+<h3 id="intravenous">Intravenous<a class="anchor" aria-label="anchor" href="#intravenous"></a>
 </h3>
 <div class="section level4">
 <h4 id="import-data">Import Data<a class="anchor" aria-label="anchor" href="#import-data"></a>
@@ -120,13 +120,15 @@
 <li>iv-vpc.csv</li>
 </ul>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"iv-obs.csv"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">typ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"iv-typ.csv"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"iv-vpc.csv"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://certara-training.s3.amazonaws.com/Vachette/examples/examples/iv-obs.csv"</span><span class="op">)</span></span>
+<span><span class="va">typ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://certara-training.s3.amazonaws.com/Vachette/examples/examples/iv-typ-minmax.csv"</span><span class="op">)</span></span>
+<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://certara-training.s3.amazonaws.com/Vachette/examples/examples/iv-sim.csv"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="vachette-transformations">Vachette Transformations<a class="anchor" aria-label="anchor" href="#vachette-transformations"></a>
 </h4>
+<p>Generate transformations for <code>obs.data</code> and
+<code>sim.data</code></p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">vd</span> <span class="op">&lt;-</span></span>
 <span>  <span class="fu"><a href="../reference/vachette_data.html">vachette_data</a></span><span class="op">(</span></span>
@@ -136,69 +138,240 @@
 <span>    covariates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>WT<span class="op">=</span><span class="fl">70</span><span class="op">)</span>,</span>
 <span>    mappings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"time"</span>,</span>
 <span>                 OBS <span class="op">=</span> <span class="st">"DV"</span><span class="op">)</span>,</span>
-<span>    model.name  <span class="op">=</span> <span class="st">"Intravenous (i.v)"</span></span>
+<span>    model.name  <span class="op">=</span> <span class="st">"intravenous"</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/apply_transformations.html">apply_transformations</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## `EVID` column found in obs.data, creating `dosenr` column in data for corresponding ref.dosenr value</span></span></code></pre>
-<pre><code><span><span class="co">## `EVID` column found in typ.data, creating `dosenr` column in data for corresponding ref.dosenr value</span></span></code></pre>
 </div>
 <div class="section level4">
 <h4 id="vachette-plot">Vachette Plot<a class="anchor" aria-label="anchor" href="#vachette-plot"></a>
 </h4>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.vachette.html">p.vachette</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.obs.ref.query.html">p.obs.ref.query</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span> </span></code></pre></div>
 <p><img src="vachette_examples_files/figure-html/unnamed-chunk-5-1.png" width="700"></p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.vachette.html">p.vachette</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-5-2.png" width="700"></p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.scaled.typical.full.curves.landmarks.html">p.scaled.typical.full.curves.landmarks</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-5-3.png" width="700"></p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.scaling.factor.html">p.scaling.factor</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-5-4.png" width="700"></p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.scaled.typical.curves.html">p.scaled.typical.curves</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-5-5.png" width="700"></p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.obs.excluded.html">p.obs.excluded</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-5-6.png" width="700"></p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">vd</span><span class="op">$</span><span class="va">obs.excluded</span></span></code></pre></div>
+<pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 15 × 15</span></span></span>
+<span><span class="co">##      REP    ID      x   OBS dosenr    WT COV   region region.type  ucov     y</span></span>
+<span><span class="co">##    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 1</span>     1     3 0.074<span style="text-decoration: underline;">3</span> 25.9       1    30 30         1 open            1 25.9 </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 2</span>     1    10 0.092<span style="text-decoration: underline;">0</span>  2.26      1    30 30         1 open            1  2.26</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 3</span>     1    12 0.073<span style="text-decoration: underline;">9</span> 25.6       1    30 30         1 open            1 25.6 </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 4</span>     1    21 0.083<span style="text-decoration: underline;">0</span> 10.0       1    30 30         1 open            1 10.0 </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 5</span>     1    40 0.055<span style="text-decoration: underline;">9</span>  9.26      1    30 30         1 open            1  9.26</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 6</span>     1    48 0.054<span style="text-decoration: underline;">7</span> 18.3       1    30 30         1 open            1 18.3 </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 7</span>     1    52 0.099<span style="text-decoration: underline;">7</span> 16.2       1    70 70         1 open            2 16.2 </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 8</span>     1    57 0.074<span style="text-decoration: underline;">9</span> 11.2       1    70 70         1 open            2 11.2 </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 9</span>     1    61 0.096<span style="text-decoration: underline;">1</span> 36.7       1    70 70         1 open            2 36.7 </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">10</span>     1    67 0.053<span style="text-decoration: underline;">8</span> 11.9       1    70 70         1 open            2 11.9 </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">11</span>     1    78 0.071<span style="text-decoration: underline;">1</span> 11.5       1    70 70         1 open            2 11.5 </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">12</span>     1    90 0.057<span style="text-decoration: underline;">9</span> 15.0       1    70 70         1 open            2 15.0 </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">13</span>     1    91 0.086<span style="text-decoration: underline;">2</span> 45.6       1    70 70         1 open            2 45.6 </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">14</span>     1    93 0.082<span style="text-decoration: underline;">8</span> 49.2       1    70 70         1 open            2 49.2 </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">15</span>     1    95 0.065<span style="text-decoration: underline;">1</span> 27.4       1    70 70         1 open            2 27.4 </span></span>
+<span><span class="co">## <span style="color: #949494;"># ℹ 4 more variables: ref &lt;chr&gt;, exclude &lt;dbl&gt;, PRED &lt;dbl&gt;, reason &lt;chr&gt;</span></span></span></code></pre>
 </div>
 <div class="section level4">
 <h4 id="vpc">VPC<a class="anchor" aria-label="anchor" href="#vpc"></a>
 </h4>
-<p>Extract obs.all and sim.all data from <code>vachette_data</code>
-object with vachette transformations</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<p>Extract obs.all and sim.all with vachette transformations</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obs_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">obs.all</span></span>
 <span><span class="va">sim_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">sim.all</span></span></code></pre></div>
 <p>Generate traditional and vachette transformed VPC’s</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">vpc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x<span class="op">=</span><span class="va">x</span>, y<span class="op">=</span><span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x<span class="op">=</span><span class="va">x</span>, y<span class="op">=</span><span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"pam"</span>, nbins <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">vpc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x <span class="op">=</span> <span class="va">x</span>, y <span class="op">=</span> <span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x <span class="op">=</span> <span class="va">x</span>, y <span class="op">=</span> <span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"centers"</span>,</span>
+<span>          centers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">8</span>, <span class="fl">12</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">vpc_vachette</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x<span class="op">=</span><span class="va">x.scaled</span>, y<span class="op">=</span><span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x<span class="op">=</span><span class="va">x.scaled</span>, y<span class="op">=</span><span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"pam"</span>, nbins <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="va">pcvpc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x <span class="op">=</span> <span class="va">x</span>, y <span class="op">=</span> <span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x <span class="op">=</span> <span class="va">x</span>, y <span class="op">=</span> <span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"centers"</span>,</span>
+<span>          centers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">8</span>, <span class="fl">12</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/predcorrect.html" class="external-link">predcorrect</a></span><span class="op">(</span>pred <span class="op">=</span> <span class="va">PRED</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">vpc_vachette</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x <span class="op">=</span> <span class="va">x.scaled</span>, y <span class="op">=</span> <span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x <span class="op">=</span> <span class="va">x.scaled</span>, y <span class="op">=</span> <span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"centers"</span>,</span>
+<span>          centers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">8</span>, <span class="fl">12</span><span class="op">)</span><span class="op">)</span>  <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span></span>
-<span><span class="fu">egg</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/egg/man/ggarrange.html" class="external-link">ggarrange</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Traditional VPC"</span><span class="op">)</span> <span class="op">+</span> <span class="va">rmd_theme</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc_vachette</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Vachette Transformed VPC"</span><span class="op">)</span> <span class="op">+</span> <span class="va">rmd_theme</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Traditional VPC"</span>,</span>
+<span>                 x <span class="op">=</span> <span class="st">"Time"</span>, y <span class="op">=</span> <span class="st">"Concentration"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="vachette_examples_files/figure-html/unnamed-chunk-7-1.png" width="700"></p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pcvpc</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"pcVPC"</span>,</span>
+<span>                   x <span class="op">=</span> <span class="st">"Time"</span>, y <span class="op">=</span> <span class="st">"Concentration"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-7-2.png" width="700"></p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc_vachette</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Vachette Transformed VPC"</span>,</span>
+<span>                          x <span class="op">=</span> <span class="st">"Time"</span>, y <span class="op">=</span> <span class="st">"Concentration"</span><span class="op">)</span>  </span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-7-3.png" width="700"></p>
 </div>
 </div>
 <div class="section level3">
-<h3 id="oral-absorption">Oral-Absorption<a class="anchor" aria-label="anchor" href="#oral-absorption"></a>
+<h3 id="sigmoid">Sigmoid<a class="anchor" aria-label="anchor" href="#sigmoid"></a>
 </h3>
 <div class="section level4">
 <h4 id="import-data-1">Import Data<a class="anchor" aria-label="anchor" href="#import-data-1"></a>
 </h4>
 <p>Data files:</p>
 <ul>
-<li>oral-absorption-obs.csv</li>
-<li>oral-absorption-typ.csv</li>
-<li>oral-absorption-vpc.csv</li>
+<li>sigmoid-obs.csv</li>
+<li>sigmoid-typ-minmax.csv</li>
+<li>sigmoid-sim.csv</li>
 </ul>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"oral-absorption-obs.csv"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">typ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"oral-absorption-typ.csv"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"oral-absorption-vpc.csv"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://certara-training.s3.amazonaws.com/Vachette/examples/examples/sigmoid-obs.csv"</span><span class="op">)</span></span>
+<span><span class="va">typ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://certara-training.s3.amazonaws.com/Vachette/examples/examples/sigmoid-typ-minmax.csv"</span><span class="op">)</span></span>
+<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://certara-training.s3.amazonaws.com/Vachette/examples/examples/sigmoid-sim.csv"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="vachette-transformations-1">Vachette Transformations<a class="anchor" aria-label="anchor" href="#vachette-transformations-1"></a>
 </h4>
+<p>Generate transformations for obs.data</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">vd</span> <span class="op">&lt;-</span></span>
+<span>  <span class="fu"><a href="../reference/vachette_data.html">vachette_data</a></span><span class="op">(</span></span>
+<span>    obs.data <span class="op">=</span> <span class="va">obs</span>,</span>
+<span>    typ.data <span class="op">=</span> <span class="va">typ</span>,</span>
+<span>    sim.data <span class="op">=</span> <span class="va">sim</span>,</span>
+<span>    covariates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>WT<span class="op">=</span><span class="fl">70</span><span class="op">)</span>,</span>
+<span>    log.x <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>    mappings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"bmx"</span>,</span>
+<span>                 OBS <span class="op">=</span> <span class="st">"DV"</span><span class="op">)</span>,</span>
+<span>    model.name  <span class="op">=</span> <span class="st">"sigmoid"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/apply_transformations.html">apply_transformations</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level4">
+<h4 id="vachette-plot-1">Vachette Plot<a class="anchor" aria-label="anchor" href="#vachette-plot-1"></a>
+</h4>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.obs.ref.query.html">p.obs.ref.query</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-10-1.png" width="700"></p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.vachette.html">p.vachette</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-10-2.png" width="700"></p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.scaled.typical.full.curves.landmarks.html">p.scaled.typical.full.curves.landmarks</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-10-3.png" width="700"></p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.scaling.factor.html">p.scaling.factor</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-10-4.png" width="700"></p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.scaled.typical.curves.html">p.scaled.typical.curves</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-10-5.png" width="700"></p>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">geomadd</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">.x</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">.x</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">coord_cartesian</a></span><span class="op">(</span>xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">vd</span><span class="op">$</span><span class="va">obs.all</span><span class="op">$</span><span class="va">x.scaled</span><span class="op">)</span>, <span class="va">vd</span><span class="op">$</span><span class="va">xstop</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_log10</a></span><span class="op">(</span>limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">vd</span><span class="op">$</span><span class="va">obs.all</span><span class="op">$</span><span class="va">x.scaled</span><span class="op">)</span>, <span class="va">vd</span><span class="op">$</span><span class="va">xstop</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/p.vachette.html">p.vachette</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span></span>
+<span>      data <span class="op">=</span> <span class="va">vd</span><span class="op">$</span><span class="va">obs.all</span><span class="op">[</span><span class="va">vd</span><span class="op">$</span><span class="va">obs.all</span><span class="op">$</span><span class="va">WT</span> <span class="op">!=</span> <span class="fl">30</span>, <span class="op">]</span>,</span>
+<span>      <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">x.vacher</span>, y <span class="op">=</span> <span class="va">y.scaled</span>, fill <span class="op">=</span> <span class="st">"V2ACHER"</span><span class="op">)</span>,</span>
+<span>      pch <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>      size <span class="op">=</span> <span class="fl">4</span></span>
+<span>    <span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="st">""</span>,</span>
+<span>         x <span class="op">=</span> <span class="st">"ln(Biomarker Concentration)"</span>,</span>
+<span>         y <span class="op">=</span> <span class="st">"Response"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_fill_manual</a></span><span class="op">(</span>values <span class="op">=</span> <span class="st">"blue"</span>, labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/expression.html" class="external-link">expression</a></span><span class="op">(</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"V"</span> <span class="op">^</span> <span class="fl">2</span> <span class="op">*</span> <span class="st">"ACHER"</span><span class="op">)</span></span>
+<span>    <span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-10-6.png" width="700"></p>
+</div>
+<div class="section level4">
+<h4 id="vpc-1">VPC<a class="anchor" aria-label="anchor" href="#vpc-1"></a>
+</h4>
+<p>Extract obs.all and sim.all with vachette transformations</p>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">obs_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">obs.all</span></span>
+<span><span class="va">sim_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">sim.all</span></span></code></pre></div>
+<p>Generate traditional and vachette transformed VPC’s</p>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">vpc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>, y <span class="op">=</span> <span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>, y <span class="op">=</span> <span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"centers"</span>,</span>
+<span>          centers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.003</span>, <span class="fl">0.01</span>, <span class="fl">0.03</span>, <span class="fl">0.1</span>, <span class="fl">0.3</span>, <span class="fl">1</span>, <span class="fl">3</span>, <span class="fl">10</span>, <span class="fl">30</span>, <span class="fl">100</span>, <span class="fl">300</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">pcvpc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>, y <span class="op">=</span> <span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>, y <span class="op">=</span> <span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"centers"</span>,</span>
+<span>          centers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.003</span>, <span class="fl">0.01</span>, <span class="fl">0.03</span>, <span class="fl">0.1</span>, <span class="fl">0.3</span>, <span class="fl">1</span>, <span class="fl">3</span>, <span class="fl">10</span>, <span class="fl">30</span>, <span class="fl">100</span>, <span class="fl">300</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/predcorrect.html" class="external-link">predcorrect</a></span><span class="op">(</span>pred <span class="op">=</span> <span class="va">PRED</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">vpc_vachette</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">x.scaled</span><span class="op">)</span>, y <span class="op">=</span> <span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">x.scaled</span><span class="op">)</span>, y <span class="op">=</span> <span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"centers"</span>,</span>
+<span>          centers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.003</span>, <span class="fl">0.01</span>, <span class="fl">0.03</span>, <span class="fl">0.1</span>, <span class="fl">0.3</span>, <span class="fl">1</span>, <span class="fl">3</span>, <span class="fl">10</span>, <span class="fl">30</span>, <span class="fl">100</span>, <span class="fl">300</span><span class="op">)</span><span class="op">)</span>  <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Traditional VPC"</span>,</span>
+<span>                 x <span class="op">=</span> <span class="st">"Biomarker Concentration"</span>,</span>
+<span>                 y <span class="op">=</span> <span class="st">"Response"</span><span class="op">)</span>  <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_log10</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-12-1.png" width="700"></p>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pcvpc</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"pcVPC"</span>,</span>
+<span>                   x <span class="op">=</span> <span class="st">"Biomarker Concentration"</span>,</span>
+<span>                   y <span class="op">=</span> <span class="st">"Response"</span><span class="op">)</span>  <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_log10</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-12-2.png" width="700"></p>
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc_vachette</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Vachette Transformed VPC"</span>,</span>
+<span>                          x <span class="op">=</span> <span class="st">"Biomarker Concentration"</span>,</span>
+<span>                          y <span class="op">=</span> <span class="st">"Response"</span><span class="op">)</span>  <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_log10</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-12-3.png" width="700"></p>
+</div>
+</div>
+<div class="section level3">
+<h3 id="oral-absorption">Oral-Absorption<a class="anchor" aria-label="anchor" href="#oral-absorption"></a>
+</h3>
+<div class="section level4">
+<h4 id="import-data-2">Import Data<a class="anchor" aria-label="anchor" href="#import-data-2"></a>
+</h4>
+<p>Data files:</p>
+<ul>
+<li>oral-absorption-obs.csv</li>
+<li>oral-absorption-typ-minmax.csv</li>
+<li>oral-absorption-sim.csv</li>
+</ul>
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://certara-training.s3.amazonaws.com/Vachette/examples/examples/oral-absorption-obs.csv"</span><span class="op">)</span></span>
+<span><span class="va">typ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://certara-training.s3.amazonaws.com/Vachette/examples/examples/oral-absorption-typ-minmax.csv"</span><span class="op">)</span></span>
+<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://certara-training.s3.amazonaws.com/Vachette/examples/examples/oral-absorption-sim.csv"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level4">
+<h4 id="vachette-transformations-2">Vachette Transformations<a class="anchor" aria-label="anchor" href="#vachette-transformations-2"></a>
+</h4>
 <p>Generate transformations for obs.data and sim.data</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">vd</span> <span class="op">&lt;-</span></span>
 <span>  <span class="fu"><a href="../reference/vachette_data.html">vachette_data</a></span><span class="op">(</span></span>
 <span>    obs.data <span class="op">=</span> <span class="va">obs</span>,</span>
@@ -210,222 +383,91 @@ object with vachette transformations</p>
 <span>    model.name  <span class="op">=</span> <span class="st">"oral-absorption"</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/apply_transformations.html">apply_transformations</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## `EVID` column found in obs.data, creating `dosenr` column in data for corresponding ref.dosenr value</span></span></code></pre>
-<pre><code><span><span class="co">## `EVID` column found in typ.data, creating `dosenr` column in data for corresponding ref.dosenr value</span></span></code></pre>
-</div>
-<div class="section level4">
-<h4 id="vachette-plot-1">Vachette Plot<a class="anchor" aria-label="anchor" href="#vachette-plot-1"></a>
-</h4>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.vachette.html">p.vachette</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vachette_examples_files/figure-html/unnamed-chunk-10-1.png" width="700"></p>
-</div>
-<div class="section level4">
-<h4 id="vpc-1">VPC<a class="anchor" aria-label="anchor" href="#vpc-1"></a>
-</h4>
-<p>Extract obs.all and sim.all data from <code>vachette_data</code>
-object with vachette transformations</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obs_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">obs.all</span></span>
-<span><span class="va">sim_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">sim.all</span></span></code></pre></div>
-<p>Generate traditional and vachette transformed VPC’s</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">vpc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x<span class="op">=</span><span class="va">x</span>, y<span class="op">=</span><span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x<span class="op">=</span><span class="va">x</span>, y<span class="op">=</span><span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"pam"</span>, nbins <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">vpc_vachette</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x<span class="op">=</span><span class="va">x.scaled</span>, y<span class="op">=</span><span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x<span class="op">=</span><span class="va">x.scaled</span>, y<span class="op">=</span><span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"pam"</span>, nbins <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span></span>
-<span><span class="fu">egg</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/egg/man/ggarrange.html" class="external-link">ggarrange</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Traditional VPC"</span><span class="op">)</span> <span class="op">+</span> <span class="va">rmd_theme</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc_vachette</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Vachette Transformed VPC"</span><span class="op">)</span> <span class="op">+</span> <span class="va">rmd_theme</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p><img src="vachette_examples_files/figure-html/unnamed-chunk-12-1.png" width="700"></p>
-</div>
-</div>
-<div class="section level3">
-<h3 id="oral-two-cov">Oral-Two-Cov<a class="anchor" aria-label="anchor" href="#oral-two-cov"></a>
-</h3>
-<div class="section level4">
-<h4 id="import-data-2">Import Data<a class="anchor" aria-label="anchor" href="#import-data-2"></a>
-</h4>
-<p>Data files:</p>
-<ul>
-<li>oral-two-cov-obs.csv</li>
-<li>oral-two-cov-typ.csv</li>
-<li>oral-two-cov-vpc.csv</li>
-</ul>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"oral-two-cov-obs.csv"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">typ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"oral-two-cov-typ.csv"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"oral-two-cov-vpc.csv"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>Next, filter out dose records from sim.data. Note, dosing records
-should not be in sim.data, vachette extracts dosenr from obs.data and
-merges into sim.data by ID and x, if sim.data is specified in
-<code><a href="../reference/vachette_data.html">vachette_data()</a></code>.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="va">sim</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">EVID</span> <span class="op">!=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level4">
-<h4 id="vachette-transformations-2">Vachette Transformations<a class="anchor" aria-label="anchor" href="#vachette-transformations-2"></a>
-</h4>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">vd</span> <span class="op">&lt;-</span></span>
-<span>  <span class="fu"><a href="../reference/vachette_data.html">vachette_data</a></span><span class="op">(</span></span>
-<span>    obs.data <span class="op">=</span> <span class="va">obs</span>,</span>
-<span>    typ.data <span class="op">=</span> <span class="va">typ</span>,</span>
-<span>    sim.data <span class="op">=</span> <span class="va">sim</span>,</span>
-<span>    covariates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>WT<span class="op">=</span><span class="fl">70</span>,</span>
-<span>                   AGE<span class="op">=</span><span class="fl">30</span><span class="op">)</span>,</span>
-<span>    mappings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"time"</span>,</span>
-<span>                 OBS <span class="op">=</span> <span class="st">"DV"</span><span class="op">)</span>,</span>
-<span>    model.name  <span class="op">=</span> <span class="st">"oral-two-cov"</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/apply_transformations.html">apply_transformations</a></span><span class="op">(</span>window <span class="op">=</span> <span class="fl">23</span>,</span>
-<span>                        window.d1.refine <span class="op">=</span> <span class="fl">7</span>,</span>
-<span>                        window.d2.refine <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## `EVID` column found in obs.data, creating `dosenr` column in data for corresponding ref.dosenr value</span></span></code></pre>
-<pre><code><span><span class="co">## `EVID` column found in typ.data, creating `dosenr` column in data for corresponding ref.dosenr value</span></span></code></pre>
 </div>
 <div class="section level4">
 <h4 id="vachette-plot-2">Vachette Plot<a class="anchor" aria-label="anchor" href="#vachette-plot-2"></a>
 </h4>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.obs.ref.query.html">p.obs.ref.query</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-15-1.png" width="700"></p>
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.scaled.typical.curves.html">p.scaled.typical.curves</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-15-2.png" width="700"></p>
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.prop.distances.html">p.prop.distances</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-15-3.png" width="700"></p>
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.scaled.typical.full.curves.landmarks.html">p.scaled.typical.full.curves.landmarks</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-15-4.png" width="700"></p>
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.scaling.factor.html">p.scaling.factor</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-15-5.png" width="700"></p>
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/p.vachette.html">p.vachette</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vachette_examples_files/figure-html/unnamed-chunk-16-1.png" width="700"></p>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-15-6.png" width="700"></p>
 </div>
 <div class="section level4">
 <h4 id="vpc-2">VPC<a class="anchor" aria-label="anchor" href="#vpc-2"></a>
 </h4>
 <p>Extract obs.all and sim.all data from <code>vachette_data</code>
-object with vachette transformations.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+object with vachette transformations</p>
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obs_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">obs.all</span></span>
-<span><span class="va">obs_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">obs.all</span></span></code></pre></div>
+<span><span class="va">sim_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">sim.all</span></span></code></pre></div>
 <p>Generate traditional and vachette transformed VPC’s</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">vpc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x<span class="op">=</span><span class="va">x</span>, y<span class="op">=</span><span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x<span class="op">=</span><span class="va">x</span>, y<span class="op">=</span><span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"pam"</span>, nbins <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">vpc_vachette</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x<span class="op">=</span><span class="va">x.scaled</span>, y<span class="op">=</span><span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x<span class="op">=</span><span class="va">x.scaled</span>, y<span class="op">=</span><span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="va">pcvpc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x<span class="op">=</span><span class="va">x</span>, y<span class="op">=</span><span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x<span class="op">=</span><span class="va">x</span>, y<span class="op">=</span><span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"pam"</span>, nbins <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/predcorrect.html" class="external-link">predcorrect</a></span><span class="op">(</span>pred<span class="op">=</span><span class="va">PRED</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
+<span> </span>
+<span><span class="va">vpc_vachette</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x <span class="op">=</span> <span class="va">x.scaled</span>, y <span class="op">=</span> <span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x <span class="op">=</span> <span class="va">x.scaled</span>, y <span class="op">=</span> <span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"pam"</span>, nbins <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span></span>
-<span><span class="fu">egg</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/egg/man/ggarrange.html" class="external-link">ggarrange</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Traditional VPC"</span><span class="op">)</span> <span class="op">+</span> <span class="va">rmd_theme</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc_vachette</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Vachette Transformed VPC"</span><span class="op">)</span> <span class="op">+</span> <span class="va">rmd_theme</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p><img src="vachette_examples_files/figure-html/unnamed-chunk-18-1.png" width="700"></p>
-</div>
-</div>
-<div class="section level3">
-<h3 id="sigmoid">Sigmoid<a class="anchor" aria-label="anchor" href="#sigmoid"></a>
-</h3>
-<div class="section level4">
-<h4 id="import-data-3">Import Data<a class="anchor" aria-label="anchor" href="#import-data-3"></a>
-</h4>
-<p>Data files:</p>
-<ul>
-<li>sigmoid-obs.csv</li>
-<li>sigmoid-typ.csv</li>
-<li>sigmoid-vpc.csv</li>
-</ul>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"sigmoid-obs.csv"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">typ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"sigmoid-typ.csv"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"sigmoid-vpc.csv"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level4">
-<h4 id="vachette-transformations-3">Vachette Transformations<a class="anchor" aria-label="anchor" href="#vachette-transformations-3"></a>
-</h4>
-<p>Generate transformations for obs.data</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">vd</span> <span class="op">&lt;-</span></span>
-<span>  <span class="fu"><a href="../reference/vachette_data.html">vachette_data</a></span><span class="op">(</span></span>
-<span>    obs.data <span class="op">=</span> <span class="va">obs</span>,</span>
-<span>    typ.data <span class="op">=</span> <span class="va">typ</span>,</span>
-<span>    sim.data <span class="op">=</span> <span class="va">sim</span>,</span>
-<span>    covariates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>WT<span class="op">=</span><span class="fl">70</span><span class="op">)</span>,</span>
-<span>    mappings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"bmx"</span>,</span>
-<span>                 OBS <span class="op">=</span> <span class="st">"DV"</span><span class="op">)</span>,</span>
-<span>    model.name  <span class="op">=</span> <span class="st">"sigmoid"</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/apply_transformations.html">apply_transformations</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## `dosenr` column is required and not found in obs.data `dosenr` can be automatically calculated using `EVID`, `AMT`, or `ADDL/II` columns in the data. Use the 'mappings' argument if these columns are named differently in your input data.</span></span></code></pre>
-<pre><code><span><span class="co">## Warning: Setting `dosenr` column to 1 in obs.data</span></span></code></pre>
-<pre><code><span><span class="co">## `dosenr` column is required and not found in typ.data `dosenr` can be automatically calculated using `EVID`, `AMT`, or `ADDL/II` columns in the data. Use the 'mappings' argument if these columns are named differently in your input data.</span></span></code></pre>
-<pre><code><span><span class="co">## Warning: Setting `dosenr` column to 1 in typ.data</span></span></code></pre>
-</div>
-<div class="section level4">
-<h4 id="vachette-plot-3">Vachette Plot<a class="anchor" aria-label="anchor" href="#vachette-plot-3"></a>
-</h4>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.vachette.html">p.vachette</a></span><span class="op">(</span><span class="va">vd</span>, log.x <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vachette_examples_files/figure-html/unnamed-chunk-21-1.png" width="700"></p>
-</div>
-<div class="section level4">
-<h4 id="vpc-3">VPC<a class="anchor" aria-label="anchor" href="#vpc-3"></a>
-</h4>
-<p>Extract obs.all and sim.all with vachette transformations</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obs_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">obs.all</span></span>
-<span><span class="va">sim_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">sim.all</span></span></code></pre></div>
-<p>Generate traditional and vachette transformed VPC’s</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">vpc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x<span class="op">=</span><span class="va">x</span>, y<span class="op">=</span><span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x<span class="op">=</span><span class="va">x</span>, y<span class="op">=</span><span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"centers"</span>, </span>
-<span>                          centers <span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.003</span>,<span class="fl">0.01</span>,<span class="fl">0.03</span>,<span class="fl">0.1</span>,<span class="fl">0.3</span>,<span class="fl">1</span>,<span class="fl">3</span>,<span class="fl">10</span>,<span class="fl">30</span>,<span class="fl">100</span>,<span class="fl">300</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">vpc_vachette</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x<span class="op">=</span><span class="va">x.scaled</span>, y<span class="op">=</span><span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x<span class="op">=</span><span class="va">x.scaled</span>, y<span class="op">=</span><span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"centers"</span>, </span>
-<span>                          centers <span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.003</span>,<span class="fl">0.01</span>,<span class="fl">0.03</span>,<span class="fl">0.1</span>,<span class="fl">0.3</span>,<span class="fl">1</span>,<span class="fl">3</span>,<span class="fl">10</span>,<span class="fl">30</span>,<span class="fl">100</span>,<span class="fl">300</span><span class="op">)</span><span class="op">)</span>  <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span></span>
-<span><span class="fu">egg</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/egg/man/ggarrange.html" class="external-link">ggarrange</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Traditional VPC"</span><span class="op">)</span> <span class="op">+</span> <span class="va">rmd_theme</span> <span class="op">+</span></span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_log10</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc_vachette</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Vachette Transformed VPC"</span><span class="op">)</span> <span class="op">+</span> <span class="va">rmd_theme</span> <span class="op">+</span></span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_log10</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p><img src="vachette_examples_files/figure-html/unnamed-chunk-23-1.png" width="700"></p>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Traditional VPC"</span>,</span>
+<span>                 x <span class="op">=</span> <span class="st">"Time"</span>, y <span class="op">=</span> <span class="st">"Concentration"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-17-1.png" width="700"></p>
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pcvpc</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"pcVPC"</span>,</span>
+<span>                   x <span class="op">=</span> <span class="st">"Time"</span>, y <span class="op">=</span> <span class="st">"Concentration"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-17-2.png" width="700"></p>
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc_vachette</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Vachette Transformed VPC"</span>,</span>
+<span>                          x <span class="op">=</span> <span class="st">"Time"</span>, y <span class="op">=</span> <span class="st">"Concentration"</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-17-3.png" width="700"></p>
 </div>
 </div>
 <div class="section level3">
 <h3 id="indirect-response">Indirect Response<a class="anchor" aria-label="anchor" href="#indirect-response"></a>
 </h3>
 <div class="section level4">
-<h4 id="import-data-4">Import Data<a class="anchor" aria-label="anchor" href="#import-data-4"></a>
+<h4 id="import-data-3">Import Data<a class="anchor" aria-label="anchor" href="#import-data-3"></a>
 </h4>
 <p>Data files:</p>
 <ul>
 <li>indirect-response-obs.csv</li>
-<li>indirect-response-typ.csv</li>
+<li>indirect-response-typ-minmax.csv</li>
 <li>indirect-response-vpc.csv</li>
 </ul>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"indirect-response-obs.csv"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">typ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"indirect-response-typ.csv"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"indirect-response-vpc.csv"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://certara-training.s3.amazonaws.com/Vachette/examples/examples/indirect-response-obs.csv"</span><span class="op">)</span></span>
+<span><span class="va">typ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://certara-training.s3.amazonaws.com/Vachette/examples/examples/indirect-response-typ-minmax.csv"</span><span class="op">)</span></span>
+<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://certara-training.s3.amazonaws.com/Vachette/examples/examples/indirect-response-sim.csv"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level4">
-<h4 id="vachette-transformations-4">Vachette Transformations<a class="anchor" aria-label="anchor" href="#vachette-transformations-4"></a>
+<h4 id="vachette-transformations-3">Vachette Transformations<a class="anchor" aria-label="anchor" href="#vachette-transformations-3"></a>
 </h4>
 <p>Generate transformations for obs.data</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">vd</span> <span class="op">&lt;-</span></span>
 <span>  <span class="fu"><a href="../reference/vachette_data.html">vachette_data</a></span><span class="op">(</span></span>
 <span>    obs.data <span class="op">=</span> <span class="va">obs</span>,</span>
@@ -437,135 +479,72 @@ object with vachette transformations.</p>
 <span>    model.name  <span class="op">=</span> <span class="st">"indirect-response"</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/apply_transformations.html">apply_transformations</a></span><span class="op">(</span>tol.noise <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## `EVID` column found in obs.data, creating `dosenr` column in data for corresponding ref.dosenr value</span></span></code></pre>
-<pre><code><span><span class="co">## `EVID` column found in typ.data, creating `dosenr` column in data for corresponding ref.dosenr value</span></span></code></pre>
-<pre><code><span><span class="co">## Warning in regularize.values(x, y, ties, missing(ties), na.rm = na.rm):</span></span>
-<span><span class="co">## collapsing to unique 'x' values</span></span>
-<span></span>
-<span><span class="co">## Warning in regularize.values(x, y, ties, missing(ties), na.rm = na.rm):</span></span>
-<span><span class="co">## collapsing to unique 'x' values</span></span>
-<span></span>
-<span><span class="co">## Warning in regularize.values(x, y, ties, missing(ties), na.rm = na.rm):</span></span>
-<span><span class="co">## collapsing to unique 'x' values</span></span>
-<span></span>
-<span><span class="co">## Warning in regularize.values(x, y, ties, missing(ties), na.rm = na.rm):</span></span>
-<span><span class="co">## collapsing to unique 'x' values</span></span></code></pre>
 </div>
 <div class="section level4">
-<h4 id="vachette-plot-4">Vachette Plot<a class="anchor" aria-label="anchor" href="#vachette-plot-4"></a>
+<h4 id="vachette-plot-3">Vachette Plot<a class="anchor" aria-label="anchor" href="#vachette-plot-3"></a>
 </h4>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">addpoints</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">lm.all</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">type</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"min"</span>, <span class="st">"inflec"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/p.obs.ref.query.html">p.obs.ref.query</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span></span>
+<span>    data <span class="op">=</span> <span class="va">addpoints</span>,</span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">x</span>, y <span class="op">=</span> <span class="va">y</span>, size <span class="op">=</span> <span class="st">"Landmark"</span><span class="op">)</span>,</span>
+<span>    shape <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>    stroke <span class="op">=</span> <span class="fl">2</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>size <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-20-1.png" width="700"></p>
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.scaled.typical.full.curves.landmarks.html">p.scaled.typical.full.curves.landmarks</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-20-2.png" width="700"></p>
+<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.scaling.factor.html">p.scaling.factor</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-20-3.png" width="700"></p>
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/p.vachette.html">p.vachette</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vachette_examples_files/figure-html/unnamed-chunk-26-1.png" width="700"></p>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-20-4.png" width="700"></p>
 </div>
 <div class="section level4">
-<h4 id="vpc-4">VPC<a class="anchor" aria-label="anchor" href="#vpc-4"></a>
+<h4 id="vpc-3">VPC<a class="anchor" aria-label="anchor" href="#vpc-3"></a>
 </h4>
 <p>Extract obs.all data from <code>vachette_data</code> object with
-vachette transformations from observed data.</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obs_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">obs.all</span></span>
-<span><span class="va">sim_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">sim.all</span></span></code></pre></div>
-<p>Generate traditional and vachette transformed VPC’s</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">vpc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x<span class="op">=</span><span class="va">x</span>, y<span class="op">=</span><span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x<span class="op">=</span><span class="va">x</span>, y<span class="op">=</span><span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"pam"</span>, nbins <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">vpc_vachette</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x<span class="op">=</span><span class="va">x.scaled</span>, y<span class="op">=</span><span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x<span class="op">=</span><span class="va">x.scaled</span>, y<span class="op">=</span><span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"pam"</span>, nbins <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span></span>
-<span><span class="fu">egg</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/egg/man/ggarrange.html" class="external-link">ggarrange</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Traditional VPC"</span><span class="op">)</span> <span class="op">+</span> <span class="va">rmd_theme</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc_vachette</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Vachette Transformed VPC"</span><span class="op">)</span> <span class="op">+</span> <span class="va">rmd_theme</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p><img src="vachette_examples_files/figure-html/unnamed-chunk-28-1.png" width="700"></p>
-</div>
-</div>
-<div class="section level3">
-<h3 id="indirect-response-high-dose">Indirect Response High Dose<a class="anchor" aria-label="anchor" href="#indirect-response-high-dose"></a>
-</h3>
-<div class="section level4">
-<h4 id="import-data-5">Import Data<a class="anchor" aria-label="anchor" href="#import-data-5"></a>
-</h4>
-<p>Data files:</p>
-<ul>
-<li>indirect-response-high-dose-obs.csv</li>
-<li>indirect-response-high-dose-typ.csv</li>
-<li>indirect-response-high-dose-vpc.csv</li>
-</ul>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"indirect-response-high-dose-obs.csv"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">typ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"indirect-response-high-dose-typ.csv"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"vachette"</span>, <span class="st">"examples"</span>, <span class="st">"indirect-response-high-dose-vpc.csv"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level4">
-<h4 id="vachette-transformations-5">Vachette Transformations<a class="anchor" aria-label="anchor" href="#vachette-transformations-5"></a>
-</h4>
-<p>Generate transformations for obs.data</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">vd</span> <span class="op">&lt;-</span></span>
-<span>  <span class="fu"><a href="../reference/vachette_data.html">vachette_data</a></span><span class="op">(</span></span>
-<span>    obs.data <span class="op">=</span> <span class="va">obs</span>,</span>
-<span>    typ.data <span class="op">=</span> <span class="va">typ</span>,</span>
-<span>    sim.data <span class="op">=</span> <span class="va">sim</span>, </span>
-<span>    covariates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>DOSE<span class="op">=</span><span class="fl">1000000</span><span class="op">)</span>,</span>
-<span>    mappings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"time"</span>,</span>
-<span>                 OBS <span class="op">=</span> <span class="st">"DV"</span><span class="op">)</span>,</span>
-<span>    model.name  <span class="op">=</span> <span class="st">"indirect-response-high-dose"</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/apply_transformations.html">apply_transformations</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## `EVID` column found in obs.data, creating `dosenr` column in data for corresponding ref.dosenr value</span></span></code></pre>
-<pre><code><span><span class="co">## `EVID` column found in typ.data, creating `dosenr` column in data for corresponding ref.dosenr value</span></span></code></pre>
-<pre><code><span><span class="co">## Warning in regularize.values(x, y, ties, missing(ties), na.rm = na.rm):</span></span>
-<span><span class="co">## collapsing to unique 'x' values</span></span>
-<span></span>
-<span><span class="co">## Warning in regularize.values(x, y, ties, missing(ties), na.rm = na.rm):</span></span>
-<span><span class="co">## collapsing to unique 'x' values</span></span>
-<span></span>
-<span><span class="co">## Warning in regularize.values(x, y, ties, missing(ties), na.rm = na.rm):</span></span>
-<span><span class="co">## collapsing to unique 'x' values</span></span>
-<span></span>
-<span><span class="co">## Warning in regularize.values(x, y, ties, missing(ties), na.rm = na.rm):</span></span>
-<span><span class="co">## collapsing to unique 'x' values</span></span></code></pre>
-</div>
-<div class="section level4">
-<h4 id="vachette-plot-5">Vachette Plot<a class="anchor" aria-label="anchor" href="#vachette-plot-5"></a>
-</h4>
+vachette transformations from observed data</p>
 <div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/p.vachette.html">p.vachette</a></span><span class="op">(</span><span class="va">vd</span><span class="op">)</span></span></code></pre></div>
-<p><img src="vachette_examples_files/figure-html/unnamed-chunk-31-1.png" width="700"></p>
-</div>
-<div class="section level4">
-<h4 id="vpc-5">VPC<a class="anchor" aria-label="anchor" href="#vpc-5"></a>
-</h4>
-<p>Extract obs.all and sim.all data from <code>vachette_data</code>
-object with vachette transformations.</p>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obs_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">obs.all</span></span>
 <span><span class="va">sim_trans</span> <span class="op">&lt;-</span> <span class="va">vd</span><span class="op">$</span><span class="va">sim.all</span></span></code></pre></div>
 <p>Generate traditional and vachette transformed VPC’s</p>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">vpc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x<span class="op">=</span><span class="va">x</span>, y<span class="op">=</span><span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x<span class="op">=</span><span class="va">x</span>, y<span class="op">=</span><span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"pam"</span>, nbins <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>                  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">vpc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x <span class="op">=</span> <span class="va">x</span>, y <span class="op">=</span> <span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x <span class="op">=</span> <span class="va">x</span>, y <span class="op">=</span> <span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"pam"</span>, nbins <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">vpc_vachette</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x<span class="op">=</span><span class="va">x.scaled</span>, y<span class="op">=</span><span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x<span class="op">=</span><span class="va">x.scaled</span>, y<span class="op">=</span><span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="va">pcvpc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x <span class="op">=</span> <span class="va">x</span>, y <span class="op">=</span> <span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x <span class="op">=</span> <span class="va">x</span>, y <span class="op">=</span> <span class="va">y</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"pam"</span>, nbins <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/predcorrect.html" class="external-link">predcorrect</a></span><span class="op">(</span>pred <span class="op">=</span> <span class="va">PRED</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">vpc_vachette</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/observed.html" class="external-link">observed</a></span><span class="op">(</span><span class="va">obs_trans</span>, x <span class="op">=</span> <span class="va">x.scaled</span>, y <span class="op">=</span> <span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/simulated.html" class="external-link">simulated</a></span><span class="op">(</span><span class="va">sim_trans</span>, x <span class="op">=</span> <span class="va">x.scaled</span>, y <span class="op">=</span> <span class="va">y.scaled</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/binning.html" class="external-link">binning</a></span><span class="op">(</span>bin <span class="op">=</span> <span class="st">"pam"</span>, nbins <span class="op">=</span> <span class="fl">11</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/tidyvpc/man/vpcstats.html" class="external-link">vpcstats</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span></span>
-<span><span class="fu">egg</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/egg/man/ggarrange.html" class="external-link">ggarrange</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Traditional VPC"</span><span class="op">)</span> <span class="op">+</span> <span class="va">rmd_theme</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc_vachette</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Vachette Transformed VPC"</span><span class="op">)</span> <span class="op">+</span> <span class="va">rmd_theme</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p><img src="vachette_examples_files/figure-html/unnamed-chunk-33-1.png" width="700"></p>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Traditional VPC"</span>,</span>
+<span>                 x <span class="op">=</span> <span class="st">"Time"</span>, y <span class="op">=</span> <span class="st">"Response"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-22-1.png" width="700"></p>
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pcvpc</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"pcVPC"</span>,</span>
+<span>                   x <span class="op">=</span> <span class="st">"Time"</span>, y <span class="op">=</span> <span class="st">"Response"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-22-2.png" width="700"></p>
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vpc_vachette</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Vachette Transformed VPC"</span>,</span>
+<span>                          x <span class="op">=</span> <span class="st">"Time"</span>, y <span class="op">=</span> <span class="st">"Response"</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="vachette_examples_files/figure-html/unnamed-chunk-22-3.png" width="700"></p>
 </div>
 </div>
 </div>
@@ -588,7 +567,7 @@ object with vachette transformations.</p>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
 </div>
 
       </footer>

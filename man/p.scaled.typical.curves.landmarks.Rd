@@ -2,15 +2,31 @@
 % Please edit documentation in R/plotting.R
 \name{p.scaled.typical.curves.landmarks}
 \alias{p.scaled.typical.curves.landmarks}
-\title{p.scaled.typical.curves.landmarks}
+\title{Plot \code{vachette} Transformed Typical Curves with Landmarks}
 \usage{
-p.scaled.typical.curves.landmarks(vachette_data, log.x = FALSE)
+p.scaled.typical.curves.landmarks(vachette_data)
 }
 \arguments{
-\item{vachette_data}{Object of class\code{vachette_data}}
-
-\item{log.x}{Set to \code{TRUE} to plot x axis on log scale}
+\item{vachette_data}{An object of class \code{vachette_data}, which contains
+the necessary data for plotting.}
+}
+\value{
+A \code{ggplot2} object representing the \code{vachette} transformed typical curves with
+their landmarks. The plot displays different segments of the curves in different color,
+and landmarks marked with black crosses.
 }
 \description{
-p.scaled.typical.curves.landmarks
+This function generates a ggplot2 visualization of the \code{vachette} transformed
+typical curves and their corresponding landmarks for a given pharmacometric model.
+The plot highlights the segments of the reference and query curves, with a special emphasis
+on the landmark positions.
+}
+\details{
+The function plots the typical curves along with their
+segments and marking the landmarks. If the x-axis is
+logarithmic, it adjusts the axis label accordingly.
+
+The plot's title includes the model name, and the caption provides details
+about the reference covariate(s) used. The x-axis range is dynamically set
+based on the minimum and maximum x values, before and after scaling.
 }

@@ -2,18 +2,30 @@
 % Please edit documentation in R/plotting.R
 \name{p.scaled.typical.curves}
 \alias{p.scaled.typical.curves}
-\title{p.scaled.typical.curves}
+\title{Plot \code{vachette} Transformed Typical Curves}
 \usage{
-p.scaled.typical.curves(vachette_data, log.x = FALSE)
+p.scaled.typical.curves(vachette_data)
 }
 \arguments{
-\item{vachette_data}{Object of class \code{vachette_data}}
-
-\item{log.x}{Set to \code{TRUE} to plot x axis on log scale}
+\item{vachette_data}{An object of class \code{vachette_data}, which contains
+the necessary data for plotting.}
 }
 \value{
-Object of class \code{ggplot2}
+A \code{ggplot2} object representing the \code{vachette} transformed typical curves. The plot
+shows both the reference and query curves, and the curves after
+the vachette transformation.
 }
 \description{
-p.scaled.typical.curves
+This function generates a ggplot2 visualization of the \code{vachette} transformed typical curves
+for a given pharmacometric model. It distinguishes between reference curves
+and query curves, showing how the curves transform.
+}
+\details{
+The function creates a plot that distinguishes between
+reference curves (in red) and query curves (in blue). The dashed
+lines represent the curves after the vachette transformation.
+
+The plot's title includes the model name, and the caption provides details
+about the reference covariate(s) used. The x-axis range is dynamically set
+based on the minimum and maximum x values, before and after scaling.
 }

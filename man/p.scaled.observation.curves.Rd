@@ -2,18 +2,32 @@
 % Please edit documentation in R/plotting.R
 \name{p.scaled.observation.curves}
 \alias{p.scaled.observation.curves}
-\title{p.scaled.observation.curves}
+\title{Plot \code{vachette} Transformed Observation Curves}
 \usage{
-p.scaled.observation.curves(vachette_data, log.x = FALSE)
+p.scaled.observation.curves(vachette_data)
 }
 \arguments{
-\item{vachette_data}{Object of class \code{vachette_data}}
-
-\item{log.x}{Set to \code{TRUE} to plot x axis on log scale}
+\item{vachette_data}{An object of class \code{vachette_data}, which contains
+the necessary data for plotting.}
 }
 \value{
-Object of class \code{ggplot2}
+A \code{ggplot2} object representing the \code{vachette} transformed observation curves. The plot
+includes different layers for query observations, their transformed counterparts,
+and the reference curves, with appropriate color coding and line styles.
 }
 \description{
-p.scaled.observation.curves
+This function generates a ggplot2 visualization of transformed observation curves,
+including their transformations and overlays with reference curves. The plot is
+useful for comparing the original and the \code{vachette}
+transformed observation data against typical reference curves.
+}
+\details{
+The function constructs a plot that overlays
+observation curves with the corresponding reference curves. Query observations
+and their transformed curves are highlighted, and if applicable, an extrapolated
+segment of the reference curve is shown as a dashed line.
+
+The plot's title includes the model name, and the caption provides details
+about the reference covariate(s) used. The x-axis range is dynamically set
+based on the minimum and maximum x values, before and after scaling.
 }

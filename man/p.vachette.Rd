@@ -2,18 +2,36 @@
 % Please edit documentation in R/plotting.R
 \name{p.vachette}
 \alias{p.vachette}
-\title{p.vachette}
+\title{Main Vachette Plot}
 \usage{
-p.vachette(vachette_data, log.x = FALSE)
+p.vachette(vachette_data)
 }
 \arguments{
-\item{vachette_data}{Object of class \code{vachette_data}}
-
-\item{log.x}{Set to \code{TRUE} to plot x axis on log scale}
+\item{vachette_data}{An object of class \code{vachette_data}, which contains
+the necessary data for plotting.}
 }
 \value{
-Object of class \code{ggplot2}
+A \code{ggplot2} object representing, which
+includes all observations, with reference data points shown in red, and
+transformed query data points shown in purple. The plot also includes
+reference curves and, if applicable, extrapolated reference curves as dashed lines.
 }
 \description{
-p.vachette
+This function generates the main Vachette plot, which visualizes all transformed
+data points within a pharmacometric model. The plot makes a clear distinction
+between reference data points (those that were not moved, shown in red) and
+transformed query data points (those that were moved, shown in purple).
+}
+\details{
+The function plots all the data points, highlighting
+reference points in red and transformed query points in purple. The plot
+also overlays reference curves, with extrapolated segments displayed as
+dashed lines if available. The subtitle provides information about the
+error model used (additive or proportional) and the number of excluded
+observations.
+
+The plot's title includes the model name, and the caption provides details
+about the reference covariate(s) used. The x-axis range is dynamically set
+based on the scaled x values. If the x-axis is logarithmic, the axis label
+is adjusted accordingly.
 }

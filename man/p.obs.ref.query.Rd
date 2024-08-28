@@ -2,18 +2,31 @@
 % Please edit documentation in R/plotting.R
 \name{p.obs.ref.query}
 \alias{p.obs.ref.query}
-\title{p.obs.ref.query}
+\title{Plot Observations and Typical Curves for Query and Reference Data}
 \usage{
-p.obs.ref.query(vachette_data, log.x = FALSE)
+p.obs.ref.query(vachette_data)
 }
 \arguments{
-\item{vachette_data}{Object of class \code{vachette_data}}
-
-\item{log.x}{Set to \code{TRUE} to plot x axis on log scale}
+\item{vachette_data}{An object of class \code{vachette_data}, which contains
+the necessary data for plotting.}
 }
 \value{
-Object of class \code{ggplot2}
+A \code{ggplot2} object representing the observations and typical curves.
+The plot displays the query and reference curves and their corresponding observations,
+color-coded for easy comparison.
 }
 \description{
-p.obs.ref.query
+This function generates a ggplot2 visualization of the observations and typical curves
+for both query and reference data within a pharmacometric model. It is designed to
+compare the observed data against the typical reference and query curves.
+}
+\details{
+The function plots the query and reference data,
+differentiating them using distinct colors. Observations are represented
+by points, while the typical curves are depicted as lines.
+
+The plot's title includes the model name, and the caption provides details
+about the reference covariate(s) used. The x-axis range is dynamically set
+based on the minimum and maximum x values, before and after scaling.
+If the x-axis is logarithmic, the axis label is adjusted accordingly.
 }

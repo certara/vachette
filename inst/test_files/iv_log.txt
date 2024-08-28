@@ -1,0 +1,81 @@
+
+----------------------------------------------------------
+
+--------------------- i.ucov =  1 ----------------------
+
+ ucov WT region region.type ref
+    1 30      1        open  No
+----------------------------------------------------------
+
+Remove noisy ends of the reference and query curves, if applicable
+Some obs cannot be associated with query curve
+No minimum or maximum detected
+Points kept in y-range of 2.5% to 97.5% only
+Polynomial order for open end curve fitting = 45
+Searched for: inflec
+Returned: NA
+No inflection point found
+No minimum or maximum detected
+Points kept in y-range of 2.5% to 97.5% only
+Polynomial order for open end curve fitting = 70
+Searched for: inflec
+Returned: NA
+No inflection point found
+First and last landmark available only
+Removing 0 observations for i.ucov=1
+No landmarks detected, x=0 assumed first landmark
+Optimized last segment x.scaling 0.5163
+
+Reference
+      x  type            y
+1   0.1 start 1.960397e+01
+2 102.0   end 2.777013e-08
+
+Query
+        x  type        y
+1   0.100 start 19.78924
+2 197.451   end       NA
+
+Zero observations cannot be transformed with proportional error model
+6 observations excluded for all i.ucov
+
+----------------------------------------------------------
+
+--------------------- i.ucov =  2 ----------------------
+
+ ucov WT region region.type ref
+    2 70      1        open Yes
+----------------------------------------------------------
+
+Remove noisy ends of the reference and query curves, if applicable
+Some obs cannot be associated with reference curve
+No minimum or maximum detected
+Points kept in y-range of 2.5% to 97.5% only
+Polynomial order for open end curve fitting = 45
+Searched for: inflec
+Returned: NA
+No inflection point found
+No minimum or maximum detected
+Points kept in y-range of 2.5% to 97.5% only
+Polynomial order for open end curve fitting = 45
+Searched for: inflec
+Returned: NA
+No inflection point found
+First and last landmark available only
+REFERENCE! No need to remove 0 observations for i.ucov=2
+No landmarks detected, x=0 assumed first landmark
+Optimized last segment x.scaling 1
+
+Reference
+      x  type            y
+1   0.1 start 1.960397e+01
+2 102.0   end 2.777013e-08
+
+Query
+      x  type            y
+1   0.1 start 1.960397e+01
+2 102.0   end 2.777013e-08
+
+*** LEFT Extension reference curve by exponential extrapolation ***
+  >> Applying NO-asymptote reference curve LEFT-side extrapolation
+15 observations excluded for all i.ucov
