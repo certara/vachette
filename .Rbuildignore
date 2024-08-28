@@ -9,7 +9,7 @@
 ^_config.yml$
 ^doc$
 ^Meta$
-^LICENSE\.md$
+^LICENSE
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
