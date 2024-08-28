@@ -542,7 +542,7 @@ p.add.distances <- function(vachette_data) {
 #' the necessary data for plotting.
 #'
 #' @return A \code{ggplot2} object representing the plot of distances.
-#' The plot compares the original distances on a logarithmic scale to the distances
+#' The plot compares the log of the original distances to the log of the distances
 #' after transformation, color-coded by segment.
 #'
 #' @details The plot includes a reference line with a slope of 1, indicating where
@@ -575,8 +575,8 @@ p.prop.distances <- function(vachette_data) {
                             vachette_data$covariates,
                             collapse = ", "
                           )),
-         x = 'Original distance on log scale',
-         x = 'Distance on log scale after transformation',
+         x = 'Log of original distances',
+         y = 'Log of vachette-transformed distances',
          col="Segm.") +
     render
 

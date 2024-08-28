@@ -12,7 +12,7 @@ the necessary data for plotting.}
 }
 \value{
 A \code{ggplot2} object representing the plot of distances.
-The plot compares the original distances on a logarithmic scale to the distances
+The plot compares the log of the original distances to the log of the distances
 after transformation, color-coded by segment.
 }
 \description{
