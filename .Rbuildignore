@@ -18,3 +18,6 @@
 ^vachette\.Rproj$
 ^README\.Rmd$
 ^README_files
+^UTSR
+^vignettes$
+^tutorials$
