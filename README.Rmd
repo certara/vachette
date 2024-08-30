@@ -16,7 +16,7 @@ comparison without dilution effects. VACHETTE improves upon previous
 methods [V2ACHER](https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.12679), enabling its
 application to all pharmacometric models and enhancing Visual Predictive
 Checks (VPC) by integrating data into cohesive plots that can highlight 
-model misspecifications.
+model misspecification.
 
 ## Installation
 
@@ -26,11 +26,9 @@ model misspecifications.
 remotes::install_github("certara/vachette")
 ```
 
-## Released 
+## Released
 
-```{r, eval = FALSE}
-install.packages("vachette")
-```
+CRAN release coming soon.
 
 ## Usage
 

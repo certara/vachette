@@ -1,7 +1,7 @@
 
 # vachette
 
-A method to visualize PKPD analyses which are impacted by covariate
+A method to visualize pharmacometric analyses which are impacted by covariate
 effects. Variability-Aligned Covariate Harmonized-Effects and
 Time-Transformation Equivalent (VACHETTE) facilitates intuitive overlays
 of data and model predictions, allowing for comprehensive comparison
@@ -9,7 +9,7 @@ without dilution effects. VACHETTE improves upon previous methods
 [V2ACHER](https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.12679),
 enabling its application to all pharmacometric models and enhancing
 Visual Predictive Checks (VPC) by integrating data into cohesive plots
-that can highlight model misspecifications.
+that can highlight model misspecification.
 
 ## Installation
 
@@ -21,11 +21,12 @@ remotes::install_github("certara/vachette")
 
 ## Released
 
-``` r
-install.packages("vachette")
-```
+CRAN release coming soon.
 
 ## Usage
+
+For a full overview of `vachette`, visit the following tutorial link:
+<https://certara.shinyapps.io/vachette>
 
 ### Import Data
 
@@ -36,7 +37,9 @@ observed (`obs.data`) and simulated predictions of typical curves
 The user also has the option to include simulated data (`sim.data`), in
 order to derive transformations needed for a VACHETTE VPC. The
 `sim.data` requires the same columns as `obs.data`, in addition to a
-required `REP` column to indicate the replicate number.
+required `REP` column to indicate the replicate number. Learn more about
+data requirements
+[here](https://certara.shinyapps.io/vachette/#section-how_it_works).
 
 Data files:
 
