@@ -18,7 +18,7 @@
 \item{...}{additional args.}
 }
 \value{
-\code{x} invisibly.
+\code{object} invisibly.
 }
 \description{
 Summary generic used to return information about \code{vachette_data} object

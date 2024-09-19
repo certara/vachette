@@ -1,8 +1,8 @@
 Package: vachette
 Title: A Method for Visualization of Pharmacometric Models
-Version: 0.40.0
+Version: 0.40.1
 Authors@R: c(
-      person("Jos", "Lommerse", email = "jos.lommerse@certara.com", role = c("aut")),
+      person("Jos", "Lommerse", email = "jos.lommerse@gmail.com", role = c("aut")),
       person("Anna", "Largajolli", email = "anna.largajolli@certara.com", role = c("aut")),
       person("James", "Craig", email = "james.craig@certara.com", role = c("aut", "cre")),
       person("Nele", "Mueller-Plock", email = "nele.mueller-plock@certara.com", role = c("ctb")),
@@ -10,21 +10,21 @@ Authors@R: c(
       person("Amy", "Cheung", email = "amy.cheung@certara.com", role = c("ctb")),
       person("Certara USA, Inc.", role = c("cph","fnd"))
       )
-Description: A method to visualize pharmacometric analyses which are impacted by 
-    covariate effects. Variability-Aligned Covariate Harmonized-Effects 
-    and Time-Transformation Equivalent (VACHETTE) facilitates intuitive 
-    overlays of data and model predictions, allowing for comprehensive 
-    comparison without dilution effects. VACHETTE improves upon previous
+Description: A method to visualize pharmacometric analyses which are impacted by
+    covariate effects. Variability-aligned covariate harmonized-effects
+    and time-transformation equivalent ('vachette') facilitates intuitive
+    overlays of data and model predictions, allowing for comprehensive
+    comparison without dilution effects. 'vachette' improves upon previous
     methods Lommerse et al. (2021) <doi:10.1002/psp4.12679>, enabling its
     application to all pharmacometric models and enhancing Visual Predictive
-    Checks (VPC) by integrating data into cohesive plots that can highlight 
+    Checks (VPC) by integrating data into cohesive plots that can highlight
     model misspecification.
 URL: https://github.com/certara/vachette
 BugReports: https://github.com/certara/vachette/issues
 Depends: R (>= 4.0)
 License: LGPL-3
 Encoding: UTF-8
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Suggests:
     knitr,
     rmarkdown,

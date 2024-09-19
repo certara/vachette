@@ -19,14 +19,7 @@ that can highlight model misspecification.
 remotes::install_github("certara/vachette")
 ```
 
-## Released
-
-CRAN release coming soon.
-
 ## Usage
-
-For a full overview of `vachette`, visit the following tutorial link:
-<https://certara.shinyapps.io/vachette>
 
 ### Import Data
 
@@ -37,9 +30,7 @@ observed (`obs.data`) and simulated predictions of typical curves
 The user also has the option to include simulated data (`sim.data`), in
 order to derive transformations needed for a VACHETTE VPC. The
 `sim.data` requires the same columns as `obs.data`, in addition to a
-required `REP` column to indicate the replicate number. Learn more about
-data requirements
-[here](https://certara.shinyapps.io/vachette/#section-how_it_works).
+required `REP` column to indicate the replicate number.
 
 Data files:
 

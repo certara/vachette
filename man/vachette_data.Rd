@@ -96,8 +96,7 @@ vd <- vachette_data(
   covariates = c(WT = 70),
   mappings = c(OBS = "DV", x = "time"),
   model.name  = "IV"
- ) |>
- apply_transformations()
+  )
 
 
 }

@@ -59,8 +59,7 @@
 #'   covariates = c(WT = 70),
 #'   mappings = c(OBS = "DV", x = "time"),
 #'   model.name  = "IV"
-#'  ) |>
-#'  apply_transformations()
+#'   )
 #'
 #'
 vachette_data <-
@@ -386,6 +385,21 @@ update <- function(vachette_data, ...) {
 #' @param log_file character; File path to direct console output e.g., \code{"log.txt"}
 #' @param ... Additional arguments
 #' @name apply_transformations
+#' @return \code{vachette_data} object containing a list of vachette-transformed \code{data.frame}s
+#' @examples
+#' obs <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv"))
+#' typ <- read.csv(system.file(package = "vachette", "examples", "iv-typ-minmax.csv"))
+#'
+#' vd <- vachette_data(
+#'   obs.data = obs,
+#'   typ.data = typ,
+#'   covariates = c(WT = 70),
+#'   mappings = c(OBS = "DV", x = "time"),
+#'   model.name  = "IV"
+#'  )
+#'
+#'  vd <- apply_transformations(vd)
+#'
 #' @export
 apply_transformations <- function(vachette_data, ...) UseMethod("apply_transformations")
 

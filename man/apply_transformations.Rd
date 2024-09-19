@@ -35,6 +35,24 @@ apply_transformations(vachette_data, ...)
 
 \item{log_file}{character; File path to direct console output e.g., \code{"log.txt"}}
 }
+\value{
+\code{vachette_data} object containing a list of vachette-transformed \code{data.frame}s
+}
 \description{
 Apply vachette transformations
+}
+\examples{
+obs <- read.csv(system.file(package = "vachette", "examples", "iv-obs.csv"))
+typ <- read.csv(system.file(package = "vachette", "examples", "iv-typ-minmax.csv"))
+
+vd <- vachette_data(
+  obs.data = obs,
+  typ.data = typ,
+  covariates = c(WT = 70),
+  mappings = c(OBS = "DV", x = "time"),
+  model.name  = "IV"
+ )
+
+ vd <- apply_transformations(vd)
+
 }
