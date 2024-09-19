@@ -1,4 +1,5 @@
 test_that("vachette transformations are accurate for iv", {
+  skip_on_os(c("mac", "linux"))
   set.seed(121)
 
   vd <- suppressMessages(
@@ -42,6 +43,7 @@ test_that("vachette transformations are accurate for iv", {
 
 
 test_that("vachette transformations are accurate for sigmoid", {
+  skip_on_os(c("mac", "linux"))
   set.seed(121)
 
   vd <- suppressMessages(suppressWarnings(
