@@ -13,7 +13,13 @@ that can highlight model misspecification.
 
 ## Installation
 
-## Development
+### CRAN
+
+``` r
+install.packages("vachette")
+```
+
+### Development
 
 ``` r
 remotes::install_github("certara/vachette")

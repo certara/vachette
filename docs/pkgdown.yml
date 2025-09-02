@@ -1,7 +1,6 @@
-pandoc: '2.18'
-pkgdown: 2.0.9
+pandoc: '3.4'
+pkgdown: 2.1.3
 pkgdown_sha: ~
 articles:
   vachette_examples: vachette_examples.html
-last_built: 2024-08-30T13:33Z
-
+last_built: 2025-09-02T16:54Z

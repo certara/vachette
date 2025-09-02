@@ -24,7 +24,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ## Installation
 
 ```{r install_vachette, eval=FALSE}
-remotes::install_github("certara/vachette")
+install.packages("vachette")
 ```
 
 ## Load Libraries
