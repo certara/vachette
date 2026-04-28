@@ -52,11 +52,6 @@ library(ggplot2)
 knitr::opts_chunk$set(eval = has_engine)
 ```
 
-> The remaining chunks execute live NLME runs and require the engine
-> (the `INSTALLDIR` environment variable must point at a valid install).
-> When the engine is not available — typical for CRAN / CI vignette
-> builds — the chunks are skipped so the vignette still knits.
-
 ## What vachette needs
 
 `vachette_data()` accepts three data frames (see
