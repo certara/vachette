@@ -13,3 +13,15 @@ navbar:
      menu:
      - text: Examples
        href: articles/vachette_examples.html
+     - text: Generating vachette inputs from RsNLME
+       href: articles/rsnlme_vachette.html
+
+articles:
+- title: Examples
+  desc: Worked examples of vachette transformations and plots.
+  contents:
+  - vachette_examples
+- title: Integration with modeling tools
+  desc: Generating vachette inputs from other pharmacometric modeling packages.
+  contents:
+  - rsnlme_vachette

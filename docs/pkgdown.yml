@@ -2,5 +2,6 @@ pandoc: '3.4'
 pkgdown: 2.1.3
 pkgdown_sha: ~
 articles:
+  rsnlme_vachette: rsnlme_vachette.html
   vachette_examples: vachette_examples.html
-last_built: 2025-09-02T16:54Z
+last_built: 2026-04-28T17:28Z
