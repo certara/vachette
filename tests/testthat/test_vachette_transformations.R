@@ -38,7 +38,7 @@ test_that("vachette transformations are accurate for iv", {
 
   testthat::expect_equal(ref_log, test_log)
   testthat::expect_equal(vd$obs.all, tidyr::as_tibble(reference))
-  testthat::expect_true(ggplot2::is.ggplot(p.vachette(vd)))
+  testthat::expect_true(ggplot2::is_ggplot(p.vachette(vd)))
 })
 
 
