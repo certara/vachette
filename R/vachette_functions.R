@@ -1181,35 +1181,46 @@ print.vachette_data <- function(x, ...) {
       by = "ID"
     )
     if (nrow(cmp) > 0L) {
-      max_dx <- max(
-        mapply(function(a, b) {
-          if (length(a) != length(b)) return(Inf)
-          if (!length(a)) return(0)
-          max(abs(a - b))
-        }, cmp$x_sim, cmp$x_obs, USE.NAMES = FALSE),
-        na.rm = TRUE
-      )
-      max_dx_fmt <- format(max_dx, scientific = TRUE, digits = 4)
-      detail <- paste0(
-        " Max |x_sim - x_obs| when pairing sorted unique `x` per overlapping `ID`: ",
-        max_dx_fmt, "."
-      )
-      if (is.finite(max_dx) && max_dx > 0 && max_dx < 1e-6) {
+      dx_by_id <- mapply(function(a, b) {
+        if (length(a) != length(b)) return(Inf)
+        if (!length(a)) return(0)
+        dx <- abs(a - b)
+        if (all(is.na(dx))) return(NA_real_)
+        max(dx, na.rm = TRUE)
+      }, cmp$x_sim, cmp$x_obs, USE.NAMES = FALSE)
+      max_dx <- if (length(dx_by_id) && any(!is.na(dx_by_id))) {
+        max(dx_by_id, na.rm = TRUE)
+      } else {
+        NA_real_
+      }
+      if (is.na(max_dx)) {
         detail <- paste0(
           detail,
-          " Very small differences suggest `x` differs only at floating-point precision",
-          " while `inner_join` requires exact equality on `x`."
+          " Could not compute a finite max |x| difference (aligned `x` values are all missing for overlapping `ID`s)."
         )
-      } else if (!is.finite(max_dx)) {
+      } else {
+        max_dx_fmt <- format(max_dx, scientific = TRUE, digits = 4)
         detail <- paste0(
-          detail,
-          " Some overlapping `ID`s have different counts of distinct `x` between the two tables."
+          " Max |x_sim - x_obs| when pairing sorted unique `x` per overlapping `ID`: ",
+          max_dx_fmt, "."
         )
-      } else if (is.finite(max_dx) && max_dx >= 1e-6) {
-        detail <- paste0(
-          detail,
-          " `x` values differ beyond a trivial tolerance for at least one overlapping `ID`."
-        )
+        if (is.finite(max_dx) && max_dx > 0 && max_dx < 1e-6) {
+          detail <- paste0(
+            detail,
+            " Very small differences suggest `x` differs only at floating-point precision",
+            " while `inner_join` requires exact equality on `x`."
+          )
+        } else if (is.infinite(max_dx)) {
+          detail <- paste0(
+            detail,
+            " Some overlapping `ID`s have different counts of distinct `x` between the two tables."
+          )
+        } else if (is.finite(max_dx) && max_dx >= 1e-6) {
+          detail <- paste0(
+            detail,
+            " `x` values differ beyond a trivial tolerance for at least one overlapping `ID`."
+          )
+        }
       }
     }
   }
