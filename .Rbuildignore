@@ -21,3 +21,5 @@
 ^UTSR
 ^vignettes$
 ^tutorials$
+^\.positai$
+^\.claude$

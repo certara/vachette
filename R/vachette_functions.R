@@ -1158,6 +1158,82 @@ print.vachette_data <- function(x, ...) {
   uniqv[which.max(tabulate(match(x, uniqv)))]
 }
 
+# Warn when sim vs obs inner_join on ID and x is empty; compares IDs and aligned x.
+# Used by .calculate_transformations (tests/testthat/test_sim_obs_join_warning.R).
+.warn_if_sim_obs_join_empty <- function(sim.query.orig, sim_join, obs_join) {
+  if (nrow(sim.query.orig) > 0L) {
+    return(invisible(NULL))
+  }
+  n_ids_sim <- length(unique(sim_join$ID))
+  n_ids_obs <- length(unique(obs_join$ID))
+  n_isect <- length(intersect(unique(sim_join$ID), unique(obs_join$ID)))
+  detail <- ""
+  if (n_isect == 0L) {
+    detail <- " No overlapping `ID` values between `sim.orig` and `obs.query.orig`."
+  } else {
+    cmp <- dplyr::inner_join(
+      sim_join %>%
+        dplyr::group_by(ID) %>%
+        dplyr::summarise(x_sim = list(sort(unique(x))), .groups = "drop"),
+      obs_join %>%
+        dplyr::group_by(ID) %>%
+        dplyr::summarise(x_obs = list(sort(unique(x))), .groups = "drop"),
+      by = "ID"
+    )
+    if (nrow(cmp) > 0L) {
+      dx_by_id <- mapply(function(a, b) {
+        if (length(a) != length(b)) return(Inf)
+        if (!length(a)) return(0)
+        dx <- abs(a - b)
+        if (all(is.na(dx))) return(NA_real_)
+        max(dx, na.rm = TRUE)
+      }, cmp$x_sim, cmp$x_obs, USE.NAMES = FALSE)
+      max_dx <- if (length(dx_by_id) && any(!is.na(dx_by_id))) {
+        max(dx_by_id, na.rm = TRUE)
+      } else {
+        NA_real_
+      }
+      if (is.na(max_dx)) {
+        detail <- paste0(
+          detail,
+          " Could not compute a finite max |x| difference (aligned `x` values are all missing for overlapping `ID`s)."
+        )
+      } else {
+        max_dx_fmt <- format(max_dx, scientific = TRUE, digits = 4)
+        detail <- paste0(
+          " Max |x_sim - x_obs| when pairing sorted unique `x` per overlapping `ID`: ",
+          max_dx_fmt, "."
+        )
+        if (is.finite(max_dx) && max_dx > 0 && max_dx < 1e-6) {
+          detail <- paste0(
+            detail,
+            " Very small differences suggest `x` differs only at floating-point precision",
+            " while `inner_join` requires exact equality on `x`."
+          )
+        } else if (is.infinite(max_dx)) {
+          detail <- paste0(
+            detail,
+            " Some overlapping `ID`s have different counts of distinct `x` between the two tables."
+          )
+        } else if (is.finite(max_dx) && max_dx >= 1e-6) {
+          detail <- paste0(
+            detail,
+            " `x` values differ beyond a trivial tolerance for at least one overlapping `ID`."
+          )
+        }
+      }
+    }
+  }
+  warning(
+    "`inner_join` of `sim.orig` and `obs.query.orig` on c(\"ID\", \"x\") returned 0 rows.",
+    " Unique `ID` count: sim.orig = ", n_ids_sim, ", obs.query.orig = ",
+    n_ids_obs, ", IDs in intersection = ", n_isect, ".",
+    detail,
+    call. = FALSE
+  )
+  invisible(NULL)
+}
+
 ###################################################################
 #                                                                 #
 #                          MAIN                                   #
@@ -2372,9 +2448,10 @@ print.vachette_data <- function(x, ...) {
       # can start here with sim.data, since everything before was x.scaling
 
       if (!is.null(sim.orig)) {
-        sim.query.orig <- dplyr::inner_join(sim.orig %>% dplyr::select(REP, ID, x, y),
-                                            obs.query.orig %>% dplyr::select(-REP, -y, -OBS),
-                                            by = c("ID", "x"))
+        sim_join <- sim.orig %>% dplyr::select(REP, ID, x, y)
+        obs_join <- obs.query.orig %>% dplyr::select(-REP, -y, -OBS)
+        sim.query.orig <- dplyr::inner_join(sim_join, obs_join, by = c("ID", "x"))
+        .warn_if_sim_obs_join_empty(sim.query.orig, sim_join, obs_join)
         sim.query      <- NULL
         for (iseg in c(1:nseg))
         {
@@ -2412,7 +2489,6 @@ print.vachette_data <- function(x, ...) {
             mutate(x.trans       = x + x.shift.query) %>%            # May be redefine to my.ref.lm$x[iseg]
             mutate(x.scaling     = ref.seg.length / query.seg.length) %>%
             mutate(x.scaled      = x.scaling * x.trans - x.shift.ref)  # Back to corresponding ref position
-
           sim.query <- rbind(sim.query, sim.query.add)
 
         }
