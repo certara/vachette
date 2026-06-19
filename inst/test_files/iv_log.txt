@@ -35,8 +35,6 @@ Query
         x  type        y
 1   0.100 start 19.78924
 2 197.451   end       NA
-
-Zero observations cannot be transformed with proportional error model
 6 observations excluded for all i.ucov
 
 ----------------------------------------------------------
