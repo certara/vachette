@@ -1,6 +1,6 @@
 Package: vachette
 Title: A Method for Visualization of Pharmacometric Models
-Version: 0.40.1
+Version: 1.0.0
 Authors@R: c(
       person("Jos", "Lommerse", email = "jos.lommerse@gmail.com", role = c("aut")),
       person("Anna", "Largajolli", email = "anna.largajolli@certara.com", role = c("aut")),
