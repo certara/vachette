@@ -322,7 +322,8 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
 
   nminmax <- 0
   # (Local) extremes - not tested in case of multiple min/max's
-  f1.0  <- photobiology::get_peaks(x,y,span=w)$x
+  # strict = TRUE matches the deprecated photobiology::get_peaks() default (issue #41)
+  f1.0  <- x[splus2R::peaks(y, span = w, strict = TRUE)]
   npeak <- length(f1.0)
 
   if(npeak == 0 & SETMAX)
@@ -340,12 +341,22 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
       # JL240216 - refine, use (same) window of grid points
       wsub <- floor(w/2)
       x.grid  <- which(x == newpeak)
+      # nearest grid point if no exact match, else the window spans the whole curve
+      if(length(x.grid) == 0) x.grid <- which.min(abs(x - newpeak))
+      x.grid  <- x.grid[1]
       x.start <- max(1,(x.grid-wsub))
       x.end   <- min(length(x),(x.grid+wsub))
       xsub    <- x[x.start:x.end]
       ysub    <- y[x.start:x.end]
 
       newpeak.refined <- extremes(xsub, ysub, type='minmax', polyorder=6)
+
+      # extremes() may return 0 or several roots; keep the one nearest the peak
+      if(length(newpeak.refined) == 0) {
+        newpeak.refined <- NA
+      } else if(length(newpeak.refined) > 1) {
+        newpeak.refined <- newpeak.refined[which.min(abs(newpeak.refined - newpeak))]
+      }
 
       log_output(paste0("Max detected at x = ",newpeak," and refined to x = ",newpeak.refined,"\n"))
 
@@ -366,7 +377,8 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
     }
   }
 
-  f1.0 <- photobiology::get_valleys(x,y,span=w)$x
+  # valleys are peaks of the negated signal (replaces deprecated get_valleys(), issue #41)
+  f1.0 <- x[splus2R::peaks(-y, span = w, strict = TRUE)]
   nvalley <- length(f1.0)
 
   if(nvalley == 0 & SETMIN)
@@ -384,12 +396,22 @@ get.x.multi.landmarks <- function(x,y,w=17,tol=1e-9) {
       # JL240216 - refine, use (same) window of grid points
       wsub <- floor(w/2)
       x.grid  <- which(x == newvalley)
+      # nearest grid point if no exact match (see peak handling above)
+      if(length(x.grid) == 0) x.grid <- which.min(abs(x - newvalley))
+      x.grid  <- x.grid[1]
       x.start <- max(1,(x.grid-wsub))
       x.end   <- min(length(x),(x.grid+wsub))
       xsub    <- x[x.start:x.end]
       ysub    <- y[x.start:x.end]
 
       newvalley.refined <- extremes(xsub, ysub, type='minmax', polyorder=6)
+
+      # extremes() may return 0 or several roots; keep the one nearest the valley
+      if(length(newvalley.refined) == 0) {
+        newvalley.refined <- NA
+      } else if(length(newvalley.refined) > 1) {
+        newvalley.refined <- newvalley.refined[which.min(abs(newvalley.refined - newvalley))]
+      }
 
       log_output(paste0("Min detected at x = ",newvalley," and refined to x = ",newvalley.refined,"\n"))
 
@@ -2510,7 +2532,8 @@ print.vachette_data <- function(x, ...) {
         query          <- query %>% mutate(ylog = ifelse(y>0,log(y),NA))
 
         # Exclude if y<=0:
-        if(sum(obs.query <= 0) & i.ucov != ref.ucov)
+        # test the y column only, NA-safe (a whole-data.frame comparison propagates NA)
+        if(sum(obs.query$y <= 0, na.rm = TRUE) > 0 & i.ucov != ref.ucov)
         {
           # print(names(obs.query.excluded))
           # print(names(obs.query))
